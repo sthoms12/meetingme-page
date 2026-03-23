@@ -185,12 +185,12 @@ export function HomePage() {
                       <FormItem>
                         <FormLabel>Custom URL (Optional)</FormLabel>
                         <FormControl>
-                          <div className="flex h-10 items-center gap-2 rounded-md border border-input bg-secondary px-3">
-                            <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">meetingme.page/</span>
-                            <Input 
-                              className="flex-1 h-full bg-transparent px-2 border-none shadow-none placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-0" 
-                              placeholder="your-slug" 
-                              {...field} 
+                          <div className="relative h-10 w-full rounded-md border border-input bg-secondary overflow-hidden focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background">
+                            <span className="absolute inset-y-0 left-0 z-10 flex h-full items-center pl-3 pr-2 sm:pr-3 text-xs sm:text-sm font-medium text-muted-foreground pointer-events-none bg-secondary whitespace-nowrap truncate">meetingme.page/</span>
+                            <Input
+                              className="h-full w-full bg-transparent px-0 pl-[120px] sm:pl-[164px] pr-3 border-none shadow-none placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-0"
+                              placeholder="your-slug"
+                              {...field}
                             />
                           </div>
                         </FormControl>
