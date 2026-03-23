@@ -83,31 +83,31 @@ export function HomePage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
           <div className="space-y-8">
             <header className="space-y-3">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-xs font-semibold">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-xs font-semibold dark:bg-indigo-950 dark:text-indigo-300">
                 <Sparkles size={14} />
                 <span>Beta Access</span>
               </div>
-              <h1 className="text-4xl md:text-5xl font-display font-bold text-slate-900 tracking-tight">
+              <h1 className="text-4xl md:text-5xl font-display font-bold text-foreground tracking-tight">
                 Share who you are <br />
-                <span className="text-indigo-600">before</span> the meeting.
+                <span className="text-indigo-600 dark:text-indigo-400">before</span> the meeting.
               </h1>
               <p className="text-lg text-muted-foreground max-w-md">
                 Create a minimal, professional intro page in seconds. No logins, no clutter.
               </p>
             </header>
             {publishedData ? (
-              <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-soft space-y-6 animate-scale-in">
+              <div className="bg-card border border-border rounded-2xl p-8 shadow-soft space-y-6 animate-scale-in dark:bg-slate-900/60">
                 <div className="space-y-2">
-                  <h3 className="text-xl font-semibold text-slate-900">It's ready!</h3>
+                  <h3 className="text-xl font-semibold text-foreground">It's ready!</h3>
                   <p className="text-muted-foreground text-sm">
                     Your public intro page is live. Share this link with your meeting participants.
                   </p>
                 </div>
-                <div className="flex items-center gap-2 p-3 bg-slate-50 border border-slate-100 rounded-lg group">
-                  <code className="flex-1 text-sm text-indigo-600 truncate">
+                <div className="flex items-center gap-2 p-3 bg-muted border border-border rounded-lg group">
+                  <code className="flex-1 text-sm text-indigo-600 dark:text-indigo-400 truncate">
                     {window.location.origin}/{publishedData.slug}
                   </code>
-                  <Button size="sm" variant="ghost" onClick={copyLink}>
+                  <Button size="sm" variant="ghost" onClick={copyLink} className="hover:bg-background">
                     {copied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
                   </Button>
                 </div>
@@ -134,7 +134,7 @@ export function HomePage() {
                       name="fullName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Full Name</FormLabel>
+                          <FormLabel className="text-foreground">Full Name</FormLabel>
                           <FormControl>
                             <Input placeholder="John Doe" {...field} />
                           </FormControl>
@@ -147,7 +147,7 @@ export function HomePage() {
                       name="profilePhoto"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Avatar URL</FormLabel>
+                          <FormLabel className="text-foreground">Avatar URL</FormLabel>
                           <FormControl>
                             <Input placeholder="https://..." {...field} />
                           </FormControl>
@@ -163,7 +163,7 @@ export function HomePage() {
                       name="jobTitle"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Job Title</FormLabel>
+                          <FormLabel className="text-foreground">Job Title</FormLabel>
                           <FormControl>
                             <Input placeholder="Product Designer" {...field} />
                           </FormControl>
@@ -176,7 +176,7 @@ export function HomePage() {
                       name="company"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Company</FormLabel>
+                          <FormLabel className="text-foreground">Company</FormLabel>
                           <FormControl>
                             <Input placeholder="Acme Inc." {...field} />
                           </FormControl>
@@ -190,12 +190,12 @@ export function HomePage() {
                     name="bio"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Bio (max 300 chars)</FormLabel>
+                        <FormLabel className="text-foreground">Bio (max 300 chars)</FormLabel>
                         <FormControl>
-                          <Textarea 
-                            placeholder="Briefly share your role, focus, or what you're excited about for this meeting..." 
+                          <Textarea
+                            placeholder="Briefly share your role, focus, or what you're excited about for this meeting..."
                             className="resize-none h-24"
-                            {...field} 
+                            {...field}
                           />
                         </FormControl>
                         <FormMessage />
@@ -203,7 +203,7 @@ export function HomePage() {
                     )}
                   />
                   <div className="space-y-4">
-                    <h3 className="text-sm font-medium text-slate-900">Optional Links</h3>
+                    <h3 className="text-sm font-medium text-foreground">Optional Links</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormField
                         control={form.control}
@@ -243,7 +243,7 @@ export function HomePage() {
                       )}
                     />
                   </div>
-                  <Button type="submit" size="lg" className="w-full gap-2 h-12 text-base shadow-indigo-200 shadow-lg" disabled={isSubmitting}>
+                  <Button type="submit" size="lg" className="w-full gap-2 h-12 text-base shadow-indigo-200 dark:shadow-indigo-900/20 shadow-lg" disabled={isSubmitting}>
                     {isSubmitting ? "Publishing..." : "Publish Page"} <Send size={18} />
                   </Button>
                 </form>
@@ -253,8 +253,8 @@ export function HomePage() {
           <div className="lg:sticky lg:top-12">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Live Preview</span>
-                <span className="text-xs text-slate-300">Updated in real-time</span>
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Live Preview</span>
+                <span className="text-xs text-muted-foreground/60">Updated in real-time</span>
               </div>
               <ProfileCard data={watchAll} />
             </div>

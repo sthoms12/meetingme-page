@@ -64,7 +64,6 @@ export function EditPage() {
       });
       const result = await response.json();
       if (result.success) {
-        // Invalidate the public profile cache to ensure the latest data is shown
         await queryClient.invalidateQueries({ queryKey: ['profile', slug] });
         toast.success('Profile updated successfully!');
         navigate(`/${slug}`);
@@ -78,11 +77,11 @@ export function EditPage() {
       setIsUpdating(false);
     }
   }, [editToken, slug, navigate, queryClient]);
-  if (isLoading) return <div className="p-8 text-center text-muted-foreground">Loading profile...</div>;
+  if (isLoading) return <div className="p-8 text-center text-muted-foreground animate-pulse">Loading profile...</div>;
   if (error) return <div className="p-8 text-center text-destructive">Error loading profile.</div>;
   if (!editToken) return (
     <div className="max-w-7xl mx-auto px-4 py-24 text-center space-y-4">
-      <h2 className="text-xl font-bold">Edit access denied.</h2>
+      <h2 className="text-xl font-bold text-foreground">Edit access denied.</h2>
       <p className="text-muted-foreground">The edit token for this profile was not found in this browser.</p>
       <Button asChild><Link to="/">Go Home</Link></Button>
     </div>
@@ -91,42 +90,43 @@ export function EditPage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="py-8 md:py-10 lg:py-12">
         <ThemeToggle />
-        <Link to={`/${slug}`} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-slate-900 mb-8 transition-colors">
+        <Link to={`/${slug}`} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-8 transition-colors">
           <ArrowLeft size={16} /> Back to Public Page
         </Link>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
           <div className="space-y-6">
-            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Edit Your Page</h1>
+            <h1 className="text-3xl font-bold text-foreground tracking-tight">Edit Your Page</h1>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField control={form.control} name="fullName" render={({ field }) => (
-                    <FormItem><FormLabel>Full Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel className="text-foreground">Full Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                   )} />
                   <FormField control={form.control} name="profilePhoto" render={({ field }) => (
-                    <FormItem><FormLabel>Avatar URL</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel className="text-foreground">Avatar URL</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                   )} />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField control={form.control} name="jobTitle" render={({ field }) => (
-                    <FormItem><FormLabel>Job Title</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel className="text-foreground">Job Title</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                   )} />
                   <FormField control={form.control} name="company" render={({ field }) => (
-                    <FormItem><FormLabel>Company</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel className="text-foreground">Company</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                   )} />
                 </div>
                 <FormField control={form.control} name="bio" render={({ field }) => (
-                  <FormItem><FormLabel>Bio</FormLabel><FormControl><Textarea className="h-24 resize-none" {...field} /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel className="text-foreground">Bio</FormLabel><FormControl><Textarea className="h-24 resize-none" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <div className="space-y-4">
+                  <h3 className="text-sm font-medium text-foreground">Links</h3>
                   <FormField control={form.control} name="linkedinUrl" render={({ field }) => (
-                    <FormItem><FormLabel>LinkedIn URL</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+                    <FormItem><FormLabel className="text-foreground">LinkedIn URL</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
                   )} />
                   <FormField control={form.control} name="websiteUrl" render={({ field }) => (
-                    <FormItem><FormLabel>Website URL</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+                    <FormItem><FormLabel className="text-foreground">Website URL</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
                   )} />
                   <FormField control={form.control} name="videoUrl" render={({ field }) => (
-                    <FormItem><FormLabel>Video Intro URL</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+                    <FormItem><FormLabel className="text-foreground">Video Intro URL</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
                   )} />
                 </div>
                 <Button type="submit" size="lg" className="w-full gap-2" disabled={isUpdating}>
@@ -138,7 +138,7 @@ export function EditPage() {
           </div>
           <div className="lg:sticky lg:top-12">
             <div className="space-y-4">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Previewing Changes</span>
+              <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Previewing Changes</span>
               <ProfileCard data={form.watch()} />
             </div>
           </div>
