@@ -10,8 +10,9 @@ export interface Profile {
   websiteUrl?: string;
   videoUrl?: string;
   createdAt: string;
+  views?: number;
 }
-export type ProfileFormData = Omit<Profile, 'slug' | 'editToken' | 'createdAt'>;
+export type ProfileFormData = Omit<Profile, 'slug' | 'editToken' | 'createdAt' | 'views'>;
 export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;

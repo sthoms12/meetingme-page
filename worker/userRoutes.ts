@@ -19,6 +19,9 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     app.get('/api/profiles/:slug', async (c) => {
         const slug = c.req.param('slug');
         const stub = c.env.GlobalDurableObject.get(c.env.GlobalDurableObject.idFromName("global"));
+        // Increment views asynchronously - we don't strictly need to wait for it for the response
+        // but for data integrity in the response we'll await it or fetch the profile after
+        await stub.incrementProfileViews(slug);
         const profile = await stub.getProfile(slug);
         if (!profile) {
             return c.json({ success: false, error: 'Profile not found' } satisfies ApiResponse, 404);
@@ -52,6 +55,7 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
             videoUrl: body.videoUrl,
             slug,
             editToken,
+            views: 0,
             createdAt: new Date().toISOString()
         };
         await stub.createProfile(newProfile);

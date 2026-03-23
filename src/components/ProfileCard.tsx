@@ -43,14 +43,15 @@ export function ProfileCard({ data, className, slug }: ProfileCardProps) {
     >
       <Card className="overflow-hidden border-border shadow-soft rounded-2xl bg-card text-card-foreground dark:bg-slate-900/40 print:border print:bg-white print:text-black">
         <CardHeader className="flex flex-col items-center pt-10 pb-6 print:pt-6">
-          <Avatar className="w-28 h-28 border-4 border-muted shadow-sm dark:border-slate-800 print:border-slate-200">
-            {profilePhoto && (
+          <Avatar className="w-28 h-28 border-4 border-muted shadow-sm dark:border-slate-800 print:border-slate-200 overflow-hidden">
+            {profilePhoto && profilePhoto.trim() !== '' ? (
               <AvatarImage
                 src={profilePhoto}
                 alt={displayFullName}
                 className="object-cover"
+                loading="lazy"
               />
-            )}
+            ) : null}
             <AvatarFallback className="bg-muted text-muted-foreground dark:bg-slate-800 print:bg-slate-50 print:text-slate-400">
               <User size={40} />
             </AvatarFallback>

@@ -8,13 +8,22 @@ export class GlobalDurableObject extends DurableObject {
       return profile || null;
     }
     async createProfile(profile: Profile): Promise<void> {
-      await this.ctx.storage.put(`profile_${profile.slug}`, profile);
+      await this.ctx.storage.put(`profile_${profile.slug}`, { ...profile, views: 0 });
+    }
+    async incrementProfileViews(slug: string): Promise<number> {
+      const profile = await this.getProfile(slug);
+      if (!profile) return 0;
+      const currentViews = profile.views || 0;
+      const newViews = currentViews + 1;
+      await this.ctx.storage.put(`profile_${slug}`, { ...profile, views: newViews });
+      return newViews;
     }
     async updateProfile(slug: string, token: string, updates: Partial<Profile>): Promise<Profile | null> {
       const profile = await this.getProfile(slug);
       if (!profile || profile.editToken !== token) {
         return null;
       }
+      // Ensure we don't accidentally overwrite views if not provided in updates
       const updatedProfile: Profile = { ...profile, ...updates };
       await this.ctx.storage.put(`profile_${slug}`, updatedProfile);
       return updatedProfile;
@@ -41,20 +50,6 @@ export class GlobalDurableObject extends DurableObject {
     async addDemoItem(item: DemoItem): Promise<DemoItem[]> {
       const items = await this.getDemoItems();
       const updatedItems = [...items, item];
-      await this.ctx.storage.put("demo_items", updatedItems);
-      return updatedItems;
-    }
-    async updateDemoItem(id: string, updates: Partial<Omit<DemoItem, 'id'>>): Promise<DemoItem[]> {
-      const items = await this.getDemoItems();
-      const updatedItems = items.map(item =>
-        item.id === id ? { ...item, ...updates } : item
-      );
-      await this.ctx.storage.put("demo_items", updatedItems);
-      return updatedItems;
-    }
-    async deleteDemoItem(id: string): Promise<DemoItem[]> {
-      const items = await this.getDemoItems();
-      const updatedItems = items.filter(item => item.id !== id);
       await this.ctx.storage.put("demo_items", updatedItems);
       return updatedItems;
     }

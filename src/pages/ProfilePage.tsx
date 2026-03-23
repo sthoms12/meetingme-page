@@ -5,7 +5,7 @@ import QRCode from 'qrcode';
 import { ProfileCard } from '@/components/ProfileCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, Info, Printer, Share2, X } from 'lucide-react';
+import { ChevronLeft, Info, Printer, Share2, Mail } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 export function ProfilePage() {
@@ -23,67 +23,46 @@ export function ProfilePage() {
     enabled: !!slug,
   });
   useEffect(() => {
-    if (data?.slug) {
-      QRCode.toDataURL(`${window.location.origin}/${data.slug}`, { margin: 2 }).then(setQrCode);
-    }
+    if (data?.slug) QRCode.toDataURL(`${window.location.origin}/${data.slug}`, { margin: 2 }).then(setQrCode);
   }, [data?.slug]);
-  if (isLoading) {
-    return (
-      <div className="max-w-2xl mx-auto py-16 md:py-24 px-4 flex flex-col items-center">
-        <Skeleton className="h-[450px] w-full max-w-md rounded-2xl" />
-      </div>
-    );
-  }
-  if (error || !data) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 text-center space-y-6 flex flex-col items-center">
-        <div className="size-16 rounded-full bg-muted flex items-center justify-center"><Info size={32} /></div>
-        <h1 className="text-2xl font-bold">Profile Not Found</h1>
-        <Button asChild variant="outline"><Link to="/">Create your own page</Link></Button>
-      </div>
-    );
-  }
+  const shareViaEmail = () => {
+    if (!data) return;
+    const url = window.location.href;
+    const subject = encodeURIComponent(`Meet ${data.fullName}`);
+    const body = encodeURIComponent(`Hi,\n\nWanted to share my intro page with you before we meet:\n\n${url}\n\n"${data.bio}"\n\nSee you soon!`);
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+  };
+  if (isLoading) return <div className="max-w-2xl mx-auto py-16 md:py-24 px-4 flex flex-col items-center"><Skeleton className="h-[450px] w-full max-w-md rounded-2xl" /></div>;
+  if (error || !data) return <div className="max-w-7xl mx-auto px-4 py-24 text-center flex flex-col items-center"><div className="size-16 rounded-full bg-muted flex items-center justify-center mb-6"><Info size={32} /></div><h1 className="text-2xl font-bold">Profile Not Found</h1><Button asChild variant="outline" className="mt-4"><Link to="/">Create your own page</Link></Button></div>;
   return (
     <div className="min-h-screen bg-background">
-      <div className="no-print">
-        <ThemeToggle />
-      </div>
+      <div className="no-print"><ThemeToggle /></div>
       <div className="max-w-2xl mx-auto py-12 md:py-24 px-4 flex flex-col items-center relative">
         <div className="w-full max-w-md mb-8 flex items-center justify-between no-print">
           <Link to="/" className="flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-indigo-600 transition-colors">
-            <ChevronLeft size={16} /> MeetingMe
+            <ChevronLeft size={16} /> Home
           </Link>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={() => window.print()} title="Print Card">
-              <Printer size={18} className="text-muted-foreground" />
-            </Button>
+            <Button variant="ghost" size="icon" onClick={() => window.print()} title="Print"><Printer size={18} className="text-muted-foreground" /></Button>
             <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon" title="Share QR">
-                  <Share2 size={18} className="text-muted-foreground" />
-                </Button>
-              </PopoverTrigger>
+              <PopoverTrigger asChild><Button variant="ghost" size="icon"><Share2 size={18} className="text-muted-foreground" /></Button></PopoverTrigger>
               <PopoverContent className="w-64 p-4 text-center space-y-4">
                 <p className="text-sm font-bold">Share Profile</p>
                 <img src={qrCode} className="size-48 mx-auto border rounded-lg" alt="QR" />
-                <Button variant="outline" size="sm" className="w-full text-xs" asChild>
-                  <a href={qrCode} download={`meetingme-${slug}.png`}>Download PNG</a>
-                </Button>
+                <div className="grid grid-cols-1 gap-2">
+                  <Button variant="outline" size="sm" onClick={shareViaEmail} className="gap-2"><Mail size={14} /> Send via Email</Button>
+                  <Button variant="secondary" size="sm" asChild><a href={qrCode} download={`meetingme-${slug}.png`}>Download QR</a></Button>
+                </div>
               </PopoverContent>
             </Popover>
           </div>
         </div>
         <ProfileCard data={data} slug={slug} />
-        <footer className="mt-12 text-center space-y-4 no-print">
-          <div className="h-px w-12 bg-border mx-auto" />
-          <p className="text-2xs text-muted-foreground uppercase tracking-widest font-bold">
-            Powered by <Link to="/" className="text-indigo-600 hover:underline">MeetingMe</Link>
-          </p>
+        <footer className="mt-12 text-center no-print border-t pt-8 w-12 mx-auto">
+          <p className="text-2xs text-muted-foreground uppercase tracking-widest font-bold">MeetingMe</p>
         </footer>
       </div>
-      <div className="hidden print:block fixed bottom-8 left-0 right-0 text-center text-[10px] text-slate-400">
-        Generated by meetingme.page — {window.location.origin}/{slug}
-      </div>
+      <div className="hidden print:block fixed bottom-8 left-0 right-0 text-center text-[10px] text-slate-400">meetingme.page/{slug}</div>
     </div>
   );
 }

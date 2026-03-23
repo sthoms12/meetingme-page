@@ -1,11 +1,11 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Save, ArrowLeft, Loader2, ShieldAlert, Printer, QrCode } from 'lucide-react';
+import { Save, ArrowLeft, Loader2, ShieldAlert, Printer, QrCode, Mail, Eye, Upload, X } from 'lucide-react';
 import QRCode from 'qrcode';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,12 +15,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ProfileCard } from '@/components/ProfileCard';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
 const formSchema = z.object({
   fullName: z.string().min(2, 'Name is required'),
   jobTitle: z.string().min(2, 'Title is required'),
   company: z.string().min(2, 'Company is required'),
   bio: z.string().min(10, 'Bio must be at least 10 characters').max(300, 'Keep it punchy'),
-  profilePhoto: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+  profilePhoto: z.string().optional().or(z.literal('')),
   linkedinUrl: z.string().url('Must be a valid URL').optional().or(z.literal('')),
   websiteUrl: z.string().url('Must be a valid URL').optional().or(z.literal('')),
   videoUrl: z.string().url('Must be a valid URL').optional().or(z.literal('')),
@@ -32,6 +33,7 @@ export function EditPage() {
   const queryClient = useQueryClient();
   const [isUpdating, setIsUpdating] = useState(false);
   const [qrCode, setQrCode] = useState<string>('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const editToken = useMemo(() => slug ? localStorage.getItem(`profile_${slug}_token`) : null, [slug]);
   const { data: initialData, isLoading } = useQuery({
     queryKey: ['profile-edit', slug],
@@ -48,14 +50,32 @@ export function EditPage() {
     defaultValues: { fullName: '', jobTitle: '', company: '', bio: '', profilePhoto: '', linkedinUrl: '', websiteUrl: '', videoUrl: '' },
   });
   const watchAll = form.watch();
-  useEffect(() => { 
-    if (initialData) form.reset(initialData); 
+  useEffect(() => {
+    if (initialData) form.reset(initialData);
   }, [initialData, form]);
   useEffect(() => {
-    if (slug) {
-      QRCode.toDataURL(`${window.location.origin}/${slug}`, { margin: 2 }).then(setQrCode);
-    }
+    if (slug) QRCode.toDataURL(`${window.location.origin}/${slug}`, { margin: 2 }).then(setQrCode);
   }, [slug]);
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const img = new Image();
+      img.src = reader.result as string;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 400;
+        const scale = MAX_WIDTH / img.width;
+        canvas.width = MAX_WIDTH;
+        canvas.height = img.height * scale;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+        form.setValue('profilePhoto', canvas.toDataURL('image/jpeg', 0.8));
+      };
+    };
+    reader.readAsDataURL(file);
+  };
   const onSubmit = useCallback(async (values: FormValues) => {
     if (!editToken || !slug) return;
     setIsUpdating(true);
@@ -75,71 +95,78 @@ export function EditPage() {
       }
     } catch (err) {
       toast.error('Something went wrong');
-    } finally {
-      setIsUpdating(false);
-    }
+    } finally { setIsUpdating(false); }
   }, [editToken, slug, navigate, queryClient]);
-  if (isLoading) return (
-    <div className="max-w-7xl mx-auto px-4 py-12">
-      <Skeleton className="h-[500px] w-full max-w-4xl mx-auto rounded-2xl" />
-    </div>
-  );
-  if (!editToken) return (
-    <div className="py-24 text-center space-y-4">
-      <ShieldAlert className="mx-auto size-12 text-muted-foreground" />
-      <h2 className="text-xl font-bold">Access Denied</h2>
-      <p className="text-muted-foreground">You don't have permission to edit this profile or your session expired.</p>
-      <Button asChild><Link to="/">Go Home</Link></Button>
-    </div>
-  );
+  const shareViaEmail = () => {
+    if (!slug) return;
+    const url = `${window.location.origin}/${slug}`;
+    const subject = encodeURIComponent(`Meet ${watchAll.fullName}`);
+    const body = encodeURIComponent(`Hi,\n\nI'm looking forward to our meeting. Here's my profile:\n\n${url}\n\nSee you soon!`);
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+  };
+  if (isLoading) return <div className="max-w-7xl mx-auto px-4 py-12"><Skeleton className="h-[500px] w-full max-w-4xl mx-auto rounded-2xl" /></div>;
+  if (!editToken) return <div className="py-24 text-center space-y-4"><ShieldAlert className="mx-auto size-12 text-muted-foreground" /><h2 className="text-xl font-bold">Access Denied</h2><Button asChild><Link to="/">Go Home</Link></Button></div>;
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <ThemeToggle />
-      <div className="flex items-center justify-between mb-8 no-print">
-        <Link to={`/${slug}`} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft size={16} /> Public View
-        </Link>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => window.print()} className="gap-2">
-            <Printer size={16} /> Print
-          </Button>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 no-print">
+        <div className="space-y-1">
+          <Link to={`/${slug}`} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+            <ArrowLeft size={16} /> Public View
+          </Link>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold">Edit Page</h1>
+            <Badge variant="secondary" className="gap-1.5"><Eye size={14} /> {initialData?.views || 0} views</Badge>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" onClick={shareViaEmail} className="gap-2"><Mail size={16} /> Email</Button>
+          <Button variant="outline" size="sm" onClick={() => window.print()} className="gap-2"><Printer size={16} /> Print</Button>
           <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2"><QrCode size={16} /> QR</Button>
-            </DialogTrigger>
+            <DialogTrigger asChild><Button variant="outline" size="sm" className="gap-2"><QrCode size={16} /> QR</Button></DialogTrigger>
             <DialogContent className="sm:max-w-xs text-center">
-              <DialogHeader><DialogTitle>Your Sharing QR</DialogTitle></DialogHeader>
-              <div className="p-4 bg-white rounded-xl inline-block mx-auto border my-4">
-                <img src={qrCode} className="size-48 mx-auto" alt="QR" />
-              </div>
-              <Button className="w-full" asChild>
-                <a href={qrCode} download={`meetingme-${slug}.png`}>Download PNG</a>
-              </Button>
+              <DialogHeader><DialogTitle>Share QR</DialogTitle></DialogHeader>
+              <div className="p-4 bg-white rounded-xl inline-block mx-auto border my-4"><img src={qrCode} className="size-48 mx-auto" alt="QR" /></div>
+              <Button className="w-full" asChild><a href={qrCode} download={`meetingme-${slug}.png`}>Download PNG</a></Button>
             </DialogContent>
           </Dialog>
         </div>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
         <div className="space-y-6">
-          <h1 className="text-3xl font-bold tracking-tight">Edit Your Page</h1>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <div className="space-y-3">
+                <FormLabel>Profile Photo</FormLabel>
+                <div 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="border-2 border-dashed rounded-xl p-4 flex items-center gap-4 cursor-pointer hover:bg-muted/50 transition-colors"
+                >
+                  <div className="relative shrink-0">
+                    {watchAll.profilePhoto ? (
+                      <img src={watchAll.profilePhoto} className="w-16 h-16 rounded-full object-cover border" alt="Profile" />
+                    ) : (
+                      <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center"><Upload size={20} /></div>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">Change profile photo</p>
+                    <p className="text-xs text-muted-foreground">Click to upload a new file</p>
+                  </div>
+                  <input ref={fileInputRef} type="file" className="hidden" accept="image/*" onChange={handleFileUpload} />
+                </div>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField control={form.control} name="fullName" render={({ field }) => (
                   <FormItem><FormLabel>Full Name</FormLabel><FormControl><Input className="bg-secondary" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
-                <FormField control={form.control} name="profilePhoto" render={({ field }) => (
-                  <FormItem><FormLabel>Avatar URL</FormLabel><FormControl><Input className="bg-secondary" {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField control={form.control} name="jobTitle" render={({ field }) => (
                   <FormItem><FormLabel>Job Title</FormLabel><FormControl><Input className="bg-secondary" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
-                <FormField control={form.control} name="company" render={({ field }) => (
-                  <FormItem><FormLabel>Company</FormLabel><FormControl><Input className="bg-secondary" {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
               </div>
+              <FormField control={form.control} name="company" render={({ field }) => (
+                <FormItem><FormLabel>Company</FormLabel><FormControl><Input className="bg-secondary" {...field} /></FormControl><FormMessage /></FormItem>
+              )} />
               <FormField control={form.control} name="bio" render={({ field }) => (
                 <FormItem><FormLabel>Bio</FormLabel><FormControl><Textarea className="h-24 bg-secondary resize-none" {...field} /></FormControl><FormMessage /></FormItem>
               )} />
@@ -149,9 +176,7 @@ export function EditPage() {
             </form>
           </Form>
         </div>
-        <div className="lg:sticky lg:top-12 no-print">
-          <ProfileCard data={watchAll} />
-        </div>
+        <div className="lg:sticky lg:top-12 no-print"><ProfileCard data={watchAll} /></div>
       </div>
     </div>
   );
