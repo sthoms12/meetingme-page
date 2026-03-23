@@ -81,7 +81,8 @@ function runSetupCommands() {
     "bun add nanoid@^5.0.0",
     "bun add qrcode",
     "bun add -D @types/qrcode",
-    "bun install qrcode @types/qrcode"
+    "bun install qrcode @types/qrcode",
+    "bun add lucide-react"
 ];
     
     if (commands.length === 0) {
