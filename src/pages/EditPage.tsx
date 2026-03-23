@@ -3,9 +3,9 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Save, ArrowLeft } from 'lucide-react';
+import { Save, ArrowLeft, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -26,6 +26,8 @@ type FormValues = z.infer<typeof formSchema>;
 export function EditPage() {
   const { slug } = useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [isUpdating, setIsUpdating] = useState(false);
   const [editToken] = useState(() => localStorage.getItem(`profile_${slug}_token`));
   const { data: initialData, isLoading, error } = useQuery({
     queryKey: ['profile-edit', slug],
@@ -53,6 +55,7 @@ export function EditPage() {
       toast.error("Editing session expired. Cannot update.");
       return;
     }
+    setIsUpdating(true);
     try {
       const response = await fetch(`/api/profiles/${slug}`, {
         method: 'PUT',
@@ -61,6 +64,8 @@ export function EditPage() {
       });
       const result = await response.json();
       if (result.success) {
+        // Invalidate the public profile cache to ensure the latest data is shown
+        await queryClient.invalidateQueries({ queryKey: ['profile', slug] });
         toast.success('Profile updated successfully!');
         navigate(`/${slug}`);
       } else {
@@ -69,8 +74,10 @@ export function EditPage() {
     } catch (err) {
       console.error('Update error:', err);
       toast.error('Something went wrong.');
+    } finally {
+      setIsUpdating(false);
     }
-  }, [editToken, slug, navigate]);
+  }, [editToken, slug, navigate, queryClient]);
   if (isLoading) return <div className="p-8 text-center text-muted-foreground">Loading profile...</div>;
   if (error) return <div className="p-8 text-center text-destructive">Error loading profile.</div>;
   if (!editToken) return (
@@ -113,16 +120,19 @@ export function EditPage() {
                 )} />
                 <div className="space-y-4">
                   <FormField control={form.control} name="linkedinUrl" render={({ field }) => (
-                    <FormItem><FormLabel>LinkedIn</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+                    <FormItem><FormLabel>LinkedIn URL</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
                   )} />
                   <FormField control={form.control} name="websiteUrl" render={({ field }) => (
-                    <FormItem><FormLabel>Website</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+                    <FormItem><FormLabel>Website URL</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
                   )} />
                   <FormField control={form.control} name="videoUrl" render={({ field }) => (
-                    <FormItem><FormLabel>Video Intro</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+                    <FormItem><FormLabel>Video Intro URL</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
                   )} />
                 </div>
-                <Button type="submit" size="lg" className="w-full gap-2"><Save size={18} /> Save Changes</Button>
+                <Button type="submit" size="lg" className="w-full gap-2" disabled={isUpdating}>
+                  {isUpdating ? <Loader2 className="size-4 animate-spin" /> : <Save size={18} />}
+                  {isUpdating ? "Saving..." : "Save Changes"}
+                </Button>
               </form>
             </Form>
           </div>
