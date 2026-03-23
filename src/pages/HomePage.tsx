@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -21,11 +21,12 @@ const formSchema = z.object({
   websiteUrl: z.string().url('Must be a valid URL').optional().or(z.literal('')),
   videoUrl: z.string().url('Must be a valid URL').optional().or(z.literal('')),
 });
+type FormValues = z.infer<typeof formSchema>;
 export function HomePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [publishedData, setPublishedData] = useState<{ slug: string; editToken: string } | null>(null);
   const [copied, setCopied] = useState(false);
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       fullName: '',
@@ -39,7 +40,7 @@ export function HomePage() {
     },
   });
   const watchAll = form.watch();
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  const onSubmit = useCallback(async (values: FormValues) => {
     setIsSubmitting(true);
     try {
       const response = await fetch('/api/profiles', {
@@ -48,33 +49,38 @@ export function HomePage() {
         body: JSON.stringify(values),
       });
       const result = await response.json();
-      if (result.success) {
+      if (result.success && result.data) {
         setPublishedData({ slug: result.data.slug, editToken: result.data.editToken });
         localStorage.setItem(`profile_${result.data.slug}_token`, result.data.editToken);
         toast.success('Your MeetingMe page is live!');
       } else {
-        toast.error('Failed to publish: ' + result.error);
+        toast.error('Failed to publish: ' + (result.error || 'Unknown error'));
       }
     } catch (error) {
+      console.error('Submission error:', error);
       toast.error('Something went wrong. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
-  }
-  const copyLink = () => {
+  }, []);
+  const copyLink = useCallback(() => {
     if (!publishedData) return;
     const url = `${window.location.origin}/${publishedData.slug}`;
     navigator.clipboard.writeText(url);
     setCopied(true);
     toast.success('Link copied to clipboard');
-    setTimeout(() => setCopied(false), 2000);
-  };
+  }, [publishedData]);
+  useEffect(() => {
+    if (copied) {
+      const timeout = setTimeout(() => setCopied(false), 2000);
+      return () => clearTimeout(timeout);
+    }
+  }, [copied]);
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="py-8 md:py-10 lg:py-12">
         <ThemeToggle />
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
-          {/* Left Column: Form / Success */}
           <div className="space-y-8">
             <header className="space-y-3">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-xs font-semibold">
@@ -244,7 +250,6 @@ export function HomePage() {
               </Form>
             )}
           </div>
-          {/* Right Column: Preview */}
           <div className="lg:sticky lg:top-12">
             <div className="space-y-4">
               <div className="flex items-center justify-between">

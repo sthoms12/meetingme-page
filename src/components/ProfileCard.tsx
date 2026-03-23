@@ -33,7 +33,7 @@ export function ProfileCard({ data, className }: ProfileCardProps) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
       className={cn("w-full max-w-md mx-auto", className)}
     >
       <Card className="overflow-hidden border-slate-200 shadow-soft rounded-2xl bg-white">
@@ -45,19 +45,19 @@ export function ProfileCard({ data, className }: ProfileCardProps) {
             </AvatarFallback>
           </Avatar>
           <div className="text-center mt-6 space-y-1">
-            <h2 className="text-2xl font-bold text-slate-900 tracking-tight">{fullName}</h2>
+            <h2 className="text-2xl font-bold text-slate-900 tracking-tight">{fullName || 'Your Name'}</h2>
             <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-              {jobTitle} <span className="text-slate-300">@</span> {company}
+              {jobTitle || 'Your Title'} <span className="text-slate-300">@</span> {company || 'Company'}
             </p>
           </div>
         </CardHeader>
         <CardContent className="px-8 pb-10 space-y-8">
           <div className="text-slate-600 text-center leading-relaxed text-pretty text-sm md:text-base">
-            {bio}
+            {bio || 'Tell people a little bit about yourself and what you bring to the meeting...'}
           </div>
           <div className="flex flex-col gap-3">
             {linkedinUrl && (
-              <Button asChild variant="outline" className="w-full justify-start gap-3 border-slate-200 hover:bg-slate-50 h-11">
+              <Button asChild variant="outline" className="w-full justify-start gap-3 border-slate-200 hover:bg-slate-50 h-11 transition-all">
                 <a href={linkedinUrl} target="_blank" rel="noopener noreferrer">
                   <Linkedin className="size-4 text-[#0077b5]" />
                   <span>LinkedIn Profile</span>
@@ -65,7 +65,7 @@ export function ProfileCard({ data, className }: ProfileCardProps) {
               </Button>
             )}
             {websiteUrl && (
-              <Button asChild variant="outline" className="w-full justify-start gap-3 border-slate-200 hover:bg-slate-50 h-11">
+              <Button asChild variant="outline" className="w-full justify-start gap-3 border-slate-200 hover:bg-slate-50 h-11 transition-all">
                 <a href={websiteUrl} target="_blank" rel="noopener noreferrer">
                   <Globe className="size-4 text-slate-500" />
                   <span>Personal Website</span>
@@ -73,7 +73,7 @@ export function ProfileCard({ data, className }: ProfileCardProps) {
               </Button>
             )}
             {videoUrl && (
-              <Button asChild variant="outline" className="w-full justify-start gap-3 border-slate-200 hover:bg-slate-50 h-11">
+              <Button asChild variant="outline" className="w-full justify-start gap-3 border-slate-200 hover:bg-slate-50 h-11 transition-all">
                 <a href={videoUrl} target="_blank" rel="noopener noreferrer">
                   <Video className="size-4 text-indigo-500" />
                   <span>Intro Video</span>

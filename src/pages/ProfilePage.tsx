@@ -6,7 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, Info } from 'lucide-react';
 export function ProfilePage() {
-  const { slug } = useParams();
+  const { slug } = useParams<{ slug: string }>();
   const { data, isLoading, error } = useQuery({
     queryKey: ['profile', slug],
     queryFn: async () => {
@@ -16,19 +16,18 @@ export function ProfilePage() {
       return result.data;
     },
     retry: false,
+    enabled: !!slug,
   });
   if (isLoading) {
     return (
-      <div className="max-w-2xl mx-auto py-16 md:py-24 px-4">
-        <div className="space-y-4 w-full max-w-md mx-auto">
-          <Skeleton className="h-[450px] w-full rounded-2xl" />
-        </div>
+      <div className="max-w-2xl mx-auto py-16 md:py-24 px-4 flex flex-col items-center">
+        <Skeleton className="h-[450px] w-full max-w-md rounded-2xl" />
       </div>
     );
   }
   if (error || !data) {
     return (
-      <div className="max-w-2xl mx-auto py-24 px-4 text-center space-y-6">
+      <div className="max-w-2xl mx-auto py-24 px-4 text-center space-y-6 flex flex-col items-center">
         <div className="inline-flex items-center justify-center size-16 rounded-full bg-slate-100 text-slate-400">
           <Info size={32} />
         </div>
@@ -44,8 +43,11 @@ export function ProfilePage() {
   }
   return (
     <div className="min-h-screen bg-slate-50/50">
-      <div className="max-w-2xl mx-auto py-16 md:py-24 px-4 relative">
-        <Link to="/" className="absolute top-8 left-4 flex items-center gap-1 text-sm text-muted-foreground hover:text-slate-900 transition-colors">
+      <div className="max-w-2xl mx-auto py-16 md:py-24 px-4 relative flex flex-col items-center">
+        <Link 
+          to="/" 
+          className="absolute top-8 left-4 flex items-center gap-1 text-sm text-muted-foreground hover:text-slate-900 transition-colors"
+        >
           <ChevronLeft size={16} />
           MeetingMe
         </Link>

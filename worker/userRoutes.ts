@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { Env } from './core-utils';
-import type { Profile, ApiResponse } from '@shared/types';
+import type { Profile, ApiResponse, ProfileFormData } from '@shared/types';
 import { nanoid } from 'nanoid';
 export function userRoutes(app: Hono<{ Bindings: Env }>) {
     // Public Get Profile
@@ -12,12 +12,12 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
             return c.json({ success: false, error: 'Profile not found' } satisfies ApiResponse, 404);
         }
         // Strip editToken for public view
-        const { editToken, ...publicProfile } = profile;
+        const { editToken: _, ...publicProfile } = profile;
         return c.json({ success: true, data: publicProfile } as ApiResponse);
     });
     // Create Profile
     app.post('/api/profiles', async (c) => {
-        const body = await c.req.json();
+        const body = (await c.req.json()) as ProfileFormData;
         const stub = c.env.GlobalDurableObject.get(c.env.GlobalDurableObject.idFromName("global"));
         const slug = nanoid(10);
         const editToken = nanoid(32);
@@ -33,7 +33,7 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     // Update Profile
     app.put('/api/profiles/:slug', async (c) => {
         const slug = c.req.param('slug');
-        const body = await c.req.json();
+        const body = (await c.req.json()) as Partial<Profile> & { editToken?: string };
         const { editToken, ...updates } = body;
         if (!editToken) {
             return c.json({ success: false, error: 'Unauthorized' } satisfies ApiResponse, 401);

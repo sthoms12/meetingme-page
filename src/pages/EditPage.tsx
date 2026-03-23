@@ -1,15 +1,15 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Save, ChevronLeft, ArrowLeft } from 'lucide-react';
+import { Save, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { ProfileCard } from '@/components/ProfileCard';
 import { ThemeToggle } from '@/components/ThemeToggle';
 const formSchema = z.object({
@@ -22,10 +22,11 @@ const formSchema = z.object({
   websiteUrl: z.string().url('Must be a valid URL').optional().or(z.literal('')),
   videoUrl: z.string().url('Must be a valid URL').optional().or(z.literal('')),
 });
+type FormValues = z.infer<typeof formSchema>;
 export function EditPage() {
   const { slug } = useParams();
   const navigate = useNavigate();
-  const editToken = localStorage.getItem(`profile_${slug}_token`);
+  const [editToken] = useState(() => localStorage.getItem(`profile_${slug}_token`));
   const { data: initialData, isLoading, error } = useQuery({
     queryKey: ['profile-edit', slug],
     queryFn: async () => {
@@ -36,7 +37,7 @@ export function EditPage() {
     },
     enabled: !!slug,
   });
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       fullName: '', jobTitle: '', company: '', bio: '', profilePhoto: '', linkedinUrl: '', websiteUrl: '', videoUrl: ''
@@ -47,7 +48,7 @@ export function EditPage() {
       form.reset(initialData);
     }
   }, [initialData, form]);
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  const onSubmit = useCallback(async (values: FormValues) => {
     if (!editToken) {
       toast.error("Editing session expired. Cannot update.");
       return;
@@ -63,18 +64,19 @@ export function EditPage() {
         toast.success('Profile updated successfully!');
         navigate(`/${slug}`);
       } else {
-        toast.error('Update failed: ' + result.error);
+        toast.error('Update failed: ' + (result.error || 'Unknown error'));
       }
-    } catch (error) {
+    } catch (err) {
+      console.error('Update error:', err);
       toast.error('Something went wrong.');
     }
-  }
-  if (isLoading) return <div className="p-8 text-center">Loading...</div>;
-  if (error) return <div className="p-8 text-center">Error loading profile.</div>;
+  }, [editToken, slug, navigate]);
+  if (isLoading) return <div className="p-8 text-center text-muted-foreground">Loading profile...</div>;
+  if (error) return <div className="p-8 text-center text-destructive">Error loading profile.</div>;
   if (!editToken) return (
     <div className="max-w-7xl mx-auto px-4 py-24 text-center space-y-4">
       <h2 className="text-xl font-bold">Edit access denied.</h2>
-      <p>The edit token for this profile was not found in this browser.</p>
+      <p className="text-muted-foreground">The edit token for this profile was not found in this browser.</p>
       <Button asChild><Link to="/">Go Home</Link></Button>
     </div>
   );
@@ -82,12 +84,12 @@ export function EditPage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="py-8 md:py-10 lg:py-12">
         <ThemeToggle />
-        <Link to={`/${slug}`} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-slate-900 mb-8">
+        <Link to={`/${slug}`} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-slate-900 mb-8 transition-colors">
           <ArrowLeft size={16} /> Back to Public Page
         </Link>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
           <div className="space-y-6">
-            <h1 className="text-3xl font-bold text-slate-900">Edit Your Page</h1>
+            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Edit Your Page</h1>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -107,7 +109,7 @@ export function EditPage() {
                   )} />
                 </div>
                 <FormField control={form.control} name="bio" render={({ field }) => (
-                  <FormItem><FormLabel>Bio</FormLabel><FormControl><Textarea className="h-24" {...field} /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>Bio</FormLabel><FormControl><Textarea className="h-24 resize-none" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <div className="space-y-4">
                   <FormField control={form.control} name="linkedinUrl" render={({ field }) => (
