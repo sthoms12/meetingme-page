@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Linkedin, Globe, Video, User } from 'lucide-react';
+import { Linkedin, Globe, Video, User, Link as LinkIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -17,8 +17,9 @@ interface ProfileCardProps {
     videoUrl?: string;
   };
   className?: string;
+  slug?: string;
 }
-export function ProfileCard({ data, className }: ProfileCardProps) {
+export function ProfileCard({ data, className, slug }: ProfileCardProps) {
   const {
     fullName = '',
     jobTitle = '',
@@ -38,36 +39,36 @@ export function ProfileCard({ data, className }: ProfileCardProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
-      className={cn("w-full max-w-md mx-auto", className)}
+      className={cn("w-full max-w-md mx-auto print:max-w-none print:transform-none", className)}
     >
-      <Card className="overflow-hidden border-border shadow-soft rounded-2xl bg-card text-card-foreground dark:bg-slate-900/40">
-        <CardHeader className="flex flex-col items-center pt-10 pb-6">
-          <Avatar className="w-28 h-28 border-4 border-muted shadow-sm dark:border-slate-800">
+      <Card className="overflow-hidden border-border shadow-soft rounded-2xl bg-card text-card-foreground dark:bg-slate-900/40 print:border print:bg-white print:text-black">
+        <CardHeader className="flex flex-col items-center pt-10 pb-6 print:pt-6">
+          <Avatar className="w-28 h-28 border-4 border-muted shadow-sm dark:border-slate-800 print:border-slate-200">
             {profilePhoto && (
-              <AvatarImage 
-                src={profilePhoto} 
-                alt={displayFullName} 
-                className="object-cover" 
+              <AvatarImage
+                src={profilePhoto}
+                alt={displayFullName}
+                className="object-cover"
               />
             )}
-            <AvatarFallback className="bg-muted text-muted-foreground dark:bg-slate-800">
+            <AvatarFallback className="bg-muted text-muted-foreground dark:bg-slate-800 print:bg-slate-50 print:text-slate-400">
               <User size={40} />
             </AvatarFallback>
           </Avatar>
           <div className="text-center mt-6 space-y-1">
-            <h2 className="text-2xl font-bold text-foreground tracking-tight">{displayFullName}</h2>
-            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+            <h2 className="text-2xl font-bold text-foreground tracking-tight print:text-black">{displayFullName}</h2>
+            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider print:text-slate-500">
               {displayJobTitle} <span className="text-muted/40">@</span> {displayCompany}
             </p>
           </div>
         </CardHeader>
-        <CardContent className="px-8 pb-10 space-y-8">
-          <div className="text-muted-foreground text-center leading-relaxed text-pretty text-sm md:text-base dark:text-slate-300">
+        <CardContent className="px-8 pb-10 space-y-8 print:pb-6">
+          <div className="text-muted-foreground text-center leading-relaxed text-pretty text-sm md:text-base dark:text-slate-300 print:text-slate-700">
             {displayBio}
           </div>
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3 no-print">
             {linkedinUrl && linkedinUrl.trim() !== '' && (
-              <Button asChild variant="outline" className="w-full justify-start gap-3 border-border hover:bg-accent hover:text-accent-foreground h-11 transition-all active:scale-[0.98]">
+              <Button asChild variant="outline" className="w-full justify-start gap-3 h-11 transition-all active:scale-[0.98]">
                 <a href={linkedinUrl} target="_blank" rel="noopener noreferrer">
                   <Linkedin className="size-4 text-[#0077b5]" />
                   <span className="font-medium">LinkedIn Profile</span>
@@ -75,7 +76,7 @@ export function ProfileCard({ data, className }: ProfileCardProps) {
               </Button>
             )}
             {websiteUrl && websiteUrl.trim() !== '' && (
-              <Button asChild variant="outline" className="w-full justify-start gap-3 border-border hover:bg-accent hover:text-accent-foreground h-11 transition-all active:scale-[0.98]">
+              <Button asChild variant="outline" className="w-full justify-start gap-3 h-11 transition-all active:scale-[0.98]">
                 <a href={websiteUrl} target="_blank" rel="noopener noreferrer">
                   <Globe className="size-4 text-indigo-500" />
                   <span className="font-medium">Personal Website</span>
@@ -83,13 +84,21 @@ export function ProfileCard({ data, className }: ProfileCardProps) {
               </Button>
             )}
             {videoUrl && videoUrl.trim() !== '' && (
-              <Button asChild variant="outline" className="w-full justify-start gap-3 border-border hover:bg-accent hover:text-accent-foreground h-11 transition-all active:scale-[0.98]">
+              <Button asChild variant="outline" className="w-full justify-start gap-3 h-11 transition-all active:scale-[0.98]">
                 <a href={videoUrl} target="_blank" rel="noopener noreferrer">
                   <Video className="size-4 text-rose-500" />
                   <span className="font-medium">Intro Video</span>
                 </a>
               </Button>
             )}
+          </div>
+          {/* Print only links section */}
+          <div className="hidden print:block space-y-2 pt-4 border-t border-slate-100">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Connected Links</p>
+            {linkedinUrl && <div className="flex items-center gap-2 text-xs text-slate-600 truncate"><Linkedin size={10} /> {linkedinUrl}</div>}
+            {websiteUrl && <div className="flex items-center gap-2 text-xs text-slate-600 truncate"><Globe size={10} /> {websiteUrl}</div>}
+            {videoUrl && <div className="flex items-center gap-2 text-xs text-slate-600 truncate"><Video size={10} /> {videoUrl}</div>}
+            {slug && <div className="flex items-center gap-2 text-xs font-bold text-indigo-600 truncate mt-4"><LinkIcon size={10} /> meetingme.page/{slug}</div>}
           </div>
         </CardContent>
       </Card>
