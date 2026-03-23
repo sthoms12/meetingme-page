@@ -40,6 +40,20 @@ export function HomePage() {
   });
   const watchAll = form.watch();
   const customSlug = watchAll.customSlug;
+  
+  const prefixRef = useRef<HTMLSpanElement>(null);
+  const [prefixWidth, setPrefixWidth] = useState(140);
+  
+  useEffect(() => {
+    const updateWidth = () => {
+      if (prefixRef.current) {
+        setPrefixWidth(prefixRef.current.offsetWidth);
+      }
+    };
+    updateWidth();
+    window.addEventListener('resize', updateWidth);
+    return () => window.removeEventListener('resize', updateWidth);
+  }, []);
   // Manual debounce implementation to replace react-use and fix hook context errors
   useEffect(() => {
     if (!customSlug || customSlug.length < 3) {
@@ -186,10 +200,16 @@ export function HomePage() {
                         <FormLabel>Custom URL (Optional)</FormLabel>
                         <FormControl>
                           <div className="relative h-10 w-full rounded-md border border-input bg-secondary overflow-hidden focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background">
-                            <span className="absolute inset-y-0 left-0 z-10 flex h-full items-center pl-3 pr-0 text-xs sm:text-sm font-medium text-muted-foreground pointer-events-none bg-secondary whitespace-nowrap truncate">meetingme.page/</span>
+                            <span 
+                              ref={prefixRef}
+                              className="absolute inset-y-0 left-0 z-10 flex h-full items-center pl-3 pr-0 text-xs sm:text-sm font-medium text-muted-foreground pointer-events-none bg-secondary whitespace-nowrap truncate"
+                            >
+                              meetingme.page/
+                            </span>
                             <Input
-                              className="h-full w-full bg-transparent px-0 pl-[120px] sm:pl-[164px] pr-3 border-none shadow-none placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-0"
+                              className="h-full w-full bg-transparent px-0 pr-3 border-none shadow-none placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-0"
                               placeholder="your-slug"
+                              style={{ paddingLeft: `${prefixWidth}px` }}
                               {...field}
                             />
                           </div>
