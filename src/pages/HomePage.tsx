@@ -147,13 +147,13 @@ export function HomePage() {
                     <h3 className="text-xl font-semibold">It's live!</h3>
                     <div className="flex items-center gap-2 p-3 bg-muted border rounded-lg">
                       <code className="flex-1 text-xs truncate">meetingme.page/{publishedData.slug}</code>
-                      <Button size="sm" variant="ghost" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/${publishedData.slug}`); setCopied(true); setTimeout(()=>setCopied(false), 2000); }}>
+                      <Button size="sm" variant="ghost" type="button" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/${publishedData.slug}`); setCopied(true); setTimeout(()=>setCopied(false), 2000); }}>
                         {copied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
                       </Button>
                     </div>
                     <div className="grid grid-cols-1 gap-2">
                       <Button asChild className="w-full gap-2"><Link to={`/${publishedData.slug}`}>View Profile <ExternalLink size={16} /></Link></Button>
-                      <Button variant="secondary" onClick={shareViaEmail} className="w-full gap-2"><Mail size={16} /> Share via Email</Button>
+                      <Button variant="secondary" type="button" onClick={shareViaEmail} className="w-full gap-2"><Mail size={16} /> Share via Email</Button>
                       <Button variant="outline" asChild className="w-full"><Link to={`/${publishedData.slug}/edit`}>Manage Profile</Link></Button>
                     </div>
                   </div>
@@ -187,10 +187,10 @@ export function HomePage() {
                     {useUrlForPhoto ? (
                       <div className="flex gap-2">
                         <Input placeholder="https://image-url.com/photo.jpg" value={profilePhoto} onChange={(e) => form.setValue('profilePhoto', e.target.value)} />
-                        <Button variant="ghost" size="icon" onClick={() => setUseUrlForPhoto(false)}><Upload size={18} /></Button>
+                        <Button variant="ghost" size="icon" type="button" onClick={() => setUseUrlForPhoto(false)}><Upload size={18} /></Button>
                       </div>
                     ) : (
-                      <div 
+                      <div
                         onClick={() => fileInputRef.current?.click()}
                         className="border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-muted/50 transition-colors"
                       >

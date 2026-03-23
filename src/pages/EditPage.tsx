@@ -120,10 +120,10 @@ export function EditPage() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" onClick={shareViaEmail} className="gap-2"><Mail size={16} /> Email</Button>
-          <Button variant="outline" size="sm" onClick={() => window.print()} className="gap-2"><Printer size={16} /> Print</Button>
+          <Button variant="outline" size="sm" type="button" onClick={shareViaEmail} className="gap-2"><Mail size={16} /> Email</Button>
+          <Button variant="outline" size="sm" type="button" onClick={() => window.print()} className="gap-2"><Printer size={16} /> Print</Button>
           <Dialog>
-            <DialogTrigger asChild><Button variant="outline" size="sm" className="gap-2"><QrCode size={16} /> QR</Button></DialogTrigger>
+            <DialogTrigger asChild><Button variant="outline" size="sm" type="button" className="gap-2"><QrCode size={16} /> QR</Button></DialogTrigger>
             <DialogContent className="sm:max-w-xs text-center">
               <DialogHeader><DialogTitle>Share QR</DialogTitle></DialogHeader>
               <div className="p-4 bg-white rounded-xl inline-block mx-auto border my-4"><img src={qrCode} className="size-48 mx-auto" alt="QR" /></div>
@@ -138,9 +138,12 @@ export function EditPage() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <div className="space-y-3">
                 <FormLabel>Profile Photo</FormLabel>
-                <div 
+                <div
+                  role="button"
+                  tabIndex={0}
                   onClick={() => fileInputRef.current?.click()}
-                  className="border-2 border-dashed rounded-xl p-4 flex items-center gap-4 cursor-pointer hover:bg-muted/50 transition-colors"
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') fileInputRef.current?.click(); }}
+                  className="border-2 border-dashed rounded-xl p-4 flex items-center gap-4 cursor-pointer hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <div className="relative shrink-0">
                     {watchAll.profilePhoto ? (
@@ -149,7 +152,7 @@ export function EditPage() {
                       <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center"><Upload size={20} /></div>
                     )}
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 text-left">
                     <p className="text-sm font-medium">Change profile photo</p>
                     <p className="text-xs text-muted-foreground">Click to upload a new file</p>
                   </div>
