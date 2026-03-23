@@ -93,7 +93,6 @@ export function ProfileCard({ data, className, slug }: ProfileCardProps) {
               </Button>
             )}
           </div>
-          {/* Print only links section */}
           <div className="hidden print:block space-y-2 pt-4 border-t border-slate-100">
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Connected Links</p>
             {linkedinUrl && <div className="flex items-center gap-2 text-xs text-slate-600 truncate"><Linkedin size={10} /> {linkedinUrl}</div>}
