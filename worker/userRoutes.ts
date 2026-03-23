@@ -1,50 +1,48 @@
 import { Hono } from "hono";
 import { Env } from './core-utils';
-import type { DemoItem, ApiResponse } from '@shared/types';
-
+import type { Profile, ApiResponse } from '@shared/types';
+import { nanoid } from 'nanoid';
 export function userRoutes(app: Hono<{ Bindings: Env }>) {
-    app.get('/api/test', (c) => c.json({ success: true, data: { name: 'CF Workers Demo' }}));
-
-    // Demo items endpoint using Durable Object storage
-    app.get('/api/demo', async (c) => {
-        const durableObjectStub = c.env.GlobalDurableObject.get(c.env.GlobalDurableObject.idFromName("global"));
-        const data = await durableObjectStub.getDemoItems();
-        return c.json({ success: true, data } satisfies ApiResponse<DemoItem[]>);
+    // Public Get Profile
+    app.get('/api/profiles/:slug', async (c) => {
+        const slug = c.req.param('slug');
+        const stub = c.env.GlobalDurableObject.get(c.env.GlobalDurableObject.idFromName("global"));
+        const profile = await stub.getProfile(slug);
+        if (!profile) {
+            return c.json({ success: false, error: 'Profile not found' } satisfies ApiResponse, 404);
+        }
+        // Strip editToken for public view
+        const { editToken, ...publicProfile } = profile;
+        return c.json({ success: true, data: publicProfile } as ApiResponse);
     });
-
-    // Counter using Durable Object
-    app.get('/api/counter', async (c) => {
-        const durableObjectStub = c.env.GlobalDurableObject.get(c.env.GlobalDurableObject.idFromName("global"));
-        const data = await durableObjectStub.getCounterValue();
-        return c.json({ success: true, data } satisfies ApiResponse<number>);
+    // Create Profile
+    app.post('/api/profiles', async (c) => {
+        const body = await c.req.json();
+        const stub = c.env.GlobalDurableObject.get(c.env.GlobalDurableObject.idFromName("global"));
+        const slug = nanoid(10);
+        const editToken = nanoid(32);
+        const newProfile: Profile = {
+            ...body,
+            slug,
+            editToken,
+            createdAt: new Date().toISOString()
+        };
+        await stub.createProfile(newProfile);
+        return c.json({ success: true, data: newProfile } satisfies ApiResponse<Profile>);
     });
-    
-    app.post('/api/counter/increment', async (c) => {
-        const durableObjectStub = c.env.GlobalDurableObject.get(c.env.GlobalDurableObject.idFromName("global"));
-        const data = await durableObjectStub.increment();
-        return c.json({ success: true, data } satisfies ApiResponse<number>);
-    });
-
-    // Demo item management endpoints
-    app.post('/api/demo', async (c) => {
-        const body = await c.req.json() as DemoItem;
-        const durableObjectStub = c.env.GlobalDurableObject.get(c.env.GlobalDurableObject.idFromName("global"));
-        const data = await durableObjectStub.addDemoItem(body);
-        return c.json({ success: true, data } satisfies ApiResponse<DemoItem[]>);
-    });
-
-    app.put('/api/demo/:id', async (c) => {
-        const id = c.req.param('id');
-        const body = await c.req.json() as Partial<Omit<DemoItem, 'id'>>;
-        const durableObjectStub = c.env.GlobalDurableObject.get(c.env.GlobalDurableObject.idFromName("global"));
-        const data = await durableObjectStub.updateDemoItem(id, body);
-        return c.json({ success: true, data } satisfies ApiResponse<DemoItem[]>);
-    });
-
-    app.delete('/api/demo/:id', async (c) => {
-        const id = c.req.param('id');
-        const durableObjectStub = c.env.GlobalDurableObject.get(c.env.GlobalDurableObject.idFromName("global"));
-        const data = await durableObjectStub.deleteDemoItem(id);
-        return c.json({ success: true, data } satisfies ApiResponse<DemoItem[]>);
+    // Update Profile
+    app.put('/api/profiles/:slug', async (c) => {
+        const slug = c.req.param('slug');
+        const body = await c.req.json();
+        const { editToken, ...updates } = body;
+        if (!editToken) {
+            return c.json({ success: false, error: 'Unauthorized' } satisfies ApiResponse, 401);
+        }
+        const stub = c.env.GlobalDurableObject.get(c.env.GlobalDurableObject.idFromName("global"));
+        const updated = await stub.updateProfile(slug, editToken, updates);
+        if (!updated) {
+            return c.json({ success: false, error: 'Update failed or unauthorized' } satisfies ApiResponse, 403);
+        }
+        return c.json({ success: true, data: updated } satisfies ApiResponse<Profile>);
     });
 }

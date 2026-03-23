@@ -1,138 +1,261 @@
-// Home page of the app.
-// Currently a demo placeholder "please wait" screen.
-// Replace this file with your actual app UI. Do not delete it to use some other file as homepage. Simply replace the entire contents of this file.
-
-import { useEffect, useMemo, useState } from 'react'
-import { Sparkles } from 'lucide-react'
-
-import { ThemeToggle } from '@/components/ThemeToggle'
-import { HAS_TEMPLATE_DEMO, TemplateDemo } from '@/components/TemplateDemo'
-import { Button } from '@/components/ui/button'
-import { Toaster, toast } from '@/components/ui/sonner'
-
-function formatDuration(ms: number): string {
-  const total = Math.max(0, Math.floor(ms / 1000))
-  const m = Math.floor(total / 60)
-  const s = total % 60
-  return `${m}:${s.toString().padStart(2, '0')}`
-}
-
+import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { toast } from 'sonner';
+import { Copy, Check, ExternalLink, Sparkles, Send } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
+import { ProfileCard } from '@/components/ProfileCard';
+import { ThemeToggle } from '@/components/ThemeToggle';
+import { Link } from 'react-router-dom';
+const formSchema = z.object({
+  fullName: z.string().min(2, 'Name is required'),
+  jobTitle: z.string().min(2, 'Title is required'),
+  company: z.string().min(2, 'Company is required'),
+  bio: z.string().min(10, 'Bio must be at least 10 characters').max(300, 'Keep it punchy (max 300 chars)'),
+  profilePhoto: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+  linkedinUrl: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+  websiteUrl: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+  videoUrl: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+});
 export function HomePage() {
-  const [coins, setCoins] = useState(0)
-  const [isRunning, setIsRunning] = useState(false)
-  const [startedAt, setStartedAt] = useState<number | null>(null)
-  const [elapsedMs, setElapsedMs] = useState(0)
-
-  useEffect(() => {
-    if (!isRunning || startedAt === null) return
-
-    const t = setInterval(() => {
-      setElapsedMs(Date.now() - startedAt)
-    }, 250)
-
-    return () => clearInterval(t)
-  }, [isRunning, startedAt])
-
-  const formatted = useMemo(() => formatDuration(elapsedMs), [elapsedMs])
-
-  const onPleaseWait = () => {
-    setCoins((c) => c + 1)
-
-    if (!isRunning) {
-      // Resume from the current elapsed time
-      setStartedAt(Date.now() - elapsedMs)
-      setIsRunning(true)
-      toast.success('Building your app…', {
-        description: "Hang tight — we're setting everything up.",
-      })
-      return
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [publishedData, setPublishedData] = useState<{ slug: string; editToken: string } | null>(null);
+  const [copied, setCopied] = useState(false);
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      fullName: '',
+      jobTitle: '',
+      company: '',
+      bio: '',
+      profilePhoto: '',
+      linkedinUrl: '',
+      websiteUrl: '',
+      videoUrl: '',
+    },
+  });
+  const watchAll = form.watch();
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    setIsSubmitting(true);
+    try {
+      const response = await fetch('/api/profiles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(values),
+      });
+      const result = await response.json();
+      if (result.success) {
+        setPublishedData({ slug: result.data.slug, editToken: result.data.editToken });
+        localStorage.setItem(`profile_${result.data.slug}_token`, result.data.editToken);
+        toast.success('Your MeetingMe page is live!');
+      } else {
+        toast.error('Failed to publish: ' + result.error);
+      }
+    } catch (error) {
+      toast.error('Something went wrong. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setIsRunning(false)
-    toast.info('Still working…', {
-      description: 'You can come back in a moment.',
-    })
   }
-
-  const onReset = () => {
-    setCoins(0)
-    setIsRunning(false)
-    setStartedAt(null)
-    setElapsedMs(0)
-    toast('Reset complete')
-  }
-
-  const onAddCoin = () => {
-    setCoins((c) => c + 1)
-    toast('Coin added')
-  }
-
+  const copyLink = () => {
+    if (!publishedData) return;
+    const url = `${window.location.origin}/${publishedData.slug}`;
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    toast.success('Link copied to clipboard');
+    setTimeout(() => setCopied(false), 2000);
+  };
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-background text-foreground p-4 overflow-hidden relative">
-      <ThemeToggle />
-      <div className="absolute inset-0 bg-gradient-rainbow opacity-10 dark:opacity-20 pointer-events-none" />
-
-      <div className="text-center space-y-8 relative z-10 animate-fade-in w-full">
-        <div className="flex justify-center">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-primary flex items-center justify-center shadow-primary floating">
-            <Sparkles className="w-8 h-8 text-white rotating" />
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="py-8 md:py-10 lg:py-12">
+        <ThemeToggle />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+          {/* Left Column: Form / Success */}
+          <div className="space-y-8">
+            <header className="space-y-3">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-xs font-semibold">
+                <Sparkles size={14} />
+                <span>Beta Access</span>
+              </div>
+              <h1 className="text-4xl md:text-5xl font-display font-bold text-slate-900 tracking-tight">
+                Share who you are <br />
+                <span className="text-indigo-600">before</span> the meeting.
+              </h1>
+              <p className="text-lg text-muted-foreground max-w-md">
+                Create a minimal, professional intro page in seconds. No logins, no clutter.
+              </p>
+            </header>
+            {publishedData ? (
+              <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-soft space-y-6 animate-scale-in">
+                <div className="space-y-2">
+                  <h3 className="text-xl font-semibold text-slate-900">It's ready!</h3>
+                  <p className="text-muted-foreground text-sm">
+                    Your public intro page is live. Share this link with your meeting participants.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 p-3 bg-slate-50 border border-slate-100 rounded-lg group">
+                  <code className="flex-1 text-sm text-indigo-600 truncate">
+                    {window.location.origin}/{publishedData.slug}
+                  </code>
+                  <Button size="sm" variant="ghost" onClick={copyLink}>
+                    {copied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
+                  </Button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4">
+                  <Button asChild className="w-full gap-2">
+                    <Link to={`/${publishedData.slug}`}>
+                      View Public Page <ExternalLink size={16} />
+                    </Link>
+                  </Button>
+                  <Button variant="outline" asChild className="w-full">
+                    <Link to={`/${publishedData.slug}/edit`}>Edit Page</Link>
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground text-center italic">
+                  Note: The edit link is saved in your browser. Bookmark it to keep access!
+                </p>
+              </div>
+            ) : (
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="fullName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Full Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="John Doe" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="profilePhoto"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Avatar URL</FormLabel>
+                          <FormControl>
+                            <Input placeholder="https://..." {...field} />
+                          </FormControl>
+                          <FormDescription className="text-2xs">Image URL (Square preferred)</FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="jobTitle"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Job Title</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Product Designer" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="company"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Company</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Acme Inc." {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <FormField
+                    control={form.control}
+                    name="bio"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Bio (max 300 chars)</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Briefly share your role, focus, or what you're excited about for this meeting..." 
+                            className="resize-none h-24"
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-medium text-slate-900">Optional Links</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="linkedinUrl"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Input placeholder="LinkedIn URL" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="websiteUrl"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Input placeholder="Website/Portfolio" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    <FormField
+                      control={form.control}
+                      name="videoUrl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input placeholder="Intro Video URL (Loom, YouTube, etc.)" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <Button type="submit" size="lg" className="w-full gap-2 h-12 text-base shadow-indigo-200 shadow-lg" disabled={isSubmitting}>
+                    {isSubmitting ? "Publishing..." : "Publish Page"} <Send size={18} />
+                  </Button>
+                </form>
+              </Form>
+            )}
+          </div>
+          {/* Right Column: Preview */}
+          <div className="lg:sticky lg:top-12">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Live Preview</span>
+                <span className="text-xs text-slate-300">Updated in real-time</span>
+              </div>
+              <ProfileCard data={watchAll} />
+            </div>
           </div>
         </div>
-
-        <div className="space-y-3">
-          <h1 className="text-5xl md:text-7xl font-display font-bold text-balance leading-tight">
-            Creating your <span className="text-gradient">app</span>
-          </h1>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-xl mx-auto text-pretty">
-            Your application would be ready soon.
-          </p>
-        </div>
-
-        {HAS_TEMPLATE_DEMO ? (
-          <div className="max-w-5xl mx-auto text-left">
-            <TemplateDemo />
-          </div>
-        ) : (
-          <>
-            <div className="flex justify-center gap-4">
-              <Button
-                size="lg"
-                onClick={onPleaseWait}
-                className="btn-gradient px-8 py-4 text-lg font-semibold hover:-translate-y-0.5 transition-all duration-200"
-                aria-live="polite"
-              >
-                Please Wait
-              </Button>
-            </div>
-
-            <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
-              <div>
-                Time elapsed:{' '}
-                <span className="font-medium tabular-nums text-foreground">{formatted}</span>
-              </div>
-              <div>
-                Coins:{' '}
-                <span className="font-medium tabular-nums text-foreground">{coins}</span>
-              </div>
-            </div>
-
-            <div className="flex justify-center gap-2">
-              <Button variant="outline" size="sm" onClick={onReset}>
-                Reset
-              </Button>
-              <Button variant="outline" size="sm" onClick={onAddCoin}>
-                Add Coin
-              </Button>
-            </div>
-          </>
-        )}
       </div>
-
-      <footer className="absolute bottom-8 text-center text-muted-foreground/80">
-        <p>Powered by Cloudflare</p>
-      </footer>
-
-      <Toaster richColors closeButton />
     </div>
-  )
+  );
 }
