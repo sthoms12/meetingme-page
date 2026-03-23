@@ -80,7 +80,8 @@ function runSetupCommands() {
     const commands = [
     "bun add nanoid@^5.0.0",
     "bun add qrcode",
-    "bun add -D @types/qrcode"
+    "bun add -D @types/qrcode",
+    "bun install qrcode @types/qrcode"
 ];
     
     if (commands.length === 0) {
