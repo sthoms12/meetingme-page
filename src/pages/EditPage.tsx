@@ -33,7 +33,7 @@ export function EditPage() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [qrCode, setQrCode] = useState<string>('');
   const editToken = useMemo(() => slug ? localStorage.getItem(`profile_${slug}_token`) : null, [slug]);
-  const { data: initialData, isLoading, error } = useQuery({
+  const { data: initialData, isLoading } = useQuery({
     queryKey: ['profile-edit', slug],
     queryFn: async () => {
       const res = await fetch(`/api/profiles/${slug}`);
@@ -47,9 +47,14 @@ export function EditPage() {
     resolver: zodResolver(formSchema),
     defaultValues: { fullName: '', jobTitle: '', company: '', bio: '', profilePhoto: '', linkedinUrl: '', websiteUrl: '', videoUrl: '' },
   });
-  useEffect(() => { if (initialData) form.reset(initialData); }, [initialData, form]);
+  const watchAll = form.watch();
+  useEffect(() => { 
+    if (initialData) form.reset(initialData); 
+  }, [initialData, form]);
   useEffect(() => {
-    if (slug) QRCode.toDataURL(`${window.location.origin}/${slug}`, { margin: 2 }).then(setQrCode);
+    if (slug) {
+      QRCode.toDataURL(`${window.location.origin}/${slug}`, { margin: 2 }).then(setQrCode);
+    }
   }, [slug]);
   const onSubmit = useCallback(async (values: FormValues) => {
     if (!editToken || !slug) return;
@@ -74,8 +79,19 @@ export function EditPage() {
       setIsUpdating(false);
     }
   }, [editToken, slug, navigate, queryClient]);
-  if (isLoading) return <div className="p-12"><Skeleton className="h-[500px] w-full max-w-4xl mx-auto rounded-2xl" /></div>;
-  if (!editToken) return <div className="py-24 text-center space-y-4"><ShieldAlert className="mx-auto size-12 text-muted-foreground" /><h2 className="text-xl font-bold">Access Denied</h2><Button asChild><Link to="/">Go Home</Link></Button></div>;
+  if (isLoading) return (
+    <div className="max-w-7xl mx-auto px-4 py-12">
+      <Skeleton className="h-[500px] w-full max-w-4xl mx-auto rounded-2xl" />
+    </div>
+  );
+  if (!editToken) return (
+    <div className="py-24 text-center space-y-4">
+      <ShieldAlert className="mx-auto size-12 text-muted-foreground" />
+      <h2 className="text-xl font-bold">Access Denied</h2>
+      <p className="text-muted-foreground">You don't have permission to edit this profile or your session expired.</p>
+      <Button asChild><Link to="/">Go Home</Link></Button>
+    </div>
+  );
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <ThemeToggle />
@@ -93,8 +109,12 @@ export function EditPage() {
             </DialogTrigger>
             <DialogContent className="sm:max-w-xs text-center">
               <DialogHeader><DialogTitle>Your Sharing QR</DialogTitle></DialogHeader>
-              <img src={qrCode} className="size-48 mx-auto border rounded-xl my-4" />
-              <Button className="w-full" asChild><a href={qrCode} download={`meetingme-${slug}.png`}>Download PNG</a></Button>
+              <div className="p-4 bg-white rounded-xl inline-block mx-auto border my-4">
+                <img src={qrCode} className="size-48 mx-auto" alt="QR" />
+              </div>
+              <Button className="w-full" asChild>
+                <a href={qrCode} download={`meetingme-${slug}.png`}>Download PNG</a>
+              </Button>
             </DialogContent>
           </Dialog>
         </div>
@@ -106,22 +126,22 @@ export function EditPage() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField control={form.control} name="fullName" render={({ field }) => (
-                  <FormItem><FormLabel>Full Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>Full Name</FormLabel><FormControl><Input className="bg-secondary" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="profilePhoto" render={({ field }) => (
-                  <FormItem><FormLabel>Avatar URL</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>Avatar URL</FormLabel><FormControl><Input className="bg-secondary" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField control={form.control} name="jobTitle" render={({ field }) => (
-                  <FormItem><FormLabel>Job Title</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>Job Title</FormLabel><FormControl><Input className="bg-secondary" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="company" render={({ field }) => (
-                  <FormItem><FormLabel>Company</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>Company</FormLabel><FormControl><Input className="bg-secondary" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
               </div>
               <FormField control={form.control} name="bio" render={({ field }) => (
-                <FormItem><FormLabel>Bio</FormLabel><FormControl><Textarea className="h-24 resize-none" {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Bio</FormLabel><FormControl><Textarea className="h-24 bg-secondary resize-none" {...field} /></FormControl><FormMessage /></FormItem>
               )} />
               <Button type="submit" size="lg" className="w-full gap-2 h-12" disabled={isUpdating}>
                 {isUpdating ? <Loader2 className="animate-spin" /> : <Save size={18} />} Save Changes
@@ -130,7 +150,7 @@ export function EditPage() {
           </Form>
         </div>
         <div className="lg:sticky lg:top-12 no-print">
-          <ProfileCard data={form.watch()} />
+          <ProfileCard data={watchAll} />
         </div>
       </div>
     </div>

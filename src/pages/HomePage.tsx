@@ -1,10 +1,10 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'sonner';
 import QRCode from 'qrcode';
-import { Copy, Check, ExternalLink, Sparkles, Send, QrCode as QrIcon, Download } from 'lucide-react';
+import { Copy, Check, ExternalLink, Sparkles, Send, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -12,7 +12,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { ProfileCard } from '@/components/ProfileCard';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Link } from 'react-router-dom';
-import { useDebounce } from 'react-use';
 const formSchema = z.object({
   fullName: z.string().min(2, 'Name is required'),
   jobTitle: z.string().min(2, 'Title is required'),
@@ -31,6 +30,7 @@ export function HomePage() {
   const [qrCodeData, setQrCodeData] = useState<string>('');
   const [copied, setCopied] = useState(false);
   const [slugAvailable, setSlugAvailable] = useState<boolean | null>(null);
+  const [isCheckingSlug, setIsCheckingSlug] = useState(false);
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -38,20 +38,33 @@ export function HomePage() {
     },
   });
   const watchAll = form.watch();
-  const customSlug = form.watch('customSlug');
-  useDebounce(async () => {
-    if (customSlug && customSlug.length >= 3) {
+  const customSlug = watchAll.customSlug;
+  // Manual debounce implementation to replace react-use and fix hook context errors
+  useEffect(() => {
+    if (!customSlug || customSlug.length < 3) {
+      setSlugAvailable(null);
+      setIsCheckingSlug(false);
+      return;
+    }
+    setIsCheckingSlug(true);
+    const handler = setTimeout(async () => {
       try {
         const res = await fetch(`/api/profiles/availability/${customSlug}`);
         const result = await res.json();
-        setSlugAvailable(result.data.available);
+        if (result.success) {
+          setSlugAvailable(result.data.available);
+        } else {
+          setSlugAvailable(null);
+        }
       } catch (e) {
+        console.error('Failed to check slug availability', e);
         setSlugAvailable(null);
+      } finally {
+        setIsCheckingSlug(false);
       }
-    } else {
-      setSlugAvailable(null);
-    }
-  }, 500, [customSlug]);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [customSlug]);
   const onSubmit = useCallback(async (values: FormValues) => {
     setIsSubmitting(true);
     try {
@@ -65,7 +78,11 @@ export function HomePage() {
         setPublishedData({ slug: result.data.slug, editToken: result.data.editToken });
         localStorage.setItem(`profile_${result.data.slug}_token`, result.data.editToken);
         const url = `${window.location.origin}/${result.data.slug}`;
-        const qr = await QRCode.toDataURL(url, { width: 400, margin: 2, color: { dark: '#0f172a', light: '#ffffff' } });
+        const qr = await QRCode.toDataURL(url, { 
+          width: 400, 
+          margin: 2, 
+          color: { dark: '#0f172a', light: '#ffffff' } 
+        });
         setQrCodeData(qr);
         toast.success('Your MeetingMe page is live!');
       } else {
@@ -73,6 +90,7 @@ export function HomePage() {
       }
     } catch (error) {
       toast.error('Something went wrong. Please try again.');
+      console.error('Publish error:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -83,6 +101,7 @@ export function HomePage() {
     navigator.clipboard.writeText(url);
     setCopied(true);
     toast.success('Link copied');
+    setTimeout(() => setCopied(false), 2000);
   }, [publishedData]);
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -95,7 +114,7 @@ export function HomePage() {
                 <Sparkles size={14} />
                 <span>Professional Intros</span>
               </div>
-              <h1 className="text-4xl md:text-5xl font-display font-bold text-foreground tracking-tight">
+              <h1 className="text-4xl md:text-5xl font-display font-bold text-foreground tracking-tight leading-tight">
                 Share who you are <br />
                 <span className="text-indigo-600 dark:text-indigo-400">before</span> the meeting.
               </h1>
@@ -130,7 +149,11 @@ export function HomePage() {
                   </div>
                   <div className="shrink-0 space-y-2 text-center">
                     <div className="p-2 bg-white rounded-xl border shadow-sm">
-                      <img src={qrCodeData} alt="QR Code" className="size-32" />
+                      {qrCodeData ? (
+                        <img src={qrCodeData} alt="QR Code" className="size-32" />
+                      ) : (
+                        <div className="size-32 bg-muted animate-pulse rounded-lg" />
+                      )}
                     </div>
                     <Button variant="ghost" size="sm" className="text-xs h-8 gap-1" asChild>
                       <a href={qrCodeData} download={`meetingme-${publishedData.slug}.png`}>
@@ -152,14 +175,17 @@ export function HomePage() {
                         <FormControl>
                           <div className="relative flex items-center">
                             <span className="absolute left-3 text-muted-foreground text-sm font-medium">meetingme.page/</span>
-                            <Input className="pl-[104px]" placeholder="john-doe" {...field} />
+                            <Input className="pl-[104px] bg-secondary border-input" placeholder="john-doe" {...field} />
                           </div>
                         </FormControl>
                         <FormDescription className="flex items-center justify-between">
                           <span>Choose a professional handle.</span>
-                          {slugAvailable !== null && customSlug && (
-                            <span className={slugAvailable ? "text-green-600 text-xs font-bold" : "text-destructive text-xs font-bold"}>
-                              {slugAvailable ? "Available" : "Taken"}
+                          {customSlug && customSlug.length >= 3 && (
+                            <span className={cn(
+                              "text-xs font-bold transition-colors",
+                              isCheckingSlug ? "text-muted-foreground" : slugAvailable ? "text-green-600" : "text-destructive"
+                            )}>
+                              {isCheckingSlug ? "Checking..." : slugAvailable ? "Available" : "Taken"}
                             </span>
                           )}
                         </FormDescription>
@@ -169,24 +195,24 @@ export function HomePage() {
                   />
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField control={form.control} name="fullName" render={({ field }) => (
-                      <FormItem><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="John Doe" {...field} /></FormControl><FormMessage /></FormItem>
+                      <FormItem><FormLabel>Full Name</FormLabel><FormControl><Input className="bg-secondary" placeholder="John Doe" {...field} /></FormControl><FormMessage /></FormItem>
                     )} />
                     <FormField control={form.control} name="profilePhoto" render={({ field }) => (
-                      <FormItem><FormLabel>Avatar URL</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>
+                      <FormItem><FormLabel>Avatar URL</FormLabel><FormControl><Input className="bg-secondary" placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>
                     )} />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField control={form.control} name="jobTitle" render={({ field }) => (
-                      <FormItem><FormLabel>Job Title</FormLabel><FormControl><Input placeholder="Product Designer" {...field} /></FormControl><FormMessage /></FormItem>
+                      <FormItem><FormLabel>Job Title</FormLabel><FormControl><Input className="bg-secondary" placeholder="Product Designer" {...field} /></FormControl><FormMessage /></FormItem>
                     )} />
                     <FormField control={form.control} name="company" render={({ field }) => (
-                      <FormItem><FormLabel>Company</FormLabel><FormControl><Input placeholder="Acme Inc." {...field} /></FormControl><FormMessage /></FormItem>
+                      <FormItem><FormLabel>Company</FormLabel><FormControl><Input className="bg-secondary" placeholder="Acme Inc." {...field} /></FormControl><FormMessage /></FormItem>
                     )} />
                   </div>
                   <FormField control={form.control} name="bio" render={({ field }) => (
-                    <FormItem><FormLabel>Bio (max 300 chars)</FormLabel><FormControl><Textarea className="h-24" placeholder="Briefly share who you are..." {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Bio (max 300 chars)</FormLabel><FormControl><Textarea className="h-24 bg-secondary resize-none" placeholder="Briefly share who you are..." {...field} /></FormControl><FormMessage /></FormItem>
                   )} />
-                  <Button type="submit" size="lg" className="w-full gap-2 h-12 shadow-lg" disabled={isSubmitting || (!!customSlug && slugAvailable === false)}>
+                  <Button type="submit" size="lg" className="w-full gap-2 h-12 shadow-lg" disabled={isSubmitting || (!!customSlug && customSlug.length >= 3 && slugAvailable === false)}>
                     {isSubmitting ? "Publishing..." : "Publish Page"} <Send size={18} />
                   </Button>
                 </form>
