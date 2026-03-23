@@ -12,6 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { ProfileCard } from '@/components/ProfileCard';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Link } from 'react-router-dom';
+import { cn } from '@/lib/utils';
 const formSchema = z.object({
   fullName: z.string().min(2, 'Name is required'),
   jobTitle: z.string().min(2, 'Title is required'),
@@ -155,10 +156,21 @@ export function HomePage() {
                         <div className="size-32 bg-muted animate-pulse rounded-lg" />
                       )}
                     </div>
-                    <Button variant="ghost" size="sm" className="text-xs h-8 gap-1" asChild>
-                      <a href={qrCodeData} download={`meetingme-${publishedData.slug}.png`}>
-                        <Download size={14} /> Download QR
-                      </a>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-xs h-8 gap-1" 
+                      onClick={() => {
+                        if (qrCodeData && publishedData) {
+                          const link = document.createElement('a');
+                          link.href = qrCodeData;
+                          link.download = `meetingme-${publishedData.slug}.png`;
+                          link.click();
+                        }
+                      }} 
+                      disabled={!qrCodeData || !publishedData}
+                    >
+                      <Download size={14} /> Download QR
                     </Button>
                   </div>
                 </div>
@@ -173,9 +185,13 @@ export function HomePage() {
                       <FormItem>
                         <FormLabel>Custom URL (Optional)</FormLabel>
                         <FormControl>
-                          <div className="relative flex items-center">
-                            <span className="absolute left-3 text-muted-foreground text-sm font-medium">meetingme.page/</span>
-                            <Input className="pl-[104px] bg-secondary border-input" placeholder="john-doe" {...field} />
+                          <div className="flex h-10 items-center gap-2 rounded-md border border-input bg-secondary px-3">
+                            <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">meetingme.page/</span>
+                            <Input 
+                              className="flex-1 h-full bg-transparent px-2 border-none shadow-none placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-0" 
+                              placeholder="your-slug" 
+                              {...field} 
+                            />
                           </div>
                         </FormControl>
                         <FormDescription className="flex items-center justify-between">
