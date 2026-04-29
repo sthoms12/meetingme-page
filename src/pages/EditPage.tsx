@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Save, ArrowLeft, Loader2, ShieldAlert, Plus, Trash2, LayoutGrid, ExternalLink, Image as ImageIcon, BarChart3, History, Code, Calendar as CalendarIcon, Clock, Linkedin, Globe, Video, Link as LinkIcon, CheckCircle2, Twitter, Github, Phone, QrCode } from 'lucide-react';
+import { Save, ArrowLeft, Loader2, ShieldAlert, Plus, Trash2, LayoutGrid, ExternalLink, Image as ImageIcon, BarChart3, History, Code, Calendar as CalendarIcon, Clock, Linkedin, Globe, Video, Link as LinkIcon, CheckCircle2, Twitter, Github, Phone, QrCode, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -47,9 +47,23 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 export function EditPage() {
   const { slug } = useParams<{ slug: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isUpdating, setIsUpdating] = useState(false);
   const [activeVariantIndex, setActiveVariantIndex] = useState(0);
+  // Ingest token from URL if present
+  useEffect(() => {
+    const tokenFromUrl = searchParams.get('token');
+    if (tokenFromUrl && slug) {
+      localStorage.setItem(`profile_${slug}_token`, tokenFromUrl);
+      // Remove token from URL for clean interface and prevent accidental sharing
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('token');
+      setSearchParams(newParams, { replace: true });
+      toast.success('Management access restored');
+    }
+  }, [searchParams, slug, setSearchParams]);
   const editToken = useMemo(() => slug ? localStorage.getItem(`profile_${slug}_token`) : null, [slug]);
   const { data: profile, isLoading } = useQuery<Profile>({
     queryKey: ['profile-manage', slug, editToken],
@@ -192,13 +206,27 @@ export function EditPage() {
     toast.success('Primary variant updated (don\'t forget to save)');
   };
   if (!editToken) return (
-    <div className="max-md mx-auto py-32 text-center space-y-8 px-6">
-      <div className="size-20 rounded-3xl bg-destructive/10 text-destructive flex items-center justify-center mx-auto"><ShieldAlert size={40} /></div>
-      <div className="space-y-2">
-        <h2 className="text-2xl font-bold">Access Restricted</h2>
-        <p className="text-muted-foreground">The private edit token is required to manage this page.</p>
+    <div className="max-w-xl mx-auto py-32 text-center space-y-10 px-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="size-24 rounded-4xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto border-2 border-dashed border-slate-200">
+        <Lock size={40} />
       </div>
-      <Button asChild size="lg" className="rounded-2xl h-14 w-full"><Link to="/">Back to Home</Link></Button>
+      <div className="space-y-4">
+        <h2 className="text-3xl font-bold tracking-tight">Access Restricted</h2>
+        <p className="text-muted-foreground text-lg leading-relaxed">
+          The private edit token is missing. This happens if you clear your browser cache or switch devices.
+        </p>
+        <div className="p-6 bg-primary/5 rounded-2xl border border-primary/10 text-sm text-primary font-medium">
+          Check your email or bookmarks for your <strong>Private Magic Link</strong> to regain access instantly.
+        </div>
+      </div>
+      <div className="grid gap-3 pt-4">
+        <Button asChild size="lg" className="rounded-2xl h-14 w-full text-lg font-bold shadow-soft">
+          <Link to="/">Back to Home</Link>
+        </Button>
+        <Button variant="ghost" asChild className="text-muted-foreground font-bold h-14">
+          <Link to="/">Help & Support</Link>
+        </Button>
+      </div>
     </div>
   );
   if (isLoading) return (
@@ -238,7 +266,7 @@ export function EditPage() {
               <Code size={16} className="mr-2" /> Embed
             </TabsTrigger>
             <TabsTrigger value="history" className="rounded-xl px-6 py-3 data-[state=active]:bg-background data-[state=active]:shadow-sm">
-              <History size={16} className="mr-2" /> Version History
+              <History size={16} className="mr-2" /> History
             </TabsTrigger>
           </TabsList>
           <TabsContent value="builder" className="m-0 animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -334,9 +362,6 @@ export function EditPage() {
                             <FormItem><FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Topics (CSV)</FormLabel><FormControl><Input className="bg-secondary/40 h-14 rounded-2xl border-none" {...field} /></FormControl></FormItem>
                           )} />
                         </div>
-                        <FormField control={form.control} name={`variants.${activeVariantIndex}.meetingNote`} render={({ field }) => (
-                          <FormItem><FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Meeting Context Note</FormLabel><FormControl><Textarea className="min-h-[100px] bg-secondary/40 rounded-2xl border-none p-4" {...field} /></FormControl></FormItem>
-                        )} />
                       </div>
                     )}
                     <div className="space-y-10 pt-10 border-t border-dashed">
@@ -369,35 +394,6 @@ export function EditPage() {
                             </div>
                           </FormItem>
                         )} />
-                        <FormField control={form.control} name="twitterUrl" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Twitter / X</FormLabel>
-                            <div className="relative">
-                              <Twitter className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                              <FormControl><Input className="bg-secondary/40 h-12 pl-10 rounded-xl border-none" {...field} /></FormControl>
-                            </div>
-                          </FormItem>
-                        )} />
-                        <FormField control={form.control} name="githubUrl" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">GitHub URL</FormLabel>
-                            <div className="relative">
-                              <Github className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                              <FormControl><Input className="bg-secondary/40 h-12 pl-10 rounded-xl border-none" {...field} /></FormControl>
-                            </div>
-                          </FormItem>
-                        )} />
-                        <FormField control={form.control} name="phone" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Phone Number</FormLabel>
-                            <div className="relative">
-                              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                              <FormControl><Input className="bg-secondary/40 h-12 pl-10 rounded-xl border-none" {...field} /></FormControl>
-                            </div>
-                          </FormItem>
-                        )} />
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <FormField control={form.control} name="websiteUrl" render={({ field }) => (
                           <FormItem>
                             <FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Website URL</FormLabel>
@@ -407,19 +403,7 @@ export function EditPage() {
                             </div>
                           </FormItem>
                         )} />
-                        <FormField control={form.control} name="videoUrl" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Video Intro URL</FormLabel>
-                            <div className="relative">
-                              <Video className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                              <FormControl><Input className="bg-secondary/40 h-12 pl-10 rounded-xl border-none" {...field} /></FormControl>
-                            </div>
-                          </FormItem>
-                        )} />
                       </div>
-                    </div>
-                    <div className="pt-20 border-t border-dashed">
-                      <SecurityFAQ className="max-w-none" />
                     </div>
                   </div>
                 </Form>
@@ -440,7 +424,7 @@ export function EditPage() {
             </div>
           </TabsContent>
           <TabsContent value="analytics" className="m-0 animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <Card className="rounded-[2rem] border-none shadow-soft">
                 <CardHeader><CardTitle className="text-sm uppercase tracking-widest text-muted-foreground">Total Views</CardTitle></CardHeader>
                 <CardContent><div className="text-5xl font-black text-primary">{profile?.variants.reduce((acc, v) => acc + (v.views || 0), 0)}</div></CardContent>

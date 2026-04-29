@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'sonner';
 import QRCode from 'qrcode';
-import { Sparkles, Send, ShieldCheck, LayoutGrid, Image as ImageIcon, Loader2, Link as LinkIcon, Linkedin, Globe, Video, Twitter, Github, Phone } from 'lucide-react';
+import { Sparkles, Send, ShieldCheck, LayoutGrid, Image as ImageIcon, Loader2, Link as LinkIcon, Linkedin, Globe, Video, Twitter, Github, Phone, Lock, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -39,10 +39,11 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 export function HomePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [publishedData, setPublishedData] = useState<{ slug: string } | null>(null);
+  const [publishedData, setPublishedData] = useState<{ slug: string; editToken: string } | null>(null);
   const [qrCodeData, setQrCodeData] = useState<string>('');
   const [slugAvailable, setSlugAvailable] = useState<boolean | null>(null);
   const [isCheckingSlug, setIsCheckingSlug] = useState(false);
+  const [copiedPrivate, setCopiedPrivate] = useState(false);
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -91,7 +92,7 @@ export function HomePage() {
       });
       const result = await res.json();
       if (result.success) {
-        setPublishedData({ slug: result.data.slug });
+        setPublishedData({ slug: result.data.slug, editToken: result.data.editToken });
         localStorage.setItem(`profile_${result.data.slug}_token`, result.data.editToken);
         const url = `${window.location.origin}/${result.data.slug}`;
         setQrCodeData(await QRCode.toDataURL(url));
@@ -99,6 +100,14 @@ export function HomePage() {
       } else { toast.error(result.error); }
     } catch { toast.error('Error publishing'); }
     finally { setIsSubmitting(false); }
+  };
+  const handleCopyPrivate = () => {
+    if (!publishedData) return;
+    const managementUrl = `${window.location.origin}/${publishedData.slug}/edit?token=${publishedData.editToken}`;
+    navigator.clipboard.writeText(managementUrl);
+    setCopiedPrivate(true);
+    toast.success('Private management link copied');
+    setTimeout(() => setCopiedPrivate(false), 2000);
   };
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -119,27 +128,60 @@ export function HomePage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
           <div className="space-y-12">
             {publishedData ? (
-              <div className="bg-card border-2 border-primary/10 rounded-4xl p-10 shadow-soft space-y-8 animate-scale-in">
+              <div className="bg-card border-2 border-primary/10 rounded-4xl p-8 md:p-10 shadow-soft space-y-10 animate-scale-in">
                 <div className="flex flex-col md:flex-row gap-8 items-center">
-                  <div className="flex-1 space-y-4 w-full">
-                    <div className="size-14 rounded-2xl bg-green-500/10 text-green-600 flex items-center justify-center"><ShieldCheck size={28} /></div>
-                    <h3 className="text-2xl font-bold">Page is Published</h3>
-                    <div className="p-4 bg-muted rounded-xl text-sm font-mono break-all border">
-                      {window.location.origin}/{publishedData.slug}
+                  <div className="flex-1 space-y-4 w-full text-center md:text-left">
+                    <div className="size-14 rounded-2xl bg-green-500/10 text-green-600 flex items-center justify-center mx-auto md:mx-0"><ShieldCheck size={28} /></div>
+                    <h3 className="text-2xl font-bold">Your page is live</h3>
+                    <div className="p-4 bg-muted rounded-xl text-sm font-mono break-all border group relative overflow-hidden">
+                      <span className="text-muted-foreground">{window.location.origin}/</span>{publishedData.slug}
                     </div>
                   </div>
-                  <img src={qrCodeData} alt="QR" className="size-36 bg-white p-3 rounded-2xl border-2 border-muted" />
+                  <div className="flex flex-col items-center gap-3">
+                    <img src={qrCodeData} alt="QR" className="size-32 bg-white p-2 rounded-2xl border-2 border-muted" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Public Scan</span>
+                  </div>
+                </div>
+                <div className="p-6 md:p-8 rounded-3xl bg-slate-900 text-white space-y-4 border border-slate-800 shadow-xl relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-4 opacity-10">
+                    <Lock size={80} />
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="p-1.5 bg-primary rounded-lg text-white">
+                      <Lock size={14} />
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-primary-foreground/70">Secure Magic Link</span>
+                  </div>
+                  <h4 className="text-lg font-bold">Private Management Access</h4>
+                  <p className="text-sm text-slate-400 leading-relaxed max-w-sm">
+                    Bookmark this private URL to manage your page from any device. This contains your edit token—keep it secret.
+                  </p>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="secondary" 
+                      onClick={handleCopyPrivate}
+                      className="flex-1 h-12 rounded-xl font-bold gap-2 text-slate-900"
+                    >
+                      {copiedPrivate ? <Check size={16} /> : <Copy size={16} />}
+                      {copiedPrivate ? "Copied" : "Copy Private Link"}
+                    </Button>
+                    <Button variant="outline" asChild className="h-12 rounded-xl px-4 border-slate-700 bg-transparent text-white hover:bg-slate-800">
+                      <Link to={`/${publishedData.slug}/edit?token=${publishedData.editToken}`}>
+                        Open Dashboard
+                      </Link>
+                    </Button>
+                  </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <Button asChild size="lg" className="h-14 text-lg font-bold rounded-2xl"><Link to={`/${publishedData.slug}`}>View Live Page</Link></Button>
-                  <Button variant="outline" asChild size="lg" className="h-14 text-lg font-bold rounded-2xl"><Link to={`/${publishedData.slug}/edit`}>Manage Details</Link></Button>
+                  <Button asChild size="lg" className="h-14 text-lg font-bold rounded-2xl"><Link to={`/${publishedData.slug}`}>View Public Page</Link></Button>
+                  <Button variant="outline" asChild size="lg" className="h-14 text-lg font-bold rounded-2xl"><Link to="/">Create Another</Link></Button>
                 </div>
                 <CopyBlurbGroup
                   fullName={watchAll.fullName}
                   jobTitle={watchAll.jobTitle}
                   company={watchAll.company}
                   url={`${window.location.origin}/${publishedData.slug}`}
-                  className="pt-8 border-t"
+                  className="pt-8 border-t border-dashed"
                 />
               </div>
             ) : (
@@ -200,7 +242,6 @@ export function HomePage() {
                             <Linkedin className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                             <FormControl><Input className="h-12 pl-10 rounded-xl" placeholder="https://linkedin.com/in/username" {...field} /></FormControl>
                           </div>
-                          <FormMessage />
                         </FormItem>
                       )} />
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -211,7 +252,6 @@ export function HomePage() {
                               <Twitter className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                               <FormControl><Input className="h-12 pl-10 rounded-xl" placeholder="https://x.com/username" {...field} /></FormControl>
                             </div>
-                            <FormMessage />
                           </FormItem>
                         )} />
                         <FormField control={form.control} name="githubUrl" render={({ field }) => (
@@ -221,42 +261,9 @@ export function HomePage() {
                               <Github className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                               <FormControl><Input className="h-12 pl-10 rounded-xl" placeholder="https://github.com/username" {...field} /></FormControl>
                             </div>
-                            <FormMessage />
                           </FormItem>
                         )} />
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <FormField control={form.control} name="phone" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Phone Number</FormLabel>
-                            <div className="relative">
-                              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                              <FormControl><Input className="h-12 pl-10 rounded-xl" placeholder="+1 (555) 000-0000" {...field} /></FormControl>
-                            </div>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
-                        <FormField control={form.control} name="websiteUrl" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Personal Website</FormLabel>
-                            <div className="relative">
-                              <Globe className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                              <FormControl><Input className="h-12 pl-10 rounded-xl" placeholder="https://yourwebsite.com" {...field} /></FormControl>
-                            </div>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
-                      </div>
-                      <FormField control={form.control} name="videoUrl" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Video Intro URL (Loom/Youtube)</FormLabel>
-                          <div className="relative">
-                            <Video className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                            <FormControl><Input className="h-12 pl-10 rounded-xl" placeholder="https://loom.com/share/..." {...field} /></FormControl>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
                     </div>
                   </div>
                   <div className="pt-8 border-t space-y-8">
@@ -270,20 +277,6 @@ export function HomePage() {
                           <FormControl><SelectTrigger className="h-14 text-lg rounded-2xl"><SelectValue placeholder="Audience Profile" /></SelectTrigger></FormControl>
                           <SelectContent className="rounded-2xl"><SelectItem value="Default">General Purpose</SelectItem><SelectItem value="Client Meeting">Client Facing</SelectItem><SelectItem value="Interview">Job Interview</SelectItem><SelectItem value="Investor">Investor Pitch</SelectItem></SelectContent>
                         </Select>
-                      </FormItem>
-                    )} />
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <FormField control={form.control} name="focus" render={({ field }) => (
-                        <FormItem><FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Main Focus</FormLabel><FormControl><Input className="h-12 rounded-xl" placeholder="Strategic GTM..." {...field} /></FormControl></FormItem>
-                      )} />
-                      <FormField control={form.control} name="topics" render={({ field }) => (
-                        <FormItem><FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Topics (CSV)</FormLabel><FormControl><Input className="h-12 rounded-xl" placeholder="SaaS, Growth..." {...field} /></FormControl></FormItem>
-                      )} />
-                    </div>
-                    <FormField control={form.control} name="meetingNote" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Before We Meet</FormLabel>
-                        <FormControl><Textarea className="h-28 resize-none rounded-2xl p-4 text-base" placeholder="Optional context or agenda preference..." {...field} /></FormControl>
                       </FormItem>
                     )} />
                     <FormField control={form.control} name="bio" render={({ field }) => (
