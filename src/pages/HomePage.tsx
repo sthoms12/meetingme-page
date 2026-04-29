@@ -95,17 +95,17 @@ export function HomePage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="py-12 md:py-20 lg:py-24 space-y-16">
-        <ThemeToggle type="button" />
+        <ThemeToggle />
         <header className="max-w-3xl space-y-6">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-[11px] font-black uppercase tracking-[0.2em] shadow-sm border border-primary/5">
-            <Sparkles size={14} /> <span>Professional Standard v4.1</span>
+            <Sparkles size={14} /> <span>V2 Professional Suite</span>
           </div>
           <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-slate-900 dark:text-white leading-[1.05]">
-            Share who you are <br />
-            <span className="text-primary">before the meeting</span>.
+            The professional introduction for <br />
+            <span className="text-primary">founders, sales, & pros</span>.
           </h1>
           <p className="text-slate-500 dark:text-slate-400 text-lg md:text-xl max-w-2xl leading-relaxed">
-            The minimal, professional intro page designed for consultants, founders, and executives. Ready in 2 minutes.
+            Perfect for client-facing roles, investor pitches, and executive networking. Share your context and intent before the meeting starts.
           </p>
         </header>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">

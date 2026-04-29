@@ -1,3 +1,14 @@
+export interface ViewLog {
+  timestamp: string;
+  variantId: string;
+  source?: string;
+  country?: string;
+}
+export interface VersionSnapshot {
+  timestamp: string;
+  label: string;
+  variants: ProfileVariant[];
+}
 export interface ProfileVariant {
   id: string;
   name: string;
@@ -22,8 +33,10 @@ export interface Profile {
   passwordHash?: string;
   variants: ProfileVariant[];
   primaryVariantId: string;
+  analytics?: ViewLog[];
+  history?: VersionSnapshot[];
 }
-export type ProfileFormData = Omit<Profile, 'slug' | 'editToken' | 'createdAt' | 'variants' | 'primaryVariantId' | 'passwordHash'> & {
+export type ProfileFormData = Omit<Profile, 'slug' | 'editToken' | 'createdAt' | 'variants' | 'primaryVariantId' | 'passwordHash' | 'analytics' | 'history'> & {
   password?: string;
   variantName: string;
   variantSlug: string;
@@ -35,7 +48,7 @@ export type ProfileFormData = Omit<Profile, 'slug' | 'editToken' | 'createdAt' |
 export interface ProfilePublicResponse {
   fullName: string;
   isLocked: boolean;
-  profile?: Omit<Profile, 'editToken' | 'passwordHash' | 'variants'> & {
+  profile?: Omit<Profile, 'editToken' | 'passwordHash' | 'variants' | 'history' | 'analytics'> & {
     activeVariant: ProfileVariant;
   };
 }

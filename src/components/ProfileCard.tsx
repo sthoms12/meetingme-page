@@ -1,11 +1,13 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Linkedin, Globe, Video, User, Link as LinkIcon, Target, Info } from 'lucide-react';
+import { Linkedin, Globe, Video, User, Link as LinkIcon, Target, Info, Calendar } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { downloadMeetingICS } from '@/lib/calendar-utils';
+import { toast } from 'sonner';
 interface ProfileCardProps {
   data: {
     fullName?: string;
@@ -44,6 +46,16 @@ export function ProfileCard({ data, className, slug }: ProfileCardProps) {
   const topicsArray = Array.isArray(topics)
     ? topics
     : (typeof topics === 'string' ? topics.split(',').map(t => t.trim()).filter(Boolean) : []);
+  const handleCalendarExport = () => {
+    downloadMeetingICS({
+      fullName: displayFullName,
+      jobTitle: displayJobTitle,
+      company: displayCompany,
+      bio: displayBio,
+      url: slug ? `${window.location.origin}/${slug}` : window.location.href
+    });
+    toast.success('Meeting invite downloaded');
+  };
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
@@ -114,6 +126,12 @@ export function ProfileCard({ data, className, slug }: ProfileCardProps) {
             </div>
           )}
           <div className="flex flex-col gap-3 no-print pt-4">
+            <Button onClick={handleCalendarExport} variant="outline" className="w-full justify-start gap-4 h-14 rounded-2xl transition-all active:scale-[0.98] border-slate-200 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <Calendar className="size-5 text-primary" />
+              </div>
+              <span className="font-bold text-[15px]">Add to Calendar</span>
+            </Button>
             {linkedinUrl && linkedinUrl.trim() !== '' && (
               <Button asChild variant="outline" className="w-full justify-start gap-4 h-14 rounded-2xl transition-all active:scale-[0.98] border-slate-200 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900">
                 <a href={linkedinUrl} target="_blank" rel="noopener noreferrer">

@@ -18,10 +18,27 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     const existing = await stub.getProfile(slug);
     return c.json({ success: true, data: { available: !existing } });
   });
+  app.get('/api/profiles/:slug/analytics', async (c) => {
+    const slug = c.req.param('slug');
+    const editToken = c.req.query('editToken');
+    const stub = c.env.GlobalDurableObject.get(c.env.GlobalDurableObject.idFromName("global"));
+    const profile = await stub.getProfile(slug);
+    if (!profile || profile.editToken !== editToken) return c.json({ success: false, error: 'Unauthorized' }, 401);
+    return c.json({ success: true, data: { analytics: profile.analytics || [], variants: profile.variants } });
+  });
+  app.post('/api/profiles/:slug/history/restore', async (c) => {
+    const slug = c.req.param('slug');
+    const { editToken, timestamp } = await c.req.json();
+    const stub = c.env.GlobalDurableObject.get(c.env.GlobalDurableObject.idFromName("global"));
+    const updated = await stub.restoreSnapshot(slug, editToken, timestamp);
+    if (!updated) return c.json({ success: false, error: 'Failed to restore' }, 400);
+    return c.json({ success: true, data: updated });
+  });
   app.get('/api/profiles/:slug', async (c) => {
     const slug = c.req.param('slug');
     const variantSlug = c.req.query('variant');
     const editToken = c.req.query('editToken');
+    const source = c.req.query('src');
     const stub = c.env.GlobalDurableObject.get(c.env.GlobalDurableObject.idFromName("global"));
     const profile = await stub.getProfile(slug);
     if (!profile) return c.json({ success: false, error: 'Profile not found' }, 404);
@@ -35,8 +52,8 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     if (profile.passwordHash) {
       return c.json({ success: true, data: { fullName: profile.fullName, isLocked: true } });
     }
-    await stub.incrementProfileViews(slug, variant.variantSlug);
-    const { editToken: _, passwordHash: __, variants: ___, ...rest } = profile;
+    await stub.incrementProfileViews(slug, variant.variantSlug, source);
+    const { editToken: _, passwordHash: __, variants: ___, history: ____, analytics: _____, ...rest } = profile;
     return c.json({ success: true, data: { ...rest, activeVariant: variant, isLocked: false } });
   });
   app.post('/api/profiles/:slug/verify', async (c) => {
@@ -53,7 +70,7 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
       : profile.variants.find(v => v.id === profile.primaryVariantId);
     if (!variant) return c.json({ success: false, error: 'Variant not found' }, 404);
     await stub.incrementProfileViews(slug, variant.variantSlug);
-    const { editToken: _, passwordHash: __, variants: ___, ...rest } = profile;
+    const { editToken: _, passwordHash: __, variants: ___, history: ____, analytics: _____, ...rest } = profile;
     return c.json({ success: true, data: { ...rest, activeVariant: variant, isLocked: false } });
   });
   app.post('/api/profiles', async (c) => {
@@ -87,7 +104,8 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
       passwordHash: body.password ? await hashPassword(body.password) : undefined,
       createdAt: new Date().toISOString(),
       variants: [initialVariant],
-      primaryVariantId: variantId
+      primaryVariantId: variantId,
+      history: []
     };
     await stub.createProfile(newProfile);
     return c.json({ success: true, data: newProfile });
@@ -100,6 +118,8 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     if (!existing || existing.editToken !== body.editToken) {
       return c.json({ success: false, error: 'Forbidden' }, 403);
     }
+    // Auto-snapshot before update
+    await stub.captureSnapshot(slug, `Update ${new Date().toLocaleTimeString()}`);
     const { editToken, removePassword, password, ...updates } = body;
     const finalUpdates: Partial<Profile> = { ...updates };
     if (removePassword) {

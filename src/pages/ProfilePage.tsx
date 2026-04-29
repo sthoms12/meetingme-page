@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ProfileCard } from '@/components/ProfileCard';
@@ -7,20 +7,25 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { ChevronLeft, Info, Lock, KeyRound, ArrowRight, Share2 } from 'lucide-react';
+import { ChevronLeft, Info, Lock, KeyRound, ArrowRight, Share2, Calendar } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { CopyBlurbGroup } from '@/components/CopyBlurbGroup';
 import { toast } from 'sonner';
+import { downloadMeetingICS } from '@/lib/calendar-utils';
 export function ProfilePage() {
   const { slug, variant: variantSlug } = useParams<{ slug: string; variant?: string }>();
+  const [searchParams] = useSearchParams();
+  const isEmbed = searchParams.get('embed') === '1';
   const isOwner = slug ? !!localStorage.getItem(`profile_${slug}_token`) : false;
   const [password, setPassword] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [unlockedData, setUnlockedData] = useState<any>(null);
   const { data: initialData, isLoading, error } = useQuery({
-    queryKey: ['profile', slug, variantSlug],
+    queryKey: ['profile', slug, variantSlug, isEmbed],
     queryFn: async () => {
-      const url = variantSlug ? `/api/profiles/${slug}?variant=${variantSlug}` : `/api/profiles/${slug}`;
+      const url = variantSlug 
+        ? `/api/profiles/${slug}?variant=${variantSlug}${isEmbed ? '&embed=1' : ''}` 
+        : `/api/profiles/${slug}${isEmbed ? '?embed=1' : ''}`;
       const response = await fetch(url);
       if (!response.ok) throw new Error('Not Found');
       const result = await response.json();
@@ -49,6 +54,17 @@ export function ProfilePage() {
     } catch { toast.error('Verification failed'); }
     finally { setIsVerifying(false); }
   };
+  const handleCalendarExport = () => {
+    if (!displayData) return;
+    downloadMeetingICS({
+      fullName: displayData.fullName,
+      jobTitle: displayData.jobTitle,
+      company: displayData.company,
+      bio: displayData.activeVariant?.bio || '',
+      url: window.location.href
+    });
+    toast.success('Calendar invite downloaded');
+  };
   if (isLoading) return (
     <div className="min-h-screen bg-background flex items-center justify-center p-6">
       <div className="w-full max-w-md space-y-6">
@@ -64,6 +80,34 @@ export function ProfilePage() {
         <p className="text-muted-foreground text-lg">This introduction version couldn't be located.</p>
       </div>
       <Button asChild size="lg" className="rounded-2xl h-14 px-8"><Link to="/">Create My Own Page</Link></Button>
+    </div>
+  );
+  if (isEmbed) return (
+    <div className="bg-transparent overflow-hidden h-screen flex flex-col items-center justify-center p-4">
+      <AnimatePresence mode="wait">
+        {isLocked ? (
+          <Card className="border-border shadow-soft rounded-[2.5rem] w-full max-w-md bg-card/90">
+            <CardContent className="p-8 text-center space-y-6">
+              <Lock size={32} className="mx-auto text-primary" />
+              <div className="space-y-1">
+                <h3 className="font-bold">{initialData.fullName}</h3>
+                <p className="text-xs text-muted-foreground">Protected Intro</p>
+              </div>
+              <form onSubmit={handleVerify} className="space-y-3">
+                <Input type="password" placeholder="Password..." className="h-12 rounded-xl" value={password} onChange={(e) => setPassword(e.target.value)} />
+                <Button type="submit" className="w-full h-12 rounded-xl font-bold">Unlock</Button>
+              </form>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="w-full h-full flex flex-col items-center">
+             <ProfileCard data={{ ...displayData, bio: displayData.activeVariant?.bio }} slug={slug} className="shadow-none border-none scale-[0.98]" />
+             <Button variant="ghost" size="sm" onClick={handleCalendarExport} className="mt-4 text-[10px] uppercase font-black tracking-widest text-muted-foreground">
+               <Calendar size={12} className="mr-2" /> Add to Calendar
+             </Button>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
   return (
@@ -102,7 +146,12 @@ export function ProfilePage() {
             </motion.div>
           ) : (
             <motion.div key="unlocked" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
-              <ProfileCard data={{ ...displayData, bio: displayData.activeVariant?.bio }} slug={slug} />
+              <div className="relative">
+                 <ProfileCard data={{ ...displayData, bio: displayData.activeVariant?.bio }} slug={slug} />
+                 <Button variant="outline" size="icon" onClick={handleCalendarExport} className="absolute -right-16 top-0 hidden lg:flex rounded-2xl size-14 border-2 shadow-soft bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800" title="Export to Calendar">
+                    <Calendar className="size-6 text-primary" />
+                 </Button>
+              </div>
               {isOwner && (
                 <motion.div
                   initial={{ opacity: 0 }}
