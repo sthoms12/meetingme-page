@@ -15,6 +15,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ProfileCard } from '@/components/ProfileCard';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { CopyBlurbGroup } from '@/components/CopyBlurbGroup';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 const formSchema = z.object({
@@ -92,17 +93,26 @@ export function HomePage() {
             {publishedData ? (
               <div className="bg-card border rounded-2xl p-8 shadow-soft space-y-6 animate-scale-in">
                 <div className="flex flex-col md:flex-row gap-8 items-center text-center md:text-left">
-                  <div className="flex-1 space-y-4">
+                  <div className="flex-1 space-y-4 w-full">
                     <div className="size-12 rounded-full bg-green-50 text-green-600 flex items-center justify-center mx-auto md:mx-0"><ShieldCheck size={24} /></div>
                     <h3 className="text-xl font-bold">You are live!</h3>
                     <code className="block p-3 bg-muted rounded-lg text-xs">meetingme.page/{publishedData.slug}</code>
-                    <div className="grid gap-2">
-                      <Button asChild><Link to={`/${publishedData.slug}`}>View Public Profile</Link></Button>
-                      <Button variant="outline" asChild><Link to={`/${publishedData.slug}/edit`}>Manage Versions</Link></Button>
-                    </div>
                   </div>
                   <img src={qrCodeData} alt="QR" className="size-32 bg-white p-2 rounded-xl border" />
                 </div>
+                
+                <div className="grid grid-cols-2 gap-2 pt-2">
+                  <Button asChild className="h-11"><Link to={`/${publishedData.slug}`}>View Profile</Link></Button>
+                  <Button variant="outline" asChild className="h-11"><Link to={`/${publishedData.slug}/edit`}>Edit versions</Link></Button>
+                </div>
+
+                <CopyBlurbGroup 
+                  fullName={watchAll.fullName}
+                  jobTitle={watchAll.jobTitle}
+                  company={watchAll.company}
+                  url={`${window.location.origin}/${publishedData.slug}`}
+                  className="pt-4 border-t"
+                />
               </div>
             ) : (
               <Form {...form}>

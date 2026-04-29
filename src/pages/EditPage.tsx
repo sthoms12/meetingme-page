@@ -14,6 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { ProfileCard } from '@/components/ProfileCard';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { CopyBlurbGroup } from '@/components/CopyBlurbGroup';
 import { nanoid } from 'nanoid';
 import { cn } from '@/lib/utils';
 import type { ProfileVariant, Profile, ApiResponse } from '@shared/types';
@@ -281,6 +282,14 @@ export function EditPage() {
             </a>
           </div>
           <ProfileCard data={{ ...watchAll, bio: currentVariant?.bio }} />
+          
+          <CopyBlurbGroup 
+            fullName={watchAll.fullName}
+            jobTitle={watchAll.jobTitle}
+            company={watchAll.company}
+            url={`${window.location.origin}/${slug}${currentVariant?.variantSlug === 'intro' ? '' : '/' + currentVariant?.variantSlug}`}
+            className="bg-card p-6 rounded-2xl border shadow-sm"
+          />
         </div>
       </div>
     </div>

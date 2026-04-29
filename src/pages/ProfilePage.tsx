@@ -7,11 +7,15 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { ChevronLeft, Info, Lock, KeyRound, ArrowRight } from 'lucide-react';
+import { ChevronLeft, Info, Lock, KeyRound, ArrowRight, Share2 } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { CopyBlurbGroup } from '@/components/CopyBlurbGroup';
 import { toast } from 'sonner';
+
 export function ProfilePage() {
   const { slug, variant: variantSlug } = useParams<{ slug: string; variant?: string }>();
+  const isOwner = slug ? !!localStorage.getItem(`profile_${slug}_token`) : false;
+  
   const [password, setPassword] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [unlockedData, setUnlockedData] = useState<any>(null);
@@ -90,6 +94,32 @@ export function ProfilePage() {
           ) : (
             <motion.div key="unlocked" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
               <ProfileCard data={{ ...displayData, bio: displayData.activeVariant?.bio }} slug={slug} />
+              
+              {isOwner && (
+                <motion.div 
+                  initial={{ opacity: 0 }} 
+                  animate={{ opacity: 1 }} 
+                  transition={{ delay: 0.5 }}
+                  className="mt-12 w-full pt-8 border-t no-print"
+                >
+                  <div className="flex items-center gap-2 mb-4 text-indigo-600">
+                    <Share2 size={16} />
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em]">Owner Tools</span>
+                  </div>
+                  <CopyBlurbGroup 
+                    fullName={displayData.fullName}
+                    jobTitle={displayData.jobTitle}
+                    company={displayData.company}
+                    url={window.location.href}
+                    className="bg-card/50 p-6 rounded-2xl border border-dashed"
+                  />
+                  <div className="mt-4 text-center">
+                    <Button variant="link" asChild className="text-[10px] uppercase font-bold text-muted-foreground hover:text-indigo-600">
+                      <Link to={`/${slug}/edit`}>Open Dashboard</Link>
+                    </Button>
+                  </div>
+                </motion.div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
