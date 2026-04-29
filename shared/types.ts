@@ -29,6 +29,9 @@ export interface Profile {
   linkedinUrl?: string;
   websiteUrl?: string;
   videoUrl?: string;
+  twitterUrl?: string;
+  githubUrl?: string;
+  phone?: string;
   createdAt: string;
   passwordHash?: string;
   variants: ProfileVariant[];

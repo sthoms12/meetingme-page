@@ -3,11 +3,12 @@ import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ProfileCard } from '@/components/ProfileCard';
+import { QRCodeDialog } from '@/components/QRCodeDialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { ChevronLeft, Info, Lock, KeyRound, ArrowRight, Share2, Calendar, Sparkles } from 'lucide-react';
+import { ChevronLeft, Info, Lock, KeyRound, ArrowRight, Share2, Calendar, Sparkles, QrCode } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { CopyBlurbGroup } from '@/components/CopyBlurbGroup';
 import { toast } from 'sonner';
@@ -128,7 +129,7 @@ export function ProfilePage() {
              <ProfileCard data={{ ...displayData, bio: displayData.activeVariant?.bio }} slug={slug} className="shadow-none border-none" />
              <div className="flex gap-4 mt-6">
                <Button variant="ghost" size="sm" onClick={handleCalendarExport} className="text-[10px] uppercase font-black tracking-widest text-muted-foreground">
-                 <Calendar size={12} className="mr-2" /> Add to Calendar
+                 <Calendar size={12} className="mr-2" /> Calendar
                </Button>
                <Button variant="ghost" size="sm" onClick={handleShare} className="text-[10px] uppercase font-black tracking-widest text-muted-foreground">
                  <Share2 size={12} className="mr-2" /> Share
@@ -184,17 +185,35 @@ export function ProfilePage() {
                       <Calendar className="size-6 text-primary" />
                    </Button>
                    <Button variant="outline" size="icon" onClick={handleShare} className="rounded-2xl size-14 border-2 shadow-soft bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 transition-all hover:scale-110 active:scale-95" title="Share Profile">
-                      <Share2 className="size-6 text-muted-foreground hover:text-primary transition-colors" />
+                      <Share2 className="size-6 text-muted-foreground" />
                    </Button>
+                   <QRCodeDialog 
+                    url={window.location.href} 
+                    label={displayData?.activeVariant?.name || 'Standard'}
+                    trigger={
+                      <Button variant="outline" size="icon" className="rounded-2xl size-14 border-2 shadow-soft bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 transition-all hover:scale-110 active:scale-95" title="QR Code">
+                        <QrCode className="size-6 text-muted-foreground" />
+                      </Button>
+                    } 
+                   />
                  </div>
               </div>
-              <div className="mt-12 flex lg:hidden justify-center gap-4 no-print">
+              <div className="mt-12 flex lg:hidden justify-center gap-3 no-print flex-wrap">
                 <Button onClick={handleCalendarExport} className="rounded-2xl h-14 px-6 gap-3 font-bold shadow-soft">
                   <Calendar size={20} /> Add to Calendar
                 </Button>
                 <Button variant="outline" onClick={handleShare} className="rounded-2xl h-14 px-6 gap-3 font-bold">
                   <Share2 size={20} /> Share
                 </Button>
+                <QRCodeDialog 
+                  url={window.location.href} 
+                  label={displayData?.activeVariant?.name || 'Standard'}
+                  trigger={
+                    <Button variant="outline" className="rounded-2xl h-14 px-6 gap-3 font-bold">
+                      <QrCode size={20} /> QR Code
+                    </Button>
+                  } 
+                 />
               </div>
               {isOwner && (
                 <motion.div

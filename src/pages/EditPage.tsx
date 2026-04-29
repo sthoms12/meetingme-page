@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Save, ArrowLeft, Loader2, ShieldAlert, Plus, Trash2, LayoutGrid, ExternalLink, Image as ImageIcon, BarChart3, History, Code, Calendar as CalendarIcon, Clock, Linkedin, Globe, Video, Link as LinkIcon, CheckCircle2 } from 'lucide-react';
+import { Save, ArrowLeft, Loader2, ShieldAlert, Plus, Trash2, LayoutGrid, ExternalLink, Image as ImageIcon, BarChart3, History, Code, Calendar as CalendarIcon, Clock, Linkedin, Globe, Video, Link as LinkIcon, CheckCircle2, Twitter, Github, Phone, QrCode } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -16,6 +16,7 @@ import { ProfileCard } from '@/components/ProfileCard';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { CopyBlurbGroup } from '@/components/CopyBlurbGroup';
 import { SecurityFAQ } from '@/components/SecurityFAQ';
+import { QRCodeDialog } from '@/components/QRCodeDialog';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { nanoid } from 'nanoid';
 import { cn } from '@/lib/utils';
@@ -28,6 +29,9 @@ const formSchema = z.object({
   linkedinUrl: z.string().url().optional().or(z.literal('')),
   websiteUrl: z.string().url().optional().or(z.literal('')),
   videoUrl: z.string().url().optional().or(z.literal('')),
+  twitterUrl: z.string().url().optional().or(z.literal('')),
+  githubUrl: z.string().url().optional().or(z.literal('')),
+  phone: z.string().optional().or(z.literal('')),
   variants: z.array(z.object({
     id: z.string(),
     name: z.string().min(1),
@@ -61,7 +65,7 @@ export function EditPage() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       fullName: '', jobTitle: '', company: '', profilePhoto: '',
-      linkedinUrl: '', websiteUrl: '', videoUrl: '',
+      linkedinUrl: '', websiteUrl: '', videoUrl: '', twitterUrl: '', githubUrl: '', phone: '',
       variants: [{
         id: 'initial',
         name: 'Default',
@@ -85,6 +89,9 @@ export function EditPage() {
         linkedinUrl: profile.linkedinUrl || '',
         websiteUrl: profile.websiteUrl || '',
         videoUrl: profile.videoUrl || '',
+        twitterUrl: profile.twitterUrl || '',
+        githubUrl: profile.githubUrl || '',
+        phone: profile.phone || '',
         variants: profile.variants.map(v => ({
           id: v.id,
           name: v.name,
@@ -185,7 +192,7 @@ export function EditPage() {
     toast.success('Primary variant updated (don\'t forget to save)');
   };
   if (!editToken) return (
-    <div className="max-w-md mx-auto py-32 text-center space-y-8 px-6">
+    <div className="max-md mx-auto py-32 text-center space-y-8 px-6">
       <div className="size-20 rounded-3xl bg-destructive/10 text-destructive flex items-center justify-center mx-auto"><ShieldAlert size={40} /></div>
       <div className="space-y-2">
         <h2 className="text-2xl font-bold">Access Restricted</h2>
@@ -276,19 +283,31 @@ export function EditPage() {
                         <div className="flex items-center justify-between">
                           <div className="flex flex-col gap-1">
                             <h3 className="text-sm font-black uppercase tracking-widest text-primary">Variant Details: {currentVariant.name}</h3>
-                            {watchAll.primaryVariantId === currentVariant.id ? (
-                              <span className="text-[10px] text-green-600 font-bold uppercase tracking-widest flex items-center gap-1">
-                                <CheckCircle2 size={10} /> Currently Primary
-                              </span>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => setPrimary(currentVariant.id)}
-                                className="text-[10px] text-muted-foreground hover:text-primary font-bold uppercase tracking-widest text-left transition-colors"
-                              >
-                                Set as Primary Variant
-                              </button>
-                            )}
+                            <div className="flex items-center gap-3 mt-1">
+                              {watchAll.primaryVariantId === currentVariant.id ? (
+                                <span className="text-[10px] text-green-600 font-bold uppercase tracking-widest flex items-center gap-1">
+                                  <CheckCircle2 size={10} /> Currently Primary
+                                </span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => setPrimary(currentVariant.id)}
+                                  className="text-[10px] text-muted-foreground hover:text-primary font-bold uppercase tracking-widest text-left transition-colors"
+                                >
+                                  Set as Primary
+                                </button>
+                              )}
+                              <span className="text-slate-300">|</span>
+                              <QRCodeDialog 
+                                url={`${window.location.origin}/${slug}${currentVariant.variantSlug === 'intro' ? '' : `/${currentVariant.variantSlug}`}`}
+                                label={currentVariant.name}
+                                trigger={
+                                  <button type="button" className="text-[10px] text-muted-foreground hover:text-primary font-bold uppercase tracking-widest flex items-center gap-1">
+                                    <QrCode size={10} /> Get Variant QR
+                                  </button>
+                                }
+                              />
+                            </div>
                           </div>
                           {watchAll.variants.length > 1 && (
                             <Button variant="ghost" size="sm" type="button" onClick={() => deleteVariant(activeVariantIndex)} className="text-destructive hover:bg-destructive/5 uppercase font-black text-[10px] tracking-widest">
@@ -340,7 +359,7 @@ export function EditPage() {
                         </Button>
                         {watchAll.profilePhoto && <div className="size-14 rounded-2xl border bg-muted overflow-hidden"><img src={watchAll.profilePhoto} className="w-full h-full object-cover" alt="Preview" /></div>}
                       </div>
-                      <div className="grid grid-cols-1 gap-6 pt-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
                         <FormField control={form.control} name="linkedinUrl" render={({ field }) => (
                           <FormItem>
                             <FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">LinkedIn URL</FormLabel>
@@ -350,6 +369,35 @@ export function EditPage() {
                             </div>
                           </FormItem>
                         )} />
+                        <FormField control={form.control} name="twitterUrl" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Twitter / X</FormLabel>
+                            <div className="relative">
+                              <Twitter className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                              <FormControl><Input className="bg-secondary/40 h-12 pl-10 rounded-xl border-none" {...field} /></FormControl>
+                            </div>
+                          </FormItem>
+                        )} />
+                        <FormField control={form.control} name="githubUrl" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">GitHub URL</FormLabel>
+                            <div className="relative">
+                              <Github className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                              <FormControl><Input className="bg-secondary/40 h-12 pl-10 rounded-xl border-none" {...field} /></FormControl>
+                            </div>
+                          </FormItem>
+                        )} />
+                        <FormField control={form.control} name="phone" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Phone Number</FormLabel>
+                            <div className="relative">
+                              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                              <FormControl><Input className="bg-secondary/40 h-12 pl-10 rounded-xl border-none" {...field} /></FormControl>
+                            </div>
+                          </FormItem>
+                        )} />
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <FormField control={form.control} name="websiteUrl" render={({ field }) => (
                           <FormItem>
                             <FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Website URL</FormLabel>
@@ -379,9 +427,12 @@ export function EditPage() {
               <div className="lg:sticky lg:top-12 space-y-8">
                 <div className="flex items-center justify-between px-2">
                   <span className="text-[11px] font-black text-muted-foreground uppercase tracking-[0.3em]">Live Preview: {currentVariant?.name}</span>
-                  <a href={`/${slug}`} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-primary flex items-center gap-2 hover:underline">
-                    <ExternalLink size={14} /> Open Live
-                  </a>
+                  <div className="flex items-center gap-4">
+                    <QRCodeDialog url={`${window.location.origin}/${slug}`} trigger={<Button variant="ghost" className="text-xs font-bold text-primary gap-2"><QrCode size={14} /> Global QR</Button>} />
+                    <a href={`/${slug}`} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-primary flex items-center gap-2 hover:underline">
+                      <ExternalLink size={14} /> Open Live
+                    </a>
+                  </div>
                 </div>
                 <ProfileCard data={{ ...watchAll, bio: currentVariant?.bio, focus: currentVariant?.focus, topics: currentVariant?.topics, meetingNote: currentVariant?.meetingNote }} slug={slug} />
                 <CopyBlurbGroup fullName={watchAll.fullName} jobTitle={watchAll.jobTitle} company={watchAll.company} url={`${window.location.origin}/${slug}`} className="bg-card p-8 rounded-[2.5rem] border border-dashed border-slate-200" />

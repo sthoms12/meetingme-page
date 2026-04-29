@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'sonner';
 import QRCode from 'qrcode';
-import { Sparkles, Send, ShieldCheck, LayoutGrid, Image as ImageIcon, Loader2, Link as LinkIcon, Linkedin, Globe, Video } from 'lucide-react';
+import { Sparkles, Send, ShieldCheck, LayoutGrid, Image as ImageIcon, Loader2, Link as LinkIcon, Linkedin, Globe, Video, Twitter, Github, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -28,6 +28,9 @@ const formSchema = z.object({
   linkedinUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
   websiteUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
   videoUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
+  twitterUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
+  githubUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
+  phone: z.string().optional().or(z.literal('')),
   customSlug: z.string().regex(/^[a-z0-9-]*$/, 'Lower, numbers, hyphens').min(3, '3+ chars').optional().or(z.literal('')),
   password: z.string().min(4).optional().or(z.literal('')),
   variantName: z.string().min(1, 'Required'),
@@ -44,7 +47,7 @@ export function HomePage() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       fullName: '', jobTitle: '', company: '', bio: '', focus: '', topics: '', meetingNote: '', profilePhoto: '',
-      linkedinUrl: '', websiteUrl: '', videoUrl: '',
+      linkedinUrl: '', websiteUrl: '', videoUrl: '', twitterUrl: '', githubUrl: '', phone: '',
       customSlug: '', password: '', variantName: 'Default', variantSlug: 'intro'
     },
   });
@@ -200,16 +203,50 @@ export function HomePage() {
                           <FormMessage />
                         </FormItem>
                       )} />
-                      <FormField control={form.control} name="websiteUrl" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Personal Website</FormLabel>
-                          <div className="relative">
-                            <Globe className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                            <FormControl><Input className="h-12 pl-10 rounded-xl" placeholder="https://yourwebsite.com" {...field} /></FormControl>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <FormField control={form.control} name="twitterUrl" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Twitter / X</FormLabel>
+                            <div className="relative">
+                              <Twitter className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                              <FormControl><Input className="h-12 pl-10 rounded-xl" placeholder="https://x.com/username" {...field} /></FormControl>
+                            </div>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                        <FormField control={form.control} name="githubUrl" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">GitHub Profile</FormLabel>
+                            <div className="relative">
+                              <Github className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                              <FormControl><Input className="h-12 pl-10 rounded-xl" placeholder="https://github.com/username" {...field} /></FormControl>
+                            </div>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <FormField control={form.control} name="phone" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Phone Number</FormLabel>
+                            <div className="relative">
+                              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                              <FormControl><Input className="h-12 pl-10 rounded-xl" placeholder="+1 (555) 000-0000" {...field} /></FormControl>
+                            </div>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                        <FormField control={form.control} name="websiteUrl" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Personal Website</FormLabel>
+                            <div className="relative">
+                              <Globe className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                              <FormControl><Input className="h-12 pl-10 rounded-xl" placeholder="https://yourwebsite.com" {...field} /></FormControl>
+                            </div>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                      </div>
                       <FormField control={form.control} name="videoUrl" render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Video Intro URL (Loom/Youtube)</FormLabel>
@@ -275,7 +312,6 @@ export function HomePage() {
             <ProfileCard data={watchAll} className="scale-105 origin-top transition-transform" />
           </div>
         </div>
-
         <section className="pt-20 pb-12 border-t border-slate-200 dark:border-slate-800">
           <SecurityFAQ />
         </section>

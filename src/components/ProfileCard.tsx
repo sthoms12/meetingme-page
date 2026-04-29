@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Linkedin, Globe, Video, User, Link as LinkIcon, Target, Info, Calendar } from 'lucide-react';
+import { Linkedin, Globe, Video, User, Link as LinkIcon, Target, Info, Calendar, Twitter, Github, Phone } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,9 @@ interface ProfileCardProps {
     linkedinUrl?: string;
     websiteUrl?: string;
     videoUrl?: string;
+    twitterUrl?: string;
+    githubUrl?: string;
+    phone?: string;
   };
   className?: string;
   slug?: string;
@@ -38,6 +41,9 @@ export function ProfileCard({ data, className, slug }: ProfileCardProps) {
     linkedinUrl,
     websiteUrl,
     videoUrl,
+    twitterUrl,
+    githubUrl,
+    phone,
   } = data;
   const displayFullName = fullName || 'Your Name';
   const displayJobTitle = jobTitle || 'Professional Title';
@@ -127,8 +133,8 @@ export function ProfileCard({ data, className, slug }: ProfileCardProps) {
             </div>
           )}
           <div className="flex flex-col gap-3 no-print pt-4">
-            <Button 
-              onClick={handleCalendarExport} 
+            <Button
+              onClick={handleCalendarExport}
               className="w-full justify-start gap-4 h-15 rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98] bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 text-white font-bold h-14"
             >
               <div className="p-2 rounded-lg bg-white/20">
@@ -143,6 +149,36 @@ export function ProfileCard({ data, className, slug }: ProfileCardProps) {
                     <Linkedin className="size-5 text-[#0077b5]" />
                   </div>
                   <span className="font-bold text-[15px] group-hover:text-slate-900 dark:group-hover:text-white transition-colors">LinkedIn Profile</span>
+                </a>
+              </Button>
+            )}
+            {twitterUrl && twitterUrl.trim() !== '' && (
+              <Button asChild variant="outline" className="w-full justify-start gap-4 h-14 rounded-2xl transition-all active:scale-[0.98] border-slate-200 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900 group">
+                <a href={twitterUrl} target="_blank" rel="noopener noreferrer">
+                  <div className="p-2 rounded-lg bg-slate-900/10 group-hover:bg-slate-900/20 transition-colors">
+                    <Twitter className="size-5 text-slate-900 dark:text-white" />
+                  </div>
+                  <span className="font-bold text-[15px] group-hover:text-slate-900 dark:group-hover:text-white transition-colors">Twitter / X</span>
+                </a>
+              </Button>
+            )}
+            {githubUrl && githubUrl.trim() !== '' && (
+              <Button asChild variant="outline" className="w-full justify-start gap-4 h-14 rounded-2xl transition-all active:scale-[0.98] border-slate-200 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900 group">
+                <a href={githubUrl} target="_blank" rel="noopener noreferrer">
+                  <div className="p-2 rounded-lg bg-slate-800/10 group-hover:bg-slate-800/20 transition-colors">
+                    <Github className="size-5 text-slate-800 dark:text-white" />
+                  </div>
+                  <span className="font-bold text-[15px] group-hover:text-slate-900 dark:group-hover:text-white transition-colors">GitHub Repos</span>
+                </a>
+              </Button>
+            )}
+            {phone && phone.trim() !== '' && (
+              <Button asChild variant="outline" className="w-full justify-start gap-4 h-14 rounded-2xl transition-all active:scale-[0.98] border-slate-200 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900 group">
+                <a href={`tel:${phone}`}>
+                  <div className="p-2 rounded-lg bg-indigo-500/10 group-hover:bg-indigo-500/20 transition-colors">
+                    <Phone className="size-5 text-indigo-500" />
+                  </div>
+                  <span className="font-bold text-[15px] group-hover:text-slate-900 dark:group-hover:text-white transition-colors">Call Direct</span>
                 </a>
               </Button>
             )}
@@ -170,6 +206,9 @@ export function ProfileCard({ data, className, slug }: ProfileCardProps) {
           <div className="hidden print:block space-y-3 pt-8 border-t border-slate-100">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Digital Portfolio</p>
             {linkedinUrl && <div className="flex items-center gap-3 text-sm text-slate-600 truncate"><Linkedin size={14} className="text-slate-400" /> {linkedinUrl}</div>}
+            {twitterUrl && <div className="flex items-center gap-3 text-sm text-slate-600 truncate"><Twitter size={14} className="text-slate-400" /> {twitterUrl}</div>}
+            {githubUrl && <div className="flex items-center gap-3 text-sm text-slate-600 truncate"><Github size={14} className="text-slate-400" /> {githubUrl}</div>}
+            {phone && <div className="flex items-center gap-3 text-sm text-slate-600 truncate"><Phone size={14} className="text-slate-400" /> {phone}</div>}
             {websiteUrl && <div className="flex items-center gap-3 text-sm text-slate-600 truncate"><Globe size={14} className="text-slate-400" /> {websiteUrl}</div>}
             {slug && <div className="flex items-center gap-2 text-sm font-black text-primary truncate mt-6 pt-6 border-t border-slate-50"><LinkIcon size={14} /> meetingme.page/{slug}</div>}
           </div>
