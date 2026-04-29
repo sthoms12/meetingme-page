@@ -7,7 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { ChevronLeft, Info, Lock, KeyRound, ArrowRight, Share2, Calendar } from 'lucide-react';
+import { ChevronLeft, Info, Lock, KeyRound, ArrowRight, Share2, Calendar, Sparkles } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { CopyBlurbGroup } from '@/components/CopyBlurbGroup';
 import { toast } from 'sonner';
@@ -23,8 +23,8 @@ export function ProfilePage() {
   const { data: initialData, isLoading, error } = useQuery({
     queryKey: ['profile', slug, variantSlug, isEmbed],
     queryFn: async () => {
-      const url = variantSlug 
-        ? `/api/profiles/${slug}?variant=${variantSlug}${isEmbed ? '&embed=1' : ''}` 
+      const url = variantSlug
+        ? `/api/profiles/${slug}?variant=${variantSlug}${isEmbed ? '&embed=1' : ''}`
         : `/api/profiles/${slug}${isEmbed ? '?embed=1' : ''}`;
       const response = await fetch(url);
       if (!response.ok) throw new Error('Not Found');
@@ -54,6 +54,23 @@ export function ProfilePage() {
     } catch { toast.error('Verification failed'); }
     finally { setIsVerifying(false); }
   };
+  const handleShare = async () => {
+    const shareData = {
+      title: `MeetingMe | ${displayData.fullName}`,
+      text: `Quick intro before our meeting: ${displayData.fullName} (${displayData.jobTitle})`,
+      url: window.location.href,
+    };
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        if ((err as Error).name !== 'AbortError') toast.error('Sharing failed');
+      }
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      toast.success('Link copied to clipboard');
+    }
+  };
   const handleCalendarExport = () => {
     if (!displayData) return;
     downloadMeetingICS({
@@ -73,17 +90,24 @@ export function ProfilePage() {
     </div>
   );
   if (error || !initialData) return (
-    <div className="max-w-7xl mx-auto px-4 py-32 text-center space-y-8">
-      <div className="size-20 rounded-3xl bg-muted flex items-center justify-center mx-auto mb-6"><Info size={40} className="text-muted-foreground" /></div>
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold">Profile Unavailable</h1>
-        <p className="text-muted-foreground text-lg">This introduction version couldn't be located.</p>
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
+      <div className="max-w-md w-full space-y-10 animate-in fade-in zoom-in duration-500">
+        <div className="size-24 rounded-[2rem] bg-white dark:bg-slate-900 flex items-center justify-center mx-auto shadow-soft border border-slate-200 dark:border-slate-800">
+          <Info size={48} className="text-primary" />
+        </div>
+        <div className="space-y-3">
+          <h1 className="text-3xl font-bold tracking-tight">Introduction Not Found</h1>
+          <p className="text-muted-foreground text-lg leading-relaxed">This page or version is no longer active. It may have been moved or the handle was changed.</p>
+        </div>
+        <div className="grid gap-3">
+          <Button asChild size="lg" className="rounded-2xl h-14 px-8 font-bold text-lg"><Link to="/">Start Your Own Intro Page</Link></Button>
+          <Button variant="ghost" asChild className="text-muted-foreground font-bold"><Link to="/">Learn More</Link></Button>
+        </div>
       </div>
-      <Button asChild size="lg" className="rounded-2xl h-14 px-8"><Link to="/">Create My Own Page</Link></Button>
     </div>
   );
   if (isEmbed) return (
-    <div className="bg-transparent overflow-hidden h-screen flex flex-col items-center justify-center p-4">
+    <div className="bg-transparent overflow-hidden flex flex-col items-center justify-center p-2">
       <AnimatePresence mode="wait">
         {isLocked ? (
           <Card className="border-border shadow-soft rounded-[2.5rem] w-full max-w-md bg-card/90">
@@ -91,7 +115,7 @@ export function ProfilePage() {
               <Lock size={32} className="mx-auto text-primary" />
               <div className="space-y-1">
                 <h3 className="font-bold">{initialData.fullName}</h3>
-                <p className="text-xs text-muted-foreground">Protected Intro</p>
+                <p className="text-xs text-muted-foreground">Protected Introduction</p>
               </div>
               <form onSubmit={handleVerify} className="space-y-3">
                 <Input type="password" placeholder="Password..." className="h-12 rounded-xl" value={password} onChange={(e) => setPassword(e.target.value)} />
@@ -100,11 +124,16 @@ export function ProfilePage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="w-full h-full flex flex-col items-center">
-             <ProfileCard data={{ ...displayData, bio: displayData.activeVariant?.bio }} slug={slug} className="shadow-none border-none scale-[0.98]" />
-             <Button variant="ghost" size="sm" onClick={handleCalendarExport} className="mt-4 text-[10px] uppercase font-black tracking-widest text-muted-foreground">
-               <Calendar size={12} className="mr-2" /> Add to Calendar
-             </Button>
+          <div className="w-full flex flex-col items-center">
+             <ProfileCard data={{ ...displayData, bio: displayData.activeVariant?.bio }} slug={slug} className="shadow-none border-none" />
+             <div className="flex gap-4 mt-6">
+               <Button variant="ghost" size="sm" onClick={handleCalendarExport} className="text-[10px] uppercase font-black tracking-widest text-muted-foreground">
+                 <Calendar size={12} className="mr-2" /> Add to Calendar
+               </Button>
+               <Button variant="ghost" size="sm" onClick={handleShare} className="text-[10px] uppercase font-black tracking-widest text-muted-foreground">
+                 <Share2 size={12} className="mr-2" /> Share
+               </Button>
+             </div>
           </div>
         )}
       </AnimatePresence>
@@ -115,11 +144,13 @@ export function ProfilePage() {
       <ThemeToggle className="fixed top-6 right-6" />
       <main className="max-w-2xl mx-auto py-16 md:py-24 lg:py-32 px-6 flex flex-col items-center">
         <div className="w-full max-w-md mb-12 flex items-center justify-between no-print">
-          <Link to="/" className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5">
-            <ChevronLeft size={14} /> Back
+          <Link to="/" className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5 group">
+            <ChevronLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> Back
           </Link>
-          <div className="text-[10px] font-black uppercase tracking-[0.2em] text-primary bg-primary/5 px-3 py-1.5 rounded-full border border-primary/10">
-            {displayData?.activeVariant?.name || 'Standard'}
+          <div className="flex items-center gap-3">
+            <div className="text-[10px] font-black uppercase tracking-[0.2em] text-primary bg-primary/5 px-3 py-1.5 rounded-full border border-primary/10">
+              {displayData?.activeVariant?.name || 'Standard'}
+            </div>
           </div>
         </div>
         <AnimatePresence mode="wait">
@@ -146,11 +177,24 @@ export function ProfilePage() {
             </motion.div>
           ) : (
             <motion.div key="unlocked" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
-              <div className="relative">
+              <div className="relative group/card">
                  <ProfileCard data={{ ...displayData, bio: displayData.activeVariant?.bio }} slug={slug} />
-                 <Button variant="outline" size="icon" onClick={handleCalendarExport} className="absolute -right-16 top-0 hidden lg:flex rounded-2xl size-14 border-2 shadow-soft bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800" title="Export to Calendar">
-                    <Calendar className="size-6 text-primary" />
-                 </Button>
+                 <div className="absolute -right-20 top-0 hidden lg:flex flex-col gap-3 no-print">
+                   <Button variant="outline" size="icon" onClick={handleCalendarExport} className="rounded-2xl size-14 border-2 shadow-soft bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 transition-all hover:scale-110 active:scale-95" title="Export to Calendar">
+                      <Calendar className="size-6 text-primary" />
+                   </Button>
+                   <Button variant="outline" size="icon" onClick={handleShare} className="rounded-2xl size-14 border-2 shadow-soft bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 transition-all hover:scale-110 active:scale-95" title="Share Profile">
+                      <Share2 className="size-6 text-muted-foreground hover:text-primary transition-colors" />
+                   </Button>
+                 </div>
+              </div>
+              <div className="mt-12 flex lg:hidden justify-center gap-4 no-print">
+                <Button onClick={handleCalendarExport} className="rounded-2xl h-14 px-6 gap-3 font-bold shadow-soft">
+                  <Calendar size={20} /> Add to Calendar
+                </Button>
+                <Button variant="outline" onClick={handleShare} className="rounded-2xl h-14 px-6 gap-3 font-bold">
+                  <Share2 size={20} /> Share
+                </Button>
               </div>
               {isOwner && (
                 <motion.div
@@ -159,9 +203,14 @@ export function ProfilePage() {
                   transition={{ delay: 0.8 }}
                   className="mt-20 w-full pt-12 border-t border-dashed no-print"
                 >
-                  <div className="flex items-center gap-3 mb-6 text-primary">
-                    <Share2 size={20} />
-                    <span className="text-xs font-black uppercase tracking-[0.3em]">Creator Tools</span>
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3 text-primary">
+                      <Sparkles size={20} />
+                      <span className="text-xs font-black uppercase tracking-[0.3em]">Owner Dashboard</span>
+                    </div>
+                    <Button variant="ghost" asChild className="text-[10px] uppercase font-black tracking-widest text-muted-foreground hover:text-primary rounded-xl">
+                      <Link to={`/${slug}/edit`}>Manage Introduction</Link>
+                    </Button>
                   </div>
                   <CopyBlurbGroup
                     fullName={displayData.fullName}
@@ -170,11 +219,6 @@ export function ProfilePage() {
                     url={window.location.href}
                     className="bg-card/30 p-8 rounded-[2rem] border-2 border-dashed border-primary/10"
                   />
-                  <div className="mt-8 text-center">
-                    <Button variant="ghost" asChild className="text-[11px] uppercase font-black tracking-widest text-muted-foreground hover:text-primary rounded-xl">
-                      <Link to={`/${slug}/edit`}>Open Management Dashboard</Link>
-                    </Button>
-                  </div>
                 </motion.div>
               )}
             </motion.div>

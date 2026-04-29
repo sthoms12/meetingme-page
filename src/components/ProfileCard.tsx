@@ -42,11 +42,12 @@ export function ProfileCard({ data, className, slug }: ProfileCardProps) {
   const displayFullName = fullName || 'Your Name';
   const displayJobTitle = jobTitle || 'Professional Title';
   const displayCompany = company || 'Organization';
-  const displayBio = bio || 'Craft a brief, powerful introduction to share before your next high-stakes meeting...';
+  const displayBio = bio || 'Craft a brief, powerful introduction to share before your next high-stakes meeting. Introduce yourself on your own terms.';
   const topicsArray = Array.isArray(topics)
     ? topics
     : (typeof topics === 'string' ? topics.split(',').map(t => t.trim()).filter(Boolean) : []);
-  const handleCalendarExport = () => {
+  const handleCalendarExport = (e: React.MouseEvent) => {
+    e.preventDefault();
     downloadMeetingICS({
       fullName: displayFullName,
       jobTitle: displayJobTitle,
@@ -63,7 +64,7 @@ export function ProfileCard({ data, className, slug }: ProfileCardProps) {
       transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
       className={cn("w-full max-w-md mx-auto print:max-w-none print:transform-none", className)}
     >
-      <Card className="overflow-hidden border-border/60 shadow-soft rounded-[2.5rem] bg-white dark:bg-slate-950 print:border print:bg-white print:text-black">
+      <Card className="overflow-hidden border-border/60 shadow-soft rounded-[2.5rem] bg-white dark:bg-slate-950 print:border print:bg-white print:text-black transition-colors duration-300">
         <CardHeader className="flex flex-col items-center pt-14 pb-8 print:pt-6">
           <Avatar className="w-32 h-32 border-8 border-slate-50 dark:border-slate-900 shadow-sm print:border-slate-100 overflow-hidden bg-slate-100 dark:bg-slate-900">
             {profilePhoto && profilePhoto.trim() !== '' ? (
@@ -82,16 +83,16 @@ export function ProfileCard({ data, className, slug }: ProfileCardProps) {
             </p>
           </div>
         </CardHeader>
-        <CardContent className="px-10 pb-14 space-y-9 print:pb-6">
+        <CardContent className="px-10 pb-14 space-y-10 print:pb-6">
           {(focus || topicsArray.length > 0) && (
-            <div className="space-y-5 p-6 rounded-3xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 transition-all">
+            <div className="space-y-5 p-6 rounded-3xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 transition-all hover:border-primary/20">
               {focus && (
                 <div className="flex items-start gap-3.5">
                   <div className="mt-0.5 p-1.5 rounded-lg bg-primary/10 text-primary">
                     <Target size={16} className="shrink-0" />
                   </div>
                   <div className="space-y-1">
-                    <span className="text-[10px] uppercase font-black tracking-widest text-muted-foreground/60 block leading-none">Meeting Focus</span>
+                    <span className="text-[10px] uppercase font-black tracking-widest text-muted-foreground/60 block leading-none">Primary Focus</span>
                     <p className="text-[15px] font-bold text-slate-900 dark:text-slate-100 leading-tight">
                       {focus}
                     </p>
@@ -113,52 +114,55 @@ export function ProfileCard({ data, className, slug }: ProfileCardProps) {
             "{displayBio}"
           </div>
           {meetingNote && meetingNote.trim() !== '' && (
-            <div className="p-6 rounded-3xl bg-primary/5 dark:bg-primary/10 border-2 border-primary/10 relative group transition-all print:bg-slate-50">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="p-1.5 rounded-lg bg-primary text-white shadow-sm flex items-center justify-center">
+            <div className="p-7 rounded-[2rem] bg-primary/5 dark:bg-primary/10 border-2 border-primary/10 relative group transition-all hover:bg-primary/[0.08] print:bg-slate-50">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-1.5 rounded-lg bg-primary text-white shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform">
                   <Info size={14} />
                 </div>
                 <span className="text-[11px] font-black uppercase tracking-[0.2em] text-primary">Pre-Meeting Context</span>
               </div>
-              <p className="text-sm md:text-base font-semibold text-slate-800 dark:text-slate-200 leading-relaxed print:text-black whitespace-pre-wrap">
+              <p className="text-sm md:text-base font-bold text-slate-800 dark:text-slate-200 leading-relaxed print:text-black whitespace-pre-wrap">
                 {meetingNote}
               </p>
             </div>
           )}
           <div className="flex flex-col gap-3 no-print pt-4">
-            <Button onClick={handleCalendarExport} variant="outline" className="w-full justify-start gap-4 h-14 rounded-2xl transition-all active:scale-[0.98] border-slate-200 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Calendar className="size-5 text-primary" />
+            <Button 
+              onClick={handleCalendarExport} 
+              className="w-full justify-start gap-4 h-15 rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98] bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 text-white font-bold h-14"
+            >
+              <div className="p-2 rounded-lg bg-white/20">
+                <Calendar className="size-5 text-white" />
               </div>
-              <span className="font-bold text-[15px]">Add to Calendar</span>
+              <span className="text-[15px]">Add to Calendar</span>
             </Button>
             {linkedinUrl && linkedinUrl.trim() !== '' && (
-              <Button asChild variant="outline" className="w-full justify-start gap-4 h-14 rounded-2xl transition-all active:scale-[0.98] border-slate-200 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900">
+              <Button asChild variant="outline" className="w-full justify-start gap-4 h-14 rounded-2xl transition-all active:scale-[0.98] border-slate-200 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900 group">
                 <a href={linkedinUrl} target="_blank" rel="noopener noreferrer">
                   <div className="p-2 rounded-lg bg-[#0077b5]/10 group-hover:bg-[#0077b5]/20 transition-colors">
                     <Linkedin className="size-5 text-[#0077b5]" />
                   </div>
-                  <span className="font-bold text-[15px]">LinkedIn Profile</span>
+                  <span className="font-bold text-[15px] group-hover:text-slate-900 dark:group-hover:text-white transition-colors">LinkedIn Profile</span>
                 </a>
               </Button>
             )}
             {websiteUrl && websiteUrl.trim() !== '' && (
-              <Button asChild variant="outline" className="w-full justify-start gap-4 h-14 rounded-2xl transition-all active:scale-[0.98] border-slate-200 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900">
+              <Button asChild variant="outline" className="w-full justify-start gap-4 h-14 rounded-2xl transition-all active:scale-[0.98] border-slate-200 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900 group">
                 <a href={websiteUrl} target="_blank" rel="noopener noreferrer">
-                  <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
-                    <Globe className="size-5 text-primary" />
+                  <div className="p-2 rounded-lg bg-emerald-500/10 group-hover:bg-emerald-500/20 transition-colors">
+                    <Globe className="size-5 text-emerald-500" />
                   </div>
-                  <span className="font-bold text-[15px]">Personal Website</span>
+                  <span className="font-bold text-[15px] group-hover:text-slate-900 dark:group-hover:text-white transition-colors">Personal Website</span>
                 </a>
               </Button>
             )}
             {videoUrl && videoUrl.trim() !== '' && (
-              <Button asChild variant="outline" className="w-full justify-start gap-4 h-14 rounded-2xl transition-all active:scale-[0.98] border-slate-200 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900">
+              <Button asChild variant="outline" className="w-full justify-start gap-4 h-14 rounded-2xl transition-all active:scale-[0.98] border-slate-200 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900 group">
                 <a href={videoUrl} target="_blank" rel="noopener noreferrer">
                   <div className="p-2 rounded-lg bg-rose-500/10 group-hover:bg-rose-500/20 transition-colors">
                     <Video className="size-5 text-rose-500" />
                   </div>
-                  <span className="font-bold text-[15px]">Video Introduction</span>
+                  <span className="font-bold text-[15px] group-hover:text-slate-900 dark:group-hover:text-white transition-colors">Video Introduction</span>
                 </a>
               </Button>
             )}

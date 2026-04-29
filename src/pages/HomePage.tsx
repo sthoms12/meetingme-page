@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'sonner';
 import QRCode from 'qrcode';
-import { Sparkles, Send, ShieldCheck, LayoutGrid, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Sparkles, Send, ShieldCheck, LayoutGrid, Image as ImageIcon, Loader2, Link as LinkIcon, Linkedin, Globe, Video } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -24,6 +24,9 @@ const formSchema = z.object({
   topics: z.string().optional().or(z.literal('')),
   meetingNote: z.string().max(200, 'Max 200 chars').optional().or(z.literal('')),
   profilePhoto: z.string().optional().or(z.literal('')),
+  linkedinUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
+  websiteUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
+  videoUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
   customSlug: z.string().regex(/^[a-z0-9-]*$/, 'Lower, numbers, hyphens').min(3, '3+ chars').optional().or(z.literal('')),
   password: z.string().min(4).optional().or(z.literal('')),
   variantName: z.string().min(1, 'Required'),
@@ -40,6 +43,7 @@ export function HomePage() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       fullName: '', jobTitle: '', company: '', bio: '', focus: '', topics: '', meetingNote: '', profilePhoto: '',
+      linkedinUrl: '', websiteUrl: '', videoUrl: '',
       customSlug: '', password: '', variantName: 'Default', variantSlug: 'intro'
     },
   });
@@ -98,14 +102,14 @@ export function HomePage() {
         <ThemeToggle />
         <header className="max-w-3xl space-y-6">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-[11px] font-black uppercase tracking-[0.2em] shadow-sm border border-primary/5">
-            <Sparkles size={14} /> <span>V2 Professional Suite</span>
+            <Sparkles size={14} /> <span>Professional Network Tools</span>
           </div>
           <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-slate-900 dark:text-white leading-[1.05]">
-            The professional introduction for <br />
-            <span className="text-primary">founders, sales, & pros</span>.
+            Professional context <br />
+            <span className="text-primary">before the meeting</span>.
           </h1>
           <p className="text-slate-500 dark:text-slate-400 text-lg md:text-xl max-w-2xl leading-relaxed">
-            Perfect for client-facing roles, investor pitches, and executive networking. Share your context and intent before the meeting starts.
+            Send a single link to introduce yourself. No ads, no fluff, just the facts your audience needs to know.
           </p>
         </header>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
@@ -181,8 +185,46 @@ export function HomePage() {
                   </div>
                   <div className="pt-8 border-t space-y-8">
                     <div className="flex items-center gap-3">
+                      <LinkIcon className="text-primary size-5" />
+                      <span className="text-sm font-black uppercase tracking-[0.2em]">Professional Links</span>
+                    </div>
+                    <div className="grid grid-cols-1 gap-6">
+                      <FormField control={form.control} name="linkedinUrl" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">LinkedIn Profile</FormLabel>
+                          <div className="relative">
+                            <Linkedin className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                            <FormControl><Input className="h-12 pl-10 rounded-xl" placeholder="https://linkedin.com/in/username" {...field} /></FormControl>
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                      <FormField control={form.control} name="websiteUrl" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Personal Website</FormLabel>
+                          <div className="relative">
+                            <Globe className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                            <FormControl><Input className="h-12 pl-10 rounded-xl" placeholder="https://yourwebsite.com" {...field} /></FormControl>
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                      <FormField control={form.control} name="videoUrl" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Video Intro URL (Loom/Youtube)</FormLabel>
+                          <div className="relative">
+                            <Video className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                            <FormControl><Input className="h-12 pl-10 rounded-xl" placeholder="https://loom.com/share/..." {...field} /></FormControl>
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                    </div>
+                  </div>
+                  <div className="pt-8 border-t space-y-8">
+                    <div className="flex items-center gap-3">
                       <LayoutGrid className="text-primary size-5" />
-                      <span className="text-sm font-black uppercase tracking-[0.2em]">Primary Context</span>
+                      <span className="text-sm font-black uppercase tracking-[0.2em]">Default Context</span>
                     </div>
                     <FormField control={form.control} name="variantName" render={({ field }) => (
                       <FormItem>

@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Save, ArrowLeft, Loader2, ShieldAlert, Plus, Trash2, LayoutGrid, ExternalLink, Image as ImageIcon, BarChart3, History, Code, Calendar as CalendarIcon, Clock } from 'lucide-react';
+import { Save, ArrowLeft, Loader2, ShieldAlert, Plus, Trash2, LayoutGrid, ExternalLink, Image as ImageIcon, BarChart3, History, Code, Calendar as CalendarIcon, Clock, Linkedin, Globe, Video, Link as LinkIcon, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -18,12 +18,15 @@ import { CopyBlurbGroup } from '@/components/CopyBlurbGroup';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { nanoid } from 'nanoid';
 import { cn } from '@/lib/utils';
-import type { Profile, ApiResponse, ViewLog } from '@shared/types';
+import type { Profile, ApiResponse } from '@shared/types';
 const formSchema = z.object({
   fullName: z.string().min(2),
   jobTitle: z.string().min(2),
   company: z.string().min(2),
   profilePhoto: z.string().optional().or(z.literal('')),
+  linkedinUrl: z.string().url().optional().or(z.literal('')),
+  websiteUrl: z.string().url().optional().or(z.literal('')),
+  videoUrl: z.string().url().optional().or(z.literal('')),
   variants: z.array(z.object({
     id: z.string(),
     name: z.string().min(1),
@@ -39,7 +42,6 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 export function EditPage() {
   const { slug } = useParams<{ slug: string }>();
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isUpdating, setIsUpdating] = useState(false);
   const [activeVariantIndex, setActiveVariantIndex] = useState(0);
@@ -57,7 +59,9 @@ export function EditPage() {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      fullName: '', jobTitle: '', company: '', profilePhoto: '', variants: [], primaryVariantId: ''
+      fullName: '', jobTitle: '', company: '', profilePhoto: '', 
+      linkedinUrl: '', websiteUrl: '', videoUrl: '',
+      variants: [], primaryVariantId: ''
     }
   });
   useEffect(() => {
@@ -67,6 +71,9 @@ export function EditPage() {
         jobTitle: profile.jobTitle,
         company: profile.company,
         profilePhoto: profile.profilePhoto || '',
+        linkedinUrl: profile.linkedinUrl || '',
+        websiteUrl: profile.websiteUrl || '',
+        videoUrl: profile.videoUrl || '',
         variants: profile.variants.map(v => ({
           id: v.id,
           name: v.name,
@@ -151,6 +158,21 @@ export function EditPage() {
     form.setValue('variants', [...current, newVariant]);
     setActiveVariantIndex(current.length);
   };
+  const deleteVariant = (index: number) => {
+    const current = form.getValues('variants');
+    if (current.length <= 1) return;
+    const variantToDelete = current[index];
+    const filtered = current.filter((_, i) => i !== index);
+    if (form.getValues('primaryVariantId') === variantToDelete.id) {
+      form.setValue('primaryVariantId', filtered[0].id);
+    }
+    form.setValue('variants', filtered);
+    setActiveVariantIndex(0);
+  };
+  const setPrimary = (id: string) => {
+    form.setValue('primaryVariantId', id);
+    toast.success('Primary variant updated (don\'t forget to save)');
+  };
   if (!editToken) return (
     <div className="max-w-md mx-auto py-32 text-center space-y-8 px-6">
       <div className="size-20 rounded-3xl bg-destructive/10 text-destructive flex items-center justify-center mx-auto"><ShieldAlert size={40} /></div>
@@ -179,7 +201,7 @@ export function EditPage() {
             <Link to={`/${slug}`} className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 hover:text-primary transition-colors">
               <ArrowLeft size={14} /> Back to Live Page
             </Link>
-            <h1 className="text-4xl font-bold tracking-tight">V2 Professional Dashboard</h1>
+            <h1 className="text-4xl font-bold tracking-tight">Professional Dashboard</h1>
           </div>
           <Button onClick={form.handleSubmit(onSubmit)} disabled={isUpdating} size="lg" className="h-14 px-10 text-lg font-bold rounded-2xl shadow-lg shadow-primary/20 active:scale-95 transition-all">
             {isUpdating ? <Loader2 className="size-5 animate-spin mr-3" /> : <Save size={20} className="mr-3" />}
@@ -195,7 +217,7 @@ export function EditPage() {
               <BarChart3 size={16} className="mr-2" /> Analytics
             </TabsTrigger>
             <TabsTrigger value="embed" className="rounded-xl px-6 py-3 data-[state=active]:bg-background data-[state=active]:shadow-sm">
-              <Code size={16} className="mr-2" /> Embed Widget
+              <Code size={16} className="mr-2" /> Embed
             </TabsTrigger>
             <TabsTrigger value="history" className="rounded-xl px-6 py-3 data-[state=active]:bg-background data-[state=active]:shadow-sm">
               <History size={16} className="mr-2" /> Version History
@@ -217,15 +239,21 @@ export function EditPage() {
                           : "bg-card text-muted-foreground border-slate-100 hover:border-slate-300 dark:border-slate-800"
                       )}
                     >
-                      <LayoutGrid size={16} />
-                      {v.name}
-                      <Badge className={activeVariantIndex === i ? "bg-primary text-white border-primary" : "bg-muted text-muted-foreground"}>
-                        {v.views}
-                      </Badge>
+                      <div className="flex flex-col items-start gap-1">
+                        <span className="flex items-center gap-2">
+                          {v.name}
+                          {watchAll.primaryVariantId === v.id && (
+                            <CheckCircle2 size={14} className="text-primary-foreground dark:text-primary" />
+                          )}
+                        </span>
+                        <Badge className={activeVariantIndex === i ? "bg-primary text-white border-primary" : "bg-muted text-muted-foreground"}>
+                          {v.views} views
+                        </Badge>
+                      </div>
                     </button>
                   ))}
                   {watchAll.variants?.length < 3 && (
-                    <Button variant="outline" size="icon" type="button" onClick={addVariant} className="rounded-2xl border-2 border-dashed h-14 w-14 shrink-0">
+                    <Button variant="outline" size="icon" type="button" onClick={addVariant} className="rounded-2xl border-2 border-dashed h-[4.5rem] w-14 shrink-0">
                       <Plus size={24} />
                     </Button>
                   )}
@@ -234,15 +262,24 @@ export function EditPage() {
                   <div className="space-y-12">
                     <div className="bg-card p-8 md:p-10 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-soft space-y-8">
                       <div className="flex items-center justify-between">
-                        <h3 className="text-sm font-black uppercase tracking-widest text-primary">Variant Details: {currentVariant?.name}</h3>
+                        <div className="flex flex-col gap-1">
+                          <h3 className="text-sm font-black uppercase tracking-widest text-primary">Variant Details: {currentVariant?.name}</h3>
+                          {watchAll.primaryVariantId === currentVariant?.id ? (
+                            <span className="text-[10px] text-green-600 font-bold uppercase tracking-widest flex items-center gap-1">
+                              <CheckCircle2 size={10} /> Currently Primary
+                            </span>
+                          ) : (
+                            <button 
+                              type="button" 
+                              onClick={() => currentVariant && setPrimary(currentVariant.id)}
+                              className="text-[10px] text-muted-foreground hover:text-primary font-bold uppercase tracking-widest text-left transition-colors"
+                            >
+                              Set as Primary Variant
+                            </button>
+                          )}
+                        </div>
                         {watchAll.variants.length > 1 && (
-                          <Button variant="ghost" size="sm" type="button" onClick={() => {
-                            if (confirm("Delete this variant?")) {
-                              const filtered = watchAll.variants.filter((_, i) => i !== activeVariantIndex);
-                              form.setValue('variants', filtered);
-                              setActiveVariantIndex(0);
-                            }
-                          }} className="text-destructive hover:bg-destructive/5 uppercase font-black text-[10px] tracking-widest">
+                          <Button variant="ghost" size="sm" type="button" onClick={() => deleteVariant(activeVariantIndex)} className="text-destructive hover:bg-destructive/5 uppercase font-black text-[10px] tracking-widest">
                             <Trash2 size={16} className="mr-2" /> Delete
                           </Button>
                         )}
@@ -271,6 +308,10 @@ export function EditPage() {
                       )} />
                     </div>
                     <div className="space-y-10 pt-10 border-t border-dashed">
+                       <div className="flex items-center gap-3">
+                        <LinkIcon className="text-primary size-5" />
+                        <span className="text-sm font-black uppercase tracking-[0.2em]">Global Identity & Links</span>
+                      </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <FormField control={form.control} name="fullName" render={({ field }) => (
                           <FormItem><FormLabel className="text-sm font-bold">Global Name</FormLabel><FormControl><Input className="bg-secondary/40 h-14 rounded-2xl border-none" {...field} /></FormControl></FormItem>
@@ -285,6 +326,35 @@ export function EditPage() {
                           <ImageIcon size={18} className="mr-2 text-primary" /> Update Photo
                         </Button>
                         {watchAll.profilePhoto && <div className="size-14 rounded-2xl border bg-muted overflow-hidden"><img src={watchAll.profilePhoto} className="w-full h-full object-cover" alt="Preview" /></div>}
+                      </div>
+                      <div className="grid grid-cols-1 gap-6 pt-4">
+                        <FormField control={form.control} name="linkedinUrl" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">LinkedIn URL</FormLabel>
+                            <div className="relative">
+                              <Linkedin className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                              <FormControl><Input className="bg-secondary/40 h-12 pl-10 rounded-xl border-none" {...field} /></FormControl>
+                            </div>
+                          </FormItem>
+                        )} />
+                        <FormField control={form.control} name="websiteUrl" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Website URL</FormLabel>
+                            <div className="relative">
+                              <Globe className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                              <FormControl><Input className="bg-secondary/40 h-12 pl-10 rounded-xl border-none" {...field} /></FormControl>
+                            </div>
+                          </FormItem>
+                        )} />
+                        <FormField control={form.control} name="videoUrl" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Video Intro URL</FormLabel>
+                            <div className="relative">
+                              <Video className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                              <FormControl><Input className="bg-secondary/40 h-12 pl-10 rounded-xl border-none" {...field} /></FormControl>
+                            </div>
+                          </FormItem>
+                        )} />
                       </div>
                     </div>
                   </div>
@@ -333,8 +403,8 @@ export function EditPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
               <div className="space-y-8">
                 <div className="space-y-4">
-                  <h2 className="text-3xl font-bold">Embed Your MeetingMe Card</h2>
-                  <p className="text-muted-foreground">Add a professional intro widget to your personal website or company portal. Perfect for contact pages.</p>
+                  <h2 className="text-3xl font-bold">Professional Widget</h2>
+                  <p className="text-muted-foreground">Embed your intro card directly on your website. Responsive and lightweight.</p>
                 </div>
                 <div className="bg-slate-900 text-slate-100 p-8 rounded-3xl relative group font-mono text-sm border-4 border-slate-800">
                   <div className="break-all whitespace-pre-wrap">{embedCode}</div>
@@ -353,8 +423,8 @@ export function EditPage() {
           <TabsContent value="history" className="m-0 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <Card className="rounded-[2.5rem] border-none shadow-soft overflow-hidden">
               <CardHeader>
-                <CardTitle>Variant History</CardTitle>
-                <CardDescription>We auto-save a snapshot of your variants before every update. Restore previous versions anytime.</CardDescription>
+                <CardTitle>Variant Snapshots</CardTitle>
+                <CardDescription>We auto-save a snapshot before every global update. Restore previous versions anytime.</CardDescription>
               </CardHeader>
               <CardContent className="p-0">
                 <div className="divide-y border-t">
@@ -367,7 +437,7 @@ export function EditPage() {
                           <div className="text-sm text-muted-foreground">{new Date(h.timestamp).toLocaleString()}</div>
                         </div>
                       </div>
-                      <Button variant="outline" className="rounded-xl px-6" onClick={() => handleRestore(h.timestamp)}>Restore Snapshot</Button>
+                      <Button variant="outline" className="rounded-xl px-6" onClick={() => handleRestore(h.timestamp)}>Restore</Button>
                     </div>
                   )) : <div className="p-20 text-center text-muted-foreground italic">No historical snapshots yet.</div>}
                 </div>
