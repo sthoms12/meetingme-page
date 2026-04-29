@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ProfileCard } from '@/components/ProfileCard';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { CopyBlurbGroup } from '@/components/CopyBlurbGroup';
+import { SecurityFAQ } from '@/components/SecurityFAQ';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 const formSchema = z.object({
@@ -274,6 +275,10 @@ export function HomePage() {
             <ProfileCard data={watchAll} className="scale-105 origin-top transition-transform" />
           </div>
         </div>
+
+        <section className="pt-20 pb-12 border-t border-slate-200 dark:border-slate-800">
+          <SecurityFAQ />
+        </section>
       </div>
     </div>
   );

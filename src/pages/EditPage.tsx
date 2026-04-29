@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { ProfileCard } from '@/components/ProfileCard';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { CopyBlurbGroup } from '@/components/CopyBlurbGroup';
+import { SecurityFAQ } from '@/components/SecurityFAQ';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { nanoid } from 'nanoid';
 import { cn } from '@/lib/utils';
@@ -356,6 +357,10 @@ export function EditPage() {
                           </FormItem>
                         )} />
                       </div>
+                    </div>
+
+                    <div className="pt-20 border-t border-dashed">
+                      <SecurityFAQ className="max-w-none" />
                     </div>
                   </div>
                 </Form>
