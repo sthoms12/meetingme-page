@@ -5,6 +5,7 @@ export interface ProfileVariant {
   bio: string;
   focus: string;
   topics: string[];
+  meetingNote?: string;
   views: number;
 }
 export interface Profile {
@@ -29,6 +30,7 @@ export type ProfileFormData = Omit<Profile, 'slug' | 'editToken' | 'createdAt' |
   bio: string;
   focus: string;
   topics: string; // Comma-separated for form input
+  meetingNote?: string;
 };
 export interface ProfilePublicResponse {
   fullName: string;

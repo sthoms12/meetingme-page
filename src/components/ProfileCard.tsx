@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Linkedin, Globe, Video, User, Link as LinkIcon, Target, Hash } from 'lucide-react';
+import { Linkedin, Globe, Video, User, Link as LinkIcon, Target, Hash, Info } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,7 @@ interface ProfileCardProps {
     bio?: string;
     focus?: string;
     topics?: string[] | string;
+    meetingNote?: string;
     profilePhoto?: string;
     linkedinUrl?: string;
     websiteUrl?: string;
@@ -30,6 +31,7 @@ export function ProfileCard({ data, className, slug }: ProfileCardProps) {
     bio = '',
     focus = '',
     topics = [],
+    meetingNote = '',
     profilePhoto = '',
     linkedinUrl,
     websiteUrl,
@@ -39,9 +41,8 @@ export function ProfileCard({ data, className, slug }: ProfileCardProps) {
   const displayJobTitle = jobTitle || 'Your Title';
   const displayCompany = company || 'Company';
   const displayBio = bio || 'Tell people a little bit about yourself and what you bring to the meeting...';
-  // Normalize topics to array
-  const topicsArray = Array.isArray(topics) 
-    ? topics 
+  const topicsArray = Array.isArray(topics)
+    ? topics
     : (typeof topics === 'string' ? topics.split(',').map(t => t.trim()).filter(Boolean) : []);
   return (
     <motion.div
@@ -73,7 +74,6 @@ export function ProfileCard({ data, className, slug }: ProfileCardProps) {
           </div>
         </CardHeader>
         <CardContent className="px-8 pb-10 space-y-6 print:pb-6">
-          {/* Quick Skim Header */}
           {(focus || topicsArray.length > 0) && (
             <div className="space-y-4 p-4 rounded-xl bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/50 transition-colors">
               {focus && (
@@ -96,9 +96,22 @@ export function ProfileCard({ data, className, slug }: ProfileCardProps) {
               )}
             </div>
           )}
-          <div className="text-muted-foreground text-center leading-relaxed text-pretty text-sm md:text-base dark:text-slate-300 print:text-slate-700 pt-2">
+          <div className="text-muted-foreground text-center leading-relaxed text-pretty text-sm md:text-base dark:text-slate-300 print:text-slate-700">
             {displayBio}
           </div>
+          {meetingNote && meetingNote.trim() !== '' && (
+            <div className="p-5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 relative group transition-all hover:bg-slate-100/50 dark:hover:bg-slate-800 print:bg-slate-50 print:border-slate-200">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="p-1 rounded bg-indigo-600/10 text-indigo-600">
+                  <Info size={12} />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Before we meet</span>
+              </div>
+              <p className="text-sm font-medium text-foreground leading-relaxed dark:text-slate-200 print:text-black">
+                {meetingNote}
+              </p>
+            </div>
+          )}
           <div className="flex flex-col gap-3 no-print pt-2">
             {linkedinUrl && linkedinUrl.trim() !== '' && (
               <Button asChild variant="outline" className="w-full justify-start gap-3 h-11 transition-all active:scale-[0.98]">

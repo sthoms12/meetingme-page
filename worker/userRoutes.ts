@@ -71,6 +71,7 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
       bio: body.bio,
       focus: body.focus || '',
       topics: topicsArray,
+      meetingNote: body.meetingNote || '',
       views: 0
     };
     const newProfile: Profile = {

@@ -5,7 +5,7 @@ import * as z from 'zod';
 import { toast } from 'sonner';
 import QRCode from 'qrcode';
 import {
-  Copy, Check, ExternalLink, Sparkles, Send, Lock, ShieldCheck, HelpCircle, LayoutGrid, Target, Hash
+  Copy, Check, ExternalLink, Sparkles, Send, Lock, ShieldCheck, HelpCircle, LayoutGrid, Target, Hash, Info
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,6 +24,7 @@ const formSchema = z.object({
   bio: z.string().min(10, 'Bio must be 10+ chars').max(300, 'Max 300 chars'),
   focus: z.string().max(60, 'Focus should be concise').optional().or(z.literal('')),
   topics: z.string().optional().or(z.literal('')),
+  meetingNote: z.string().max(200, 'Max 200 chars').optional().or(z.literal('')),
   profilePhoto: z.string().optional().or(z.literal('')),
   customSlug: z.string().regex(/^[a-z0-9-]*$/, 'Lower, numbers, hyphens').min(3, '3+ chars').optional().or(z.literal('')),
   password: z.string().min(4).optional().or(z.literal('')),
@@ -40,7 +41,7 @@ export function HomePage() {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      fullName: '', jobTitle: '', company: '', bio: '', focus: '', topics: '', profilePhoto: '',
+      fullName: '', jobTitle: '', company: '', bio: '', focus: '', topics: '', meetingNote: '', profilePhoto: '',
       customSlug: '', password: '', variantName: 'Default', variantSlug: 'intro'
     },
   });
@@ -86,10 +87,10 @@ export function HomePage() {
           <div className="space-y-10">
             <header className="space-y-4">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-xs font-bold dark:bg-indigo-950 dark:text-indigo-300">
-                <Sparkles size={14} /> <span>Quick Skim v2.0</span>
+                <Sparkles size={14} /> <span>Meeting Polish v3.0</span>
               </div>
               <h1 className="text-4xl md:text-5xl font-display font-bold tracking-tight">Introduce yourself <span className="text-indigo-600">beautifully</span>.</h1>
-              <p className="text-muted-foreground text-lg">Help meeting participants skim your background in 5 seconds.</p>
+              <p className="text-muted-foreground text-lg">Help meeting participants skim your background and prep in seconds.</p>
             </header>
             {publishedData ? (
               <div className="bg-card border rounded-2xl p-8 shadow-soft space-y-6 animate-scale-in">
@@ -158,6 +159,13 @@ export function HomePage() {
                         </FormItem>
                       )} />
                     </div>
+                    <FormField control={form.control} name="meetingNote" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-bold text-muted-foreground">Pre-Meeting Context (Optional)</FormLabel>
+                        <FormControl><Textarea className="h-20 resize-none bg-background" placeholder="I prefer jumping straight into the agenda..." {...field} /></FormControl>
+                        <FormDescription className="text-[10px]">What should someone know before meeting you?</FormDescription>
+                      </FormItem>
+                    )} />
                     <FormField control={form.control} name="bio" render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-xs font-bold text-muted-foreground">Personal Bio</FormLabel>

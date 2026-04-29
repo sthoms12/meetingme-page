@@ -6,7 +6,7 @@ import * as z from 'zod';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
-  Save, ArrowLeft, Loader2, ShieldAlert, Copy, ExternalLink, Plus, Trash2, LayoutGrid, Target, Hash
+  Save, ArrowLeft, Loader2, ShieldAlert, Copy, ExternalLink, Plus, Trash2, LayoutGrid, Target, Hash, Info
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,7 +29,8 @@ const formSchema = z.object({
     variantSlug: z.string().min(2),
     bio: z.string().min(10).max(300),
     focus: z.string().max(60).optional().or(z.literal('')),
-    topics: z.string().optional().or(z.literal('')), // String for input
+    topics: z.string().optional().or(z.literal('')),
+    meetingNote: z.string().max(200).optional().or(z.literal('')),
     views: z.number()
   })).min(1).max(3),
   primaryVariantId: z.string()
@@ -72,6 +73,7 @@ export function EditPage() {
           bio: v.bio,
           focus: v.focus || '',
           topics: Array.isArray(v.topics) ? v.topics.join(', ') : '',
+          meetingNote: v.meetingNote || '',
           views: v.views
         })),
         primaryVariantId: profile.primaryVariantId
@@ -82,7 +84,6 @@ export function EditPage() {
     if (!editToken || !slug) return;
     setIsUpdating(true);
     try {
-      // Map back topics from string to array for storage
       const payload = {
         ...values,
         editToken,
@@ -120,13 +121,14 @@ export function EditPage() {
       bio: 'Brief intro for this group...',
       focus: '',
       topics: '',
+      meetingNote: '',
       views: 0
     };
     form.setValue('variants', [...current, newVariant]);
     setActiveVariantIndex(current.length);
   };
   if (!editToken) return (
-    <div className="max-w-lg mx-auto py-24 text-center space-y-4">
+    <div className="max-lg mx-auto py-24 text-center space-y-4">
       <ShieldAlert className="size-12 text-destructive mx-auto" />
       <h2 className="text-xl font-bold">Token Missing</h2>
       <p className="text-muted-foreground">Private dashboard restricted to the creator device.</p>
@@ -177,7 +179,7 @@ export function EditPage() {
             <div className="space-y-6">
               <div className="bg-card p-6 rounded-2xl border space-y-5">
                 <div className="flex items-center justify-between border-b pb-4">
-                  <h3 className="text-[10px] font-black uppercase tracking-[0.1em] text-indigo-600">Skim Header & Bio</h3>
+                  <h3 className="text-[10px] font-black uppercase tracking-[0.1em] text-indigo-600">Variant Context</h3>
                   {watchAll.variants.length > 1 && (
                     <Button variant="ghost" size="sm" type="button" onClick={() => {
                       const filtered = watchAll.variants.filter((_, i) => i !== activeVariantIndex);
@@ -189,60 +191,34 @@ export function EditPage() {
                   )}
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name={`variants.${activeVariantIndex}.name`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Version Name</FormLabel>
-                        <FormControl><Input className="bg-secondary/30 h-10" {...field} /></FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name={`variants.${activeVariantIndex}.variantSlug`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Custom Path</FormLabel>
-                        <FormControl><Input className="bg-secondary/30 h-10" {...field} /></FormControl>
-                      </FormItem>
-                    )}
-                  />
+                  <FormField control={form.control} name={`variants.${activeVariantIndex}.name`} render={({ field }) => (
+                    <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Version Name</FormLabel><FormControl><Input className="bg-secondary/30 h-10" {...field} /></FormControl></FormItem>
+                  )} />
+                  <FormField control={form.control} name={`variants.${activeVariantIndex}.variantSlug`} render={({ field }) => (
+                    <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Custom Path</FormLabel><FormControl><Input className="bg-secondary/30 h-10" {...field} /></FormControl></FormItem>
+                  )} />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name={`variants.${activeVariantIndex}.focus`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Main Focus</FormLabel>
-                        <FormControl><Input className="bg-secondary/30 h-10" placeholder="e.g. Sales growth" {...field} /></FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name={`variants.${activeVariantIndex}.topics`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Topics (Comma separated)</FormLabel>
-                        <FormControl><Input className="bg-secondary/30 h-10" placeholder="e.g. SaaS, Fintech" {...field} /></FormControl>
-                      </FormItem>
-                    )}
-                  />
+                  <FormField control={form.control} name={`variants.${activeVariantIndex}.focus`} render={({ field }) => (
+                    <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Main Focus</FormLabel><FormControl><Input className="bg-secondary/30 h-10" {...field} /></FormControl></FormItem>
+                  )} />
+                  <FormField control={form.control} name={`variants.${activeVariantIndex}.topics`} render={({ field }) => (
+                    <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Topics (CSV)</FormLabel><FormControl><Input className="bg-secondary/30 h-10" {...field} /></FormControl></FormItem>
+                  )} />
                 </div>
-                <FormField
-                  control={form.control}
-                  name={`variants.${activeVariantIndex}.bio`}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Variant Specific Bio</FormLabel>
-                      <FormControl><Textarea className="h-32 bg-secondary/30 resize-none text-sm" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <FormField control={form.control} name={`variants.${activeVariantIndex}.meetingNote`} render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Pre-Meeting Context</FormLabel>
+                    <FormControl><Textarea className="h-20 bg-secondary/30 resize-none text-sm" placeholder="Tell people how you like to meet..." {...field} /></FormControl>
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name={`variants.${activeVariantIndex}.bio`} render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Variant Specific Bio</FormLabel>
+                    <FormControl><Textarea className="h-32 bg-secondary/30 resize-none text-sm" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
               </div>
               <div className="space-y-4 pt-6 border-t">
                 <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground">Shared Identity</h3>
@@ -268,7 +244,7 @@ export function EditPage() {
               <ExternalLink size={12} /> View Page
             </a>
           </div>
-          <ProfileCard data={{ ...watchAll, bio: currentVariant?.bio, focus: currentVariant?.focus, topics: currentVariant?.topics }} />
+          <ProfileCard data={{ ...watchAll, bio: currentVariant?.bio, focus: currentVariant?.focus, topics: currentVariant?.topics, meetingNote: currentVariant?.meetingNote }} />
           <CopyBlurbGroup
             fullName={watchAll.fullName}
             jobTitle={watchAll.jobTitle}
