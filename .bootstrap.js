@@ -79,7 +79,7 @@ function updateWranglerJsonc() {
 function runSetupCommands() {
     const commands = [
     "bun add nanoid@^5.0.0 qrcode lucide-react@0.525.0",
-    "bun add qrcode",
+    "bun add qrcode @types/qrcode nanoid",
     "bun add -D @types/qrcode",
     "bun install qrcode @types/qrcode",
     "bun add lucide-react",
