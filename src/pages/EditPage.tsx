@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Save, ArrowLeft, Loader2, ShieldAlert, Plus, Trash2, LayoutGrid, ExternalLink, Image as ImageIcon, BarChart3, History, Code, Calendar as CalendarIcon, Clock, Linkedin, Globe, Video, Link as LinkIcon, CheckCircle2, Twitter, Github, Phone, QrCode, Lock } from 'lucide-react';
+import { Save, ArrowLeft, Loader2, ShieldAlert, Plus, Trash2, LayoutGrid, ExternalLink, Image as ImageIcon, BarChart3, History, Code, Calendar as CalendarIcon, Clock, Linkedin, Globe, Video, Link as LinkIcon, CheckCircle2, Twitter, GitHub, Phone, QrCode, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -63,7 +63,7 @@ export function EditPage() {
       setSearchParams(newParams, { replace: true });
       toast.success('Management access restored');
     }
-  }, [searchParams, slug, setSearchParams]);
+  }, [searchParams.get('token'), slug]);
   const editToken = useMemo(() => slug ? localStorage.getItem(`profile_${slug}_token`) : null, [slug]);
   const { data: profile, isLoading } = useQuery<Profile>({
     queryKey: ['profile-manage', slug, editToken],
@@ -119,9 +119,13 @@ export function EditPage() {
         primaryVariantId: profile.primaryVariantId
       });
     }
-  }, [profile, form]);
+  }, [profile]);
   const handleRestore = async (timestamp: string) => {
     if (!confirm('Restore this version history? Current variant details will be moved to history.')) return;
+    if (!editToken) {
+      toast.error('No edit token available');
+      return;
+    }
     try {
       const res = await fetch(`/api/profiles/${slug}/history/restore`, {
         method: 'POST',
