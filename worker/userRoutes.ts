@@ -25,7 +25,6 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     const stub = c.env.GlobalDurableObject.get(c.env.GlobalDurableObject.idFromName("global"));
     const profile = await stub.getProfile(slug);
     if (!profile) return c.json({ success: false, error: 'Profile not found' }, 404);
-    // If editToken matches, return full profile data for management
     if (editToken && profile.editToken === editToken) {
       return c.json({ success: true, data: profile });
     }
@@ -64,11 +63,14 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     if (body.customSlug && !isValidSlug(slug)) return c.json({ success: false, error: 'Invalid format' }, 400);
     if (await stub.getProfile(slug)) return c.json({ success: false, error: 'Taken' }, 409);
     const variantId = nanoid();
+    const topicsArray = body.topics ? body.topics.split(',').map(t => t.trim()).filter(Boolean) : [];
     const initialVariant: ProfileVariant = {
       id: variantId,
       name: body.variantName || 'Default',
       variantSlug: body.variantSlug || 'intro',
       bio: body.bio,
+      focus: body.focus || '',
+      topics: topicsArray,
       views: 0
     };
     const newProfile: Profile = {
@@ -91,7 +93,7 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
   });
   app.put('/api/profiles/:slug', async (c) => {
     const slug = c.req.param('slug');
-    const body = (await c.req.json()) as Partial<Profile> & { editToken: string; removePassword?: boolean; password?: string };
+    const body = (await c.req.json()) as any;
     const stub = c.env.GlobalDurableObject.get(c.env.GlobalDurableObject.idFromName("global"));
     const existing = await stub.getProfile(slug);
     if (!existing || existing.editToken !== body.editToken) {

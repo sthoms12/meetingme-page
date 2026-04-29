@@ -3,6 +3,8 @@ export interface ProfileVariant {
   name: string;
   variantSlug: string; // e.g. "default", "client", "interview"
   bio: string;
+  focus: string;
+  topics: string[];
   views: number;
 }
 export interface Profile {
@@ -24,7 +26,9 @@ export type ProfileFormData = Omit<Profile, 'slug' | 'editToken' | 'createdAt' |
   password?: string;
   variantName: string;
   variantSlug: string;
-  bio: string; // Initial bio for the first variant
+  bio: string;
+  focus: string;
+  topics: string; // Comma-separated for form input
 };
 export interface ProfilePublicResponse {
   fullName: string;

@@ -1,9 +1,10 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Linkedin, Globe, Video, User, Link as LinkIcon } from 'lucide-react';
+import { Linkedin, Globe, Video, User, Link as LinkIcon, Target, Hash } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 interface ProfileCardProps {
   data: {
@@ -11,6 +12,8 @@ interface ProfileCardProps {
     jobTitle?: string;
     company?: string;
     bio?: string;
+    focus?: string;
+    topics?: string[] | string;
     profilePhoto?: string;
     linkedinUrl?: string;
     websiteUrl?: string;
@@ -25,6 +28,8 @@ export function ProfileCard({ data, className, slug }: ProfileCardProps) {
     jobTitle = '',
     company = '',
     bio = '',
+    focus = '',
+    topics = [],
     profilePhoto = '',
     linkedinUrl,
     websiteUrl,
@@ -34,6 +39,10 @@ export function ProfileCard({ data, className, slug }: ProfileCardProps) {
   const displayJobTitle = jobTitle || 'Your Title';
   const displayCompany = company || 'Company';
   const displayBio = bio || 'Tell people a little bit about yourself and what you bring to the meeting...';
+  // Normalize topics to array
+  const topicsArray = Array.isArray(topics) 
+    ? topics 
+    : (typeof topics === 'string' ? topics.split(',').map(t => t.trim()).filter(Boolean) : []);
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -63,16 +72,39 @@ export function ProfileCard({ data, className, slug }: ProfileCardProps) {
             </p>
           </div>
         </CardHeader>
-        <CardContent className="px-8 pb-10 space-y-8 print:pb-6">
-          <div className="text-muted-foreground text-center leading-relaxed text-pretty text-sm md:text-base dark:text-slate-300 print:text-slate-700">
+        <CardContent className="px-8 pb-10 space-y-6 print:pb-6">
+          {/* Quick Skim Header */}
+          {(focus || topicsArray.length > 0) && (
+            <div className="space-y-4 p-4 rounded-xl bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/50 transition-colors">
+              {focus && (
+                <div className="flex items-start gap-2">
+                  <Target size={14} className="mt-1 text-indigo-600 shrink-0" />
+                  <p className="text-sm font-bold text-indigo-900 dark:text-indigo-300 leading-tight">
+                    <span className="text-[10px] uppercase tracking-wider opacity-60 block">Focus</span>
+                    {focus}
+                  </p>
+                </div>
+              )}
+              {topicsArray.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {topicsArray.map((topic, i) => (
+                    <Badge key={i} variant="secondary" className="bg-white/80 dark:bg-slate-800 border-indigo-100 text-[10px] font-bold px-2 py-0.5 shadow-sm">
+                      #{topic}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          <div className="text-muted-foreground text-center leading-relaxed text-pretty text-sm md:text-base dark:text-slate-300 print:text-slate-700 pt-2">
             {displayBio}
           </div>
-          <div className="flex flex-col gap-3 no-print">
+          <div className="flex flex-col gap-3 no-print pt-2">
             {linkedinUrl && linkedinUrl.trim() !== '' && (
               <Button asChild variant="outline" className="w-full justify-start gap-3 h-11 transition-all active:scale-[0.98]">
                 <a href={linkedinUrl} target="_blank" rel="noopener noreferrer">
                   <Linkedin className="size-4 text-[#0077b5]" />
-                  <span className="font-medium">LinkedIn Profile</span>
+                  <span className="font-medium text-sm">LinkedIn Profile</span>
                 </a>
               </Button>
             )}
@@ -80,7 +112,7 @@ export function ProfileCard({ data, className, slug }: ProfileCardProps) {
               <Button asChild variant="outline" className="w-full justify-start gap-3 h-11 transition-all active:scale-[0.98]">
                 <a href={websiteUrl} target="_blank" rel="noopener noreferrer">
                   <Globe className="size-4 text-indigo-500" />
-                  <span className="font-medium">Personal Website</span>
+                  <span className="font-medium text-sm">Personal Website</span>
                 </a>
               </Button>
             )}
@@ -88,7 +120,7 @@ export function ProfileCard({ data, className, slug }: ProfileCardProps) {
               <Button asChild variant="outline" className="w-full justify-start gap-3 h-11 transition-all active:scale-[0.98]">
                 <a href={videoUrl} target="_blank" rel="noopener noreferrer">
                   <Video className="size-4 text-rose-500" />
-                  <span className="font-medium">Intro Video</span>
+                  <span className="font-medium text-sm">Intro Video</span>
                 </a>
               </Button>
             )}

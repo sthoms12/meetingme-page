@@ -5,13 +5,12 @@ import * as z from 'zod';
 import { toast } from 'sonner';
 import QRCode from 'qrcode';
 import {
-  Copy, Check, ExternalLink, Sparkles, Send, Lock, ShieldCheck, HelpCircle, LayoutGrid
+  Copy, Check, ExternalLink, Sparkles, Send, Lock, ShieldCheck, HelpCircle, LayoutGrid, Target, Hash
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ProfileCard } from '@/components/ProfileCard';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -23,6 +22,8 @@ const formSchema = z.object({
   jobTitle: z.string().min(2, 'Title is required'),
   company: z.string().min(2, 'Company is required'),
   bio: z.string().min(10, 'Bio must be 10+ chars').max(300, 'Max 300 chars'),
+  focus: z.string().max(60, 'Focus should be concise').optional().or(z.literal('')),
+  topics: z.string().optional().or(z.literal('')),
   profilePhoto: z.string().optional().or(z.literal('')),
   customSlug: z.string().regex(/^[a-z0-9-]*$/, 'Lower, numbers, hyphens').min(3, '3+ chars').optional().or(z.literal('')),
   password: z.string().min(4).optional().or(z.literal('')),
@@ -38,9 +39,9 @@ export function HomePage() {
   const [isCheckingSlug, setIsCheckingSlug] = useState(false);
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { 
-      fullName: '', jobTitle: '', company: '', bio: '', profilePhoto: '',
-      customSlug: '', password: '', variantName: 'Default', variantSlug: 'intro' 
+    defaultValues: {
+      fullName: '', jobTitle: '', company: '', bio: '', focus: '', topics: '', profilePhoto: '',
+      customSlug: '', password: '', variantName: 'Default', variantSlug: 'intro'
     },
   });
   const watchAll = form.watch();
@@ -85,10 +86,10 @@ export function HomePage() {
           <div className="space-y-10">
             <header className="space-y-4">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-xs font-bold dark:bg-indigo-950 dark:text-indigo-300">
-                <Sparkles size={14} /> <span>Professional Variants v2.0</span>
+                <Sparkles size={14} /> <span>Quick Skim v2.0</span>
               </div>
               <h1 className="text-4xl md:text-5xl font-display font-bold tracking-tight">Introduce yourself <span className="text-indigo-600">beautifully</span>.</h1>
-              <p className="text-muted-foreground text-lg">Create tailored intros for clients, investors, or hiring managers.</p>
+              <p className="text-muted-foreground text-lg">Help meeting participants skim your background in 5 seconds.</p>
             </header>
             {publishedData ? (
               <div className="bg-card border rounded-2xl p-8 shadow-soft space-y-6 animate-scale-in">
@@ -100,13 +101,11 @@ export function HomePage() {
                   </div>
                   <img src={qrCodeData} alt="QR" className="size-32 bg-white p-2 rounded-xl border" />
                 </div>
-                
                 <div className="grid grid-cols-2 gap-2 pt-2">
                   <Button asChild className="h-11"><Link to={`/${publishedData.slug}`}>View Profile</Link></Button>
                   <Button variant="outline" asChild className="h-11"><Link to={`/${publishedData.slug}/edit`}>Edit versions</Link></Button>
                 </div>
-
-                <CopyBlurbGroup 
+                <CopyBlurbGroup
                   fullName={watchAll.fullName}
                   jobTitle={watchAll.jobTitle}
                   company={watchAll.company}
@@ -132,21 +131,42 @@ export function HomePage() {
                       <FormItem><FormLabel className="text-sm font-bold">Job Title</FormLabel><FormControl><Input className="h-11" {...field} /></FormControl></FormItem>
                     )} />
                   </div>
-                  <div className="p-4 bg-secondary/30 rounded-2xl border border-dashed border-indigo-500/20 space-y-4">
-                    <div className="flex items-center gap-2 text-indigo-600"><LayoutGrid size={16} /><span className="text-xs font-bold uppercase tracking-widest">Version: {watchAll.variantName}</span></div>
+                  <div className="p-5 bg-secondary/30 rounded-2xl border border-dashed border-indigo-500/20 space-y-6">
+                    <div className="flex items-center gap-2 text-indigo-600 font-display">
+                      <LayoutGrid size={16} />
+                      <span className="text-xs font-bold uppercase tracking-widest">Variant: {watchAll.variantName}</span>
+                    </div>
                     <FormField control={form.control} name="variantName" render={({ field }) => (
                       <FormItem>
                         <Select onValueChange={(val) => { field.onChange(val); form.setValue('variantSlug', val.toLowerCase().replace(/\s+/g, '-')) }} defaultValue={field.value}>
-                          <FormControl><SelectTrigger><SelectValue placeholder="Select purpose" /></SelectTrigger></FormControl>
+                          <FormControl><SelectTrigger className="h-11"><SelectValue placeholder="Select purpose" /></SelectTrigger></FormControl>
                           <SelectContent><SelectItem value="Default">Default Intro</SelectItem><SelectItem value="Client Meeting">Client Facing</SelectItem><SelectItem value="Interview">Job Interview</SelectItem><SelectItem value="Investor">Investor Pitch</SelectItem></SelectContent>
                         </Select>
                       </FormItem>
                     )} />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField control={form.control} name="focus" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs font-bold text-muted-foreground">Main Focus</FormLabel>
+                          <FormControl><Input className="h-10 bg-background" placeholder="GTM strategy, Pipeline..." {...field} /></FormControl>
+                        </FormItem>
+                      )} />
+                      <FormField control={form.control} name="topics" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs font-bold text-muted-foreground">Topics (Comma separated)</FormLabel>
+                          <FormControl><Input className="h-10 bg-background" placeholder="SaaS, Ops, Growth" {...field} /></FormControl>
+                        </FormItem>
+                      )} />
+                    </div>
                     <FormField control={form.control} name="bio" render={({ field }) => (
-                      <FormItem><FormControl><Textarea className="h-24 resize-none bg-background" placeholder="Write an intro specific to this version..." {...field} /></FormControl><FormMessage /></FormItem>
+                      <FormItem>
+                        <FormLabel className="text-xs font-bold text-muted-foreground">Personal Bio</FormLabel>
+                        <FormControl><Textarea className="h-24 resize-none bg-background" placeholder="A brief intro about what you bring to this meeting..." {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
                     )} />
                   </div>
-                  <Button type="submit" size="lg" className="w-full h-12 shadow-indigo-500/10" disabled={isSubmitting || slugAvailable === false}>
+                  <Button type="submit" size="lg" className="w-full h-12 shadow-indigo-500/10 font-bold" disabled={isSubmitting || slugAvailable === false}>
                     {isSubmitting ? "Publishing..." : "Publish My Page"} <Send size={18} className="ml-2" />
                   </Button>
                 </form>
@@ -156,7 +176,10 @@ export function HomePage() {
           <div className="lg:sticky lg:top-12">
             <div className="flex items-center justify-between px-1 mb-4">
               <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Live Preview</span>
-              <div className="flex gap-1"><div className="size-1.5 rounded-full bg-green-500 animate-pulse" /><span className="text-[10px] text-muted-foreground font-medium">Active: {watchAll.variantName}</span></div>
+              <div className="flex gap-1 items-center">
+                <div className="size-1.5 rounded-full bg-green-500 animate-pulse" />
+                <span className="text-[10px] text-muted-foreground font-bold">{watchAll.variantName} Mode</span>
+              </div>
             </div>
             <ProfileCard data={watchAll} />
           </div>
