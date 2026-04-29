@@ -1,25 +1,36 @@
+export interface ProfileVariant {
+  id: string;
+  name: string;
+  variantSlug: string; // e.g. "default", "client", "interview"
+  bio: string;
+  views: number;
+}
 export interface Profile {
   slug: string;
   editToken: string;
   fullName: string;
   jobTitle: string;
   company: string;
-  bio: string;
   profilePhoto?: string;
   linkedinUrl?: string;
   websiteUrl?: string;
   videoUrl?: string;
   createdAt: string;
-  views?: number;
-  passwordHash?: string; // SHA-256 hash of the optional page password
+  passwordHash?: string;
+  variants: ProfileVariant[];
+  primaryVariantId: string;
 }
-export type ProfileFormData = Omit<Profile, 'slug' | 'editToken' | 'createdAt' | 'views' | 'passwordHash'> & {
+export type ProfileFormData = Omit<Profile, 'slug' | 'editToken' | 'createdAt' | 'variants' | 'primaryVariantId' | 'passwordHash'> & {
   password?: string;
+  variantName: string;
+  variantSlug: string;
 };
 export interface ProfilePublicResponse {
   fullName: string;
   isLocked: boolean;
-  profile?: Omit<Profile, 'editToken' | 'passwordHash'>;
+  profile?: Omit<Profile, 'editToken' | 'passwordHash' | 'variants'> & {
+    activeVariant: ProfileVariant;
+  };
 }
 export interface ApiResponse<T = unknown> {
   success: boolean;

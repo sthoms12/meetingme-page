@@ -1,29 +1,33 @@
 import { DurableObject } from "cloudflare:workers";
-import type { DemoItem, Profile } from '@shared/types';
+import type { DemoItem, Profile, ProfileVariant } from '@shared/types';
 import { MOCK_ITEMS } from '@shared/mock-data';
 export class GlobalDurableObject extends DurableObject {
-    // Profile Methods
     async getProfile(slug: string): Promise<Profile | null> {
       const profile = await this.ctx.storage.get<Profile>(`profile_${slug}`);
       return profile || null;
     }
     async createProfile(profile: Profile): Promise<void> {
-      await this.ctx.storage.put(`profile_${profile.slug}`, { ...profile, views: 0 });
+      await this.ctx.storage.put(`profile_${profile.slug}`, profile);
     }
-    async incrementProfileViews(slug: string): Promise<number> {
+    async incrementProfileViews(slug: string, variantSlug?: string): Promise<void> {
       const profile = await this.getProfile(slug);
-      if (!profile) return 0;
-      const currentViews = profile.views || 0;
-      const newViews = currentViews + 1;
-      await this.ctx.storage.put(`profile_${slug}`, { ...profile, views: newViews });
-      return newViews;
+      if (!profile) return;
+      const updatedVariants = profile.variants.map(v => {
+        const isMatch = variantSlug 
+          ? v.variantSlug === variantSlug 
+          : v.id === profile.primaryVariantId;
+        if (isMatch) {
+          return { ...v, views: (v.views || 0) + 1 };
+        }
+        return v;
+      });
+      await this.ctx.storage.put(`profile_${slug}`, { ...profile, variants: updatedVariants });
     }
     async updateProfile(slug: string, token: string, updates: Partial<Profile>): Promise<Profile | null> {
       const profile = await this.getProfile(slug);
       if (!profile || profile.editToken !== token) {
         return null;
       }
-      // Ensure we don't accidentally overwrite views if not provided in updates
       const updatedProfile: Profile = { ...profile, ...updates };
       await this.ctx.storage.put(`profile_${slug}`, updatedProfile);
       return updatedProfile;
@@ -41,9 +45,7 @@ export class GlobalDurableObject extends DurableObject {
     }
     async getDemoItems(): Promise<DemoItem[]> {
       const items = await this.ctx.storage.get<DemoItem[]>("demo_items");
-      if (items) {
-        return items;
-      }
+      if (items) return items;
       await this.ctx.storage.put("demo_items", MOCK_ITEMS);
       return MOCK_ITEMS;
     }

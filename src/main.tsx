@@ -27,6 +27,11 @@ const router = createBrowserRouter([
     errorElement: <RouteErrorBoundary />,
   },
   {
+    path: "/:slug/:variant",
+    element: <ProfilePage />,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
     path: "/:slug/edit",
     element: <EditPage />,
     errorElement: <RouteErrorBoundary />,
