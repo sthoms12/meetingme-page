@@ -38,129 +38,118 @@ export function ProfileCard({ data, className, slug }: ProfileCardProps) {
     videoUrl,
   } = data;
   const displayFullName = fullName || 'Your Name';
-  const displayJobTitle = jobTitle || 'Your Title';
-  const displayCompany = company || 'Company';
-  const displayBio = bio || 'Tell people a little bit about yourself and what you bring to the meeting...';
+  const displayJobTitle = jobTitle || 'Professional Title';
+  const displayCompany = company || 'Organization';
+  const displayBio = bio || 'Craft a brief, powerful introduction to share before your next high-stakes meeting...';
   const topicsArray = Array.isArray(topics)
     ? topics
     : (typeof topics === 'string' ? topics.split(',').map(t => t.trim()).filter(Boolean) : []);
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
+      transition={{ duration: 0.6, cubicBezier: [0.16, 1, 0.3, 1] }}
       className={cn("w-full max-w-md mx-auto print:max-w-none print:transform-none", className)}
     >
-      <Card className="overflow-hidden border-border shadow-soft rounded-3xl bg-card text-card-foreground dark:bg-slate-900/40 print:border print:bg-white print:text-black">
-        <CardHeader className="flex flex-col items-center pt-12 pb-6 print:pt-6">
-          <Avatar className="w-28 h-28 border-4 border-muted shadow-sm dark:border-slate-800 print:border-slate-200 overflow-hidden">
+      <Card className="overflow-hidden border-border/60 shadow-soft rounded-[2.5rem] bg-white dark:bg-slate-950 print:border print:bg-white print:text-black">
+        <CardHeader className="flex flex-col items-center pt-14 pb-8 print:pt-6">
+          <Avatar className="w-32 h-32 border-8 border-slate-50 dark:border-slate-900 shadow-sm print:border-slate-100 overflow-hidden">
             {profilePhoto && profilePhoto.trim() !== '' ? (
-              <AvatarImage
-                src={profilePhoto}
-                alt={displayFullName}
-                className="object-cover"
-                loading="lazy"
-              />
+              <AvatarImage src={profilePhoto} alt={displayFullName} className="object-cover" />
             ) : null}
-            <AvatarFallback className="bg-muted text-muted-foreground dark:bg-slate-800 print:bg-slate-50 print:text-slate-400">
-              <User size={40} />
+            <AvatarFallback className="bg-slate-100 text-slate-400 dark:bg-slate-900 print:bg-slate-50">
+              <User size={48} />
             </AvatarFallback>
           </Avatar>
-          <div className="text-center mt-6 space-y-1.5">
-            <h2 className="text-2xl font-bold text-foreground tracking-tight print:text-black leading-none">{displayFullName}</h2>
-            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-[0.15em] print:text-slate-500">
-              {displayJobTitle} <span className="opacity-40 px-0.5">/</span> {displayCompany}
+          <div className="text-center mt-8 space-y-3">
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white leading-none tracking-tighter">
+              {displayFullName}
+            </h2>
+            <p className="text-[11px] font-black text-primary uppercase tracking-[0.25em] leading-none">
+              {displayJobTitle} <span className="text-slate-300 dark:text-slate-700 px-1">/</span> {displayCompany}
             </p>
           </div>
         </CardHeader>
-        <CardContent className="px-8 pb-12 space-y-7 print:pb-6">
+        <CardContent className="px-10 pb-14 space-y-9 print:pb-6">
           {(focus || topicsArray.length > 0) && (
-            <div className="space-y-4 p-5 rounded-2xl bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/50 transition-all mb-1">
+            <div className="space-y-5 p-6 rounded-3xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 transition-all">
               {focus && (
-                <div className="flex items-start gap-3">
-                  <div className="mt-1 p-1 rounded-md bg-indigo-600/10 text-indigo-600">
-                    <Target size={14} className="shrink-0" />
+                <div className="flex items-start gap-3.5">
+                  <div className="mt-0.5 p-1.5 rounded-lg bg-primary/10 text-primary">
+                    <Target size={16} className="shrink-0" />
                   </div>
-                  <div className="space-y-0.5">
-                    <span className="text-[9px] uppercase font-black tracking-widest text-indigo-600/60 block leading-none">Primary Focus</span>
-                    <p className="text-sm font-bold text-indigo-950 dark:text-indigo-200 leading-tight">
+                  <div className="space-y-1">
+                    <span className="text-[10px] uppercase font-black tracking-widest text-muted-foreground/60 block leading-none">Meeting Focus</span>
+                    <p className="text-[15px] font-bold text-slate-900 dark:text-slate-100 leading-tight">
                       {focus}
                     </p>
                   </div>
                 </div>
               )}
               {topicsArray.length > 0 && (
-                <div className="flex flex-wrap gap-2 pt-1">
+                <div className="flex flex-wrap gap-2.5 pt-1">
                   {topicsArray.map((topic, i) => (
-                    <motion.div
-                      key={i}
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: i * 0.05 }}
-                    >
-                      <Badge variant="secondary" className="bg-white/90 dark:bg-slate-800 border-indigo-100/50 text-[10px] font-bold px-2.5 py-0.5 shadow-sm hover:scale-105 transition-transform cursor-default">
-                        #{topic}
-                      </Badge>
-                    </motion.div>
+                    <Badge key={i} variant="secondary" className="bg-white dark:bg-slate-800 border-slate-200/60 text-[10px] font-black uppercase px-3 py-1 shadow-sm hover:scale-105 transition-transform cursor-default">
+                      {topic}
+                    </Badge>
                   ))}
                 </div>
               )}
             </div>
           )}
-          <div className="text-muted-foreground text-center leading-relaxed text-sm md:text-base dark:text-slate-300 print:text-slate-700 px-2 italic font-medium">
+          <div className="text-slate-600 text-center leading-relaxed text-base md:text-lg dark:text-slate-300 print:text-slate-700 font-medium italic px-2">
             "{displayBio}"
           </div>
           {meetingNote && meetingNote.trim() !== '' && (
-            <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 relative group transition-all hover:bg-slate-100/50 dark:hover:bg-slate-800 print:bg-slate-50 print:border-slate-200">
-              <div className="flex items-center gap-2.5 mb-3">
-                <div className="p-1.5 rounded-lg bg-indigo-600 text-white shadow-sm flex items-center justify-center">
-                  <Info size={12} />
+            <div className="p-6 rounded-3xl bg-primary/5 dark:bg-primary/10 border-2 border-primary/10 relative group transition-all print:bg-slate-50">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-1.5 rounded-lg bg-primary text-white shadow-sm flex items-center justify-center">
+                  <Info size={14} />
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Before we meet</span>
+                <span className="text-[11px] font-black uppercase tracking-[0.2em] text-primary">Pre-Meeting Context</span>
               </div>
-              <p className="text-sm font-medium text-foreground leading-relaxed dark:text-slate-200 print:text-black">
+              <p className="text-sm md:text-base font-semibold text-slate-800 dark:text-slate-200 leading-relaxed print:text-black">
                 {meetingNote}
               </p>
             </div>
           )}
-          <div className="flex flex-col gap-3 no-print pt-2">
+          <div className="flex flex-col gap-3 no-print pt-4">
             {linkedinUrl && linkedinUrl.trim() !== '' && (
-              <Button asChild variant="outline" className="w-full justify-start gap-3 h-12 rounded-xl transition-all active:scale-[0.98] border-muted-foreground/10 hover:bg-muted/50">
+              <Button asChild variant="outline" className="w-full justify-start gap-4 h-14 rounded-2xl transition-all active:scale-[0.98] border-slate-200 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900">
                 <a href={linkedinUrl} target="_blank" rel="noopener noreferrer">
-                  <div className="p-1.5 rounded bg-[#0077b5]/10">
-                    <Linkedin className="size-4 text-[#0077b5]" />
+                  <div className="p-2 rounded-lg bg-[#0077b5]/10 group-hover:bg-[#0077b5]/20 transition-colors">
+                    <Linkedin className="size-5 text-[#0077b5]" />
                   </div>
-                  <span className="font-bold text-sm tracking-tight">LinkedIn Profile</span>
+                  <span className="font-bold text-[15px]">LinkedIn Profile</span>
                 </a>
               </Button>
             )}
             {websiteUrl && websiteUrl.trim() !== '' && (
-              <Button asChild variant="outline" className="w-full justify-start gap-3 h-12 rounded-xl transition-all active:scale-[0.98] border-muted-foreground/10 hover:bg-muted/50">
+              <Button asChild variant="outline" className="w-full justify-start gap-4 h-14 rounded-2xl transition-all active:scale-[0.98] border-slate-200 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900">
                 <a href={websiteUrl} target="_blank" rel="noopener noreferrer">
-                  <div className="p-1.5 rounded bg-indigo-500/10">
-                    <Globe className="size-4 text-indigo-500" />
+                  <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                    <Globe className="size-5 text-primary" />
                   </div>
-                  <span className="font-bold text-sm tracking-tight">Personal Website</span>
+                  <span className="font-bold text-[15px]">Personal Website</span>
                 </a>
               </Button>
             )}
             {videoUrl && videoUrl.trim() !== '' && (
-              <Button asChild variant="outline" className="w-full justify-start gap-3 h-12 rounded-xl transition-all active:scale-[0.98] border-muted-foreground/10 hover:bg-muted/50">
+              <Button asChild variant="outline" className="w-full justify-start gap-4 h-14 rounded-2xl transition-all active:scale-[0.98] border-slate-200 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900">
                 <a href={videoUrl} target="_blank" rel="noopener noreferrer">
-                  <div className="p-1.5 rounded bg-rose-500/10">
-                    <Video className="size-4 text-rose-500" />
+                  <div className="p-2 rounded-lg bg-rose-500/10 group-hover:bg-rose-500/20 transition-colors">
+                    <Video className="size-5 text-rose-500" />
                   </div>
-                  <span className="font-bold text-sm tracking-tight">Intro Video</span>
+                  <span className="font-bold text-[15px]">Video Introduction</span>
                 </a>
               </Button>
             )}
           </div>
-          <div className="hidden print:block space-y-2 pt-6 border-t border-slate-100">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Links & Contact</p>
-            {linkedinUrl && <div className="flex items-center gap-2.5 text-xs text-slate-600 truncate"><Linkedin size={11} className="text-slate-400" /> {linkedinUrl}</div>}
-            {websiteUrl && <div className="flex items-center gap-2.5 text-xs text-slate-600 truncate"><Globe size={11} className="text-slate-400" /> {websiteUrl}</div>}
-            {videoUrl && <div className="flex items-center gap-2.5 text-xs text-slate-600 truncate"><Video size={11} className="text-slate-400" /> {videoUrl}</div>}
-            {slug && <div className="flex items-center gap-2 text-xs font-black text-indigo-600 truncate mt-6 pt-4 border-t border-slate-50"><LinkIcon size={11} /> meetingme.page/{slug}</div>}
+          <div className="hidden print:block space-y-3 pt-8 border-t border-slate-100">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Digital Portfolio</p>
+            {linkedinUrl && <div className="flex items-center gap-3 text-sm text-slate-600 truncate"><Linkedin size={14} className="text-slate-400" /> {linkedinUrl}</div>}
+            {websiteUrl && <div className="flex items-center gap-3 text-sm text-slate-600 truncate"><Globe size={14} className="text-slate-400" /> {websiteUrl}</div>}
+            {slug && <div className="flex items-center gap-2 text-sm font-black text-primary truncate mt-6 pt-6 border-t border-slate-50"><LinkIcon size={14} /> meetingme.page/{slug}</div>}
           </div>
         </CardContent>
       </Card>

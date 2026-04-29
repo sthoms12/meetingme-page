@@ -1,12 +1,10 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'sonner';
 import QRCode from 'qrcode';
-import {
-  Copy, Check, ExternalLink, Sparkles, Send, Lock, ShieldCheck, HelpCircle, LayoutGrid, Target, Hash, Info
-} from 'lucide-react';
+import { Sparkles, Send, ShieldCheck, LayoutGrid, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -81,115 +79,117 @@ export function HomePage() {
   };
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="py-8 md:py-10 lg:py-12">
+      <div className="py-12 md:py-20 lg:py-24 space-y-16">
         <ThemeToggle />
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          <div className="space-y-10">
-            <header className="space-y-4">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-xs font-bold dark:bg-indigo-950 dark:text-indigo-300">
-                <Sparkles size={14} /> <span>Meeting Polish v3.0</span>
-              </div>
-              <h1 className="text-4xl md:text-5xl font-display font-bold tracking-tight">Introduce yourself <span className="text-indigo-600">beautifully</span>.</h1>
-              <p className="text-muted-foreground text-lg">Help meeting participants skim your background and prep in seconds.</p>
-            </header>
+        <header className="max-w-3xl space-y-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-widest">
+            <Sparkles size={14} /> <span>Professional Standard v4.0</span>
+          </div>
+          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-slate-900 dark:text-white leading-[1.05]">
+            Share who you are <br />
+            <span className="text-primary">before the meeting</span>.
+          </h1>
+          <p className="text-slate-500 dark:text-slate-400 text-lg md:text-xl max-w-2xl leading-relaxed">
+            The minimal, professional intro page designed for consultants, founders, and executives. Ready in 2 minutes.
+          </p>
+        </header>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
+          <div className="space-y-12">
             {publishedData ? (
-              <div className="bg-card border rounded-2xl p-8 shadow-soft space-y-6 animate-scale-in">
-                <div className="flex flex-col md:flex-row gap-8 items-center text-center md:text-left">
+              <div className="bg-card border-2 border-primary/10 rounded-4xl p-10 shadow-soft space-y-8 animate-scale-in">
+                <div className="flex flex-col md:flex-row gap-8 items-center">
                   <div className="flex-1 space-y-4 w-full">
-                    <div className="size-12 rounded-full bg-green-50 text-green-600 flex items-center justify-center mx-auto md:mx-0"><ShieldCheck size={24} /></div>
-                    <h3 className="text-xl font-bold">You are live!</h3>
-                    <code className="block p-3 bg-muted rounded-lg text-xs">meetingme.page/{publishedData.slug}</code>
+                    <div className="size-14 rounded-2xl bg-green-500/10 text-green-600 flex items-center justify-center"><ShieldCheck size={28} /></div>
+                    <h3 className="text-2xl font-bold">Page is Published</h3>
+                    <div className="p-4 bg-muted rounded-xl text-sm font-mono break-all border">
+                      {window.location.origin}/{publishedData.slug}
+                    </div>
                   </div>
-                  <img src={qrCodeData} alt="QR" className="size-32 bg-white p-2 rounded-xl border" />
+                  <img src={qrCodeData} alt="QR" className="size-36 bg-white p-3 rounded-2xl border-2 border-muted" />
                 </div>
-                <div className="grid grid-cols-2 gap-2 pt-2">
-                  <Button asChild className="h-11"><Link to={`/${publishedData.slug}`}>View Profile</Link></Button>
-                  <Button variant="outline" asChild className="h-11"><Link to={`/${publishedData.slug}/edit`}>Edit versions</Link></Button>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Button asChild size="lg" className="h-14 text-lg font-bold rounded-2xl"><Link to={`/${publishedData.slug}`}>View Live Page</Link></Button>
+                  <Button variant="outline" asChild size="lg" className="h-14 text-lg font-bold rounded-2xl"><Link to={`/${publishedData.slug}/edit`}>Manage Details</Link></Button>
                 </div>
                 <CopyBlurbGroup
                   fullName={watchAll.fullName}
                   jobTitle={watchAll.jobTitle}
                   company={watchAll.company}
                   url={`${window.location.origin}/${publishedData.slug}`}
-                  className="pt-4 border-t"
+                  className="pt-8 border-t"
                 />
               </div>
             ) : (
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 bg-card/50 p-6 md:p-8 rounded-3xl border shadow-sm">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-10 bg-card p-8 md:p-12 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-soft">
+                  <div className="space-y-6">
                     <FormField control={form.control} name="customSlug" render={({ field }) => (
-                      <FormItem className="md:col-span-2">
-                        <FormLabel className="text-xs font-bold uppercase tracking-widest text-muted-foreground">URL Handle</FormLabel>
-                        <FormControl><Input className="h-11" placeholder="jane-doe" {...field} /></FormControl>
-                        {customSlug && <FormDescription className={cn("text-[10px] font-bold", slugAvailable ? "text-green-600" : "text-destructive")}>{isCheckingSlug ? "Checking..." : slugAvailable ? "Available" : "Taken"}</FormDescription>}
+                      <FormItem>
+                        <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Public Handle</FormLabel>
+                        <FormControl><Input className="h-14 text-lg rounded-2xl border-slate-200" placeholder="jane-doe" {...field} /></FormControl>
+                        {customSlug && <FormDescription className={cn("text-[11px] font-bold", slugAvailable ? "text-green-600" : "text-destructive")}>{isCheckingSlug ? "Verifying..." : slugAvailable ? "✓ Slug is available" : "✗ Already taken"}</FormDescription>}
                       </FormItem>
                     )} />
-                    <FormField control={form.control} name="fullName" render={({ field }) => (
-                      <FormItem><FormLabel className="text-sm font-bold">Full Name</FormLabel><FormControl><Input className="h-11" {...field} /></FormControl></FormItem>
-                    )} />
-                    <FormField control={form.control} name="jobTitle" render={({ field }) => (
-                      <FormItem><FormLabel className="text-sm font-bold">Job Title</FormLabel><FormControl><Input className="h-11" {...field} /></FormControl></FormItem>
-                    )} />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <FormField control={form.control} name="fullName" render={({ field }) => (
+                        <FormItem><FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Full Name</FormLabel><FormControl><Input className="h-14 text-lg rounded-2xl" {...field} /></FormControl></FormItem>
+                      )} />
+                      <FormField control={form.control} name="jobTitle" render={({ field }) => (
+                        <FormItem><FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Job Title</FormLabel><FormControl><Input className="h-14 text-lg rounded-2xl" {...field} /></FormControl></FormItem>
+                      )} />
+                    </div>
                   </div>
-                  <div className="p-5 bg-secondary/30 rounded-2xl border border-dashed border-indigo-500/20 space-y-6">
-                    <div className="flex items-center gap-2 text-indigo-600 font-display">
-                      <LayoutGrid size={16} />
-                      <span className="text-xs font-bold uppercase tracking-widest">Variant: {watchAll.variantName}</span>
+                  <div className="pt-8 border-t space-y-8">
+                    <div className="flex items-center gap-3">
+                      <LayoutGrid className="text-primary size-5" />
+                      <span className="text-sm font-black uppercase tracking-[0.2em]">Primary Context</span>
                     </div>
                     <FormField control={form.control} name="variantName" render={({ field }) => (
                       <FormItem>
                         <Select onValueChange={(val) => { field.onChange(val); form.setValue('variantSlug', val.toLowerCase().replace(/\s+/g, '-')) }} defaultValue={field.value}>
-                          <FormControl><SelectTrigger className="h-11"><SelectValue placeholder="Select purpose" /></SelectTrigger></FormControl>
-                          <SelectContent><SelectItem value="Default">Default Intro</SelectItem><SelectItem value="Client Meeting">Client Facing</SelectItem><SelectItem value="Interview">Job Interview</SelectItem><SelectItem value="Investor">Investor Pitch</SelectItem></SelectContent>
+                          <FormControl><SelectTrigger className="h-14 text-lg rounded-2xl"><SelectValue placeholder="Audience Profile" /></SelectTrigger></FormControl>
+                          <SelectContent className="rounded-2xl"><SelectItem value="Default">General Purpose</SelectItem><SelectItem value="Client Meeting">Client Facing</SelectItem><SelectItem value="Interview">Job Interview</SelectItem><SelectItem value="Investor">Investor Pitch</SelectItem></SelectContent>
                         </Select>
                       </FormItem>
                     )} />
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <FormField control={form.control} name="focus" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs font-bold text-muted-foreground">Main Focus</FormLabel>
-                          <FormControl><Input className="h-10 bg-background" placeholder="GTM strategy, Pipeline..." {...field} /></FormControl>
-                        </FormItem>
+                        <FormItem><FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Main Focus</FormLabel><FormControl><Input className="h-12 rounded-xl" placeholder="Strategic GTM..." {...field} /></FormControl></FormItem>
                       )} />
                       <FormField control={form.control} name="topics" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs font-bold text-muted-foreground">Topics (Comma separated)</FormLabel>
-                          <FormControl><Input className="h-10 bg-background" placeholder="SaaS, Ops, Growth" {...field} /></FormControl>
-                        </FormItem>
+                        <FormItem><FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Topics (CSV)</FormLabel><FormControl><Input className="h-12 rounded-xl" placeholder="SaaS, Growth..." {...field} /></FormControl></FormItem>
                       )} />
                     </div>
                     <FormField control={form.control} name="meetingNote" render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-xs font-bold text-muted-foreground">Pre-Meeting Context (Optional)</FormLabel>
-                        <FormControl><Textarea className="h-20 resize-none bg-background" placeholder="I prefer jumping straight into the agenda..." {...field} /></FormControl>
-                        <FormDescription className="text-[10px]">What should someone know before meeting you?</FormDescription>
+                        <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Before We Meet</FormLabel>
+                        <FormControl><Textarea className="h-28 resize-none rounded-2xl p-4 text-base" placeholder="Optional context or agenda preference..." {...field} /></FormControl>
                       </FormItem>
                     )} />
                     <FormField control={form.control} name="bio" render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-xs font-bold text-muted-foreground">Personal Bio</FormLabel>
-                        <FormControl><Textarea className="h-24 resize-none bg-background" placeholder="A brief intro about what you bring to this meeting..." {...field} /></FormControl>
+                        <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Short Bio</FormLabel>
+                        <FormControl><Textarea className="h-32 resize-none rounded-2xl p-4 text-base" placeholder="Brief intro (max 300 characters)..." {...field} /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )} />
                   </div>
-                  <Button type="submit" size="lg" className="w-full h-12 shadow-indigo-500/10 font-bold" disabled={isSubmitting || slugAvailable === false}>
-                    {isSubmitting ? "Publishing..." : "Publish My Page"} <Send size={18} className="ml-2" />
+                  <Button type="submit" size="lg" className="w-full h-16 text-xl rounded-2xl font-bold shadow-lg shadow-primary/20 hover:scale-[1.01] active:scale-95 transition-all" disabled={isSubmitting || slugAvailable === false}>
+                    {isSubmitting ? "Publishing..." : "Create My Page"} <Send size={20} className="ml-3" />
                   </Button>
                 </form>
               </Form>
             )}
           </div>
-          <div className="lg:sticky lg:top-12">
-            <div className="flex items-center justify-between px-1 mb-4">
-              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Live Preview</span>
-              <div className="flex gap-1 items-center">
-                <div className="size-1.5 rounded-full bg-green-500 animate-pulse" />
-                <span className="text-[10px] text-muted-foreground font-bold">{watchAll.variantName} Mode</span>
+          <div className="lg:sticky lg:top-12 space-y-6">
+            <div className="flex items-center justify-between px-2">
+              <span className="text-[11px] font-black text-muted-foreground uppercase tracking-[0.3em]">Live Preview</span>
+              <div className="flex gap-2 items-center">
+                <div className="size-2 rounded-full bg-green-500 shadow-glow animate-pulse" />
+                <span className="text-xs text-muted-foreground font-bold">{watchAll.variantName} Mode</span>
               </div>
             </div>
-            <ProfileCard data={watchAll} />
+            <ProfileCard data={watchAll} className="scale-105 origin-top transition-transform" />
           </div>
         </div>
       </div>

@@ -5,13 +5,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import {
-  Save, ArrowLeft, Loader2, ShieldAlert, Plus, Trash2, LayoutGrid, ExternalLink
-} from 'lucide-react';
+import { Save, ArrowLeft, Loader2, ShieldAlert, Plus, Trash2, LayoutGrid, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { ProfileCard } from '@/components/ProfileCard';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { CopyBlurbGroup } from '@/components/CopyBlurbGroup';
@@ -99,17 +97,12 @@ export function EditPage() {
       });
       const result = await res.json();
       if (result.success) {
-        toast.success('Settings updated successfully');
+        toast.success('Settings updated');
         queryClient.invalidateQueries({ queryKey: ['profile', slug] });
         navigate(`/${slug}`);
-      } else {
-        toast.error(result.error || 'Update failed');
-      }
-    } catch {
-      toast.error('Save failed');
-    } finally {
-      setIsUpdating(false);
-    }
+      } else { toast.error(result.error || 'Update failed'); }
+    } catch { toast.error('Save failed'); }
+    finally { setIsUpdating(false); }
   };
   const addVariant = () => {
     const current = form.getValues('variants');
@@ -128,46 +121,41 @@ export function EditPage() {
     setActiveVariantIndex(current.length);
   };
   if (!editToken) return (
-    <div className="max-w-md mx-auto py-24 text-center space-y-4 px-6">
-      <ShieldAlert className="size-12 text-destructive mx-auto" />
-      <h2 className="text-xl font-bold">Token Missing</h2>
-      <p className="text-muted-foreground">This private dashboard is restricted to the creator's device.</p>
-      <Button asChild><Link to="/">Go Home</Link></Button>
+    <div className="max-w-md mx-auto py-32 text-center space-y-8 px-6">
+      <div className="size-20 rounded-3xl bg-destructive/10 text-destructive flex items-center justify-center mx-auto"><ShieldAlert size={40} /></div>
+      <div className="space-y-2">
+        <h2 className="text-2xl font-bold">Access Restricted</h2>
+        <p className="text-muted-foreground">The private edit token is required to manage this page.</p>
+      </div>
+      <Button asChild size="lg" className="rounded-2xl h-14 w-full"><Link to="/">Back to Home</Link></Button>
     </div>
   );
   if (isLoading) return (
-    <div className="max-w-7xl mx-auto px-4 py-24 flex flex-col items-center justify-center gap-4">
-      <Loader2 className="animate-spin text-primary size-8" />
-      <p className="text-sm font-medium text-muted-foreground">Loading your dashboard...</p>
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-6">
+      <Loader2 className="animate-spin text-primary size-10" />
+      <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Initializing Dashboard...</p>
     </div>
   );
   const watchAll = form.watch();
   const currentVariant = watchAll.variants?.[activeVariantIndex];
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="py-8 md:py-10 lg:py-12">
+      <div className="py-12 md:py-20">
         <ThemeToggle />
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-10 gap-4">
-          <div className="space-y-1">
-            <Link to={`/${slug}`} className="text-xs font-bold text-muted-foreground flex items-center gap-1 hover:text-indigo-600 transition-colors uppercase tracking-widest">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-16 gap-8">
+          <div className="space-y-4">
+            <Link to={`/${slug}`} className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 hover:text-primary transition-colors">
               <ArrowLeft size={14} /> Back to Live Page
             </Link>
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">Manage Intro Versions</h1>
+            <h1 className="text-4xl font-bold tracking-tight">Introduction Dashboard</h1>
           </div>
-          <Button 
-            onClick={form.handleSubmit(onSubmit)} 
-            disabled={isUpdating} 
-            className="gap-2 font-bold px-8 h-11 transition-all shadow-indigo-500/10 active:scale-95"
-            aria-label="Save all changes to profile"
-          >
-            {isUpdating ? <Loader2 className="size-4 animate-spin" /> : <Save size={18} />}
-            <span className="min-w-[4rem] text-center">
-              {isUpdating ? "Saving..." : "Save All"}
-            </span>
+          <Button onClick={form.handleSubmit(onSubmit)} disabled={isUpdating} size="lg" className="h-14 px-10 text-lg font-bold rounded-2xl shadow-lg shadow-primary/20 active:scale-95 transition-all">
+            {isUpdating ? <Loader2 className="size-5 animate-spin mr-3" /> : <Save size={20} className="mr-3" />}
+            Save All Changes
           </Button>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
-          <div className="space-y-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
+          <div className="space-y-12">
             <div className="flex items-center gap-3 overflow-x-auto pb-4 no-scrollbar -mx-1 px-1">
               {watchAll.variants?.map((v, i) => (
                 <button
@@ -175,146 +163,117 @@ export function EditPage() {
                   type="button"
                   onClick={() => setActiveVariantIndex(i)}
                   className={cn(
-                    "px-5 py-3.5 rounded-2xl border text-sm font-bold transition-all shrink-0 flex items-center gap-3 relative group",
-                    activeVariantIndex === i 
-                      ? "bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-500/20 z-10" 
-                      : "bg-card text-muted-foreground border-border hover:border-indigo-300 hover:text-indigo-600 hover:shadow-md dark:hover:bg-indigo-950/20"
+                    "px-6 py-4 rounded-2xl border-2 text-sm font-bold transition-all shrink-0 flex items-center gap-4 relative group",
+                    activeVariantIndex === i
+                      ? "bg-slate-900 text-white border-slate-900 shadow-lg dark:bg-white dark:text-slate-950 dark:border-white"
+                      : "bg-card text-muted-foreground border-slate-100 hover:border-slate-300 dark:border-slate-800"
                   )}
                 >
-                  <LayoutGrid size={15} className={activeVariantIndex === i ? "text-white" : "text-muted-foreground/50 group-hover:text-indigo-500"} />
+                  <LayoutGrid size={16} />
                   {v.name}
                   <span className={cn(
-                    "text-[10px] px-1.5 py-0.5 rounded-full font-black",
-                    activeVariantIndex === i 
-                      ? "bg-white/20 text-white" 
-                      : "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300"
+                    "text-[10px] px-2 py-0.5 rounded-full font-black",
+                    activeVariantIndex === i ? "bg-primary text-white" : "bg-muted text-muted-foreground"
                   )}>
-                    {v.views}
+                    {v.views} views
                   </span>
                 </button>
               ))}
               {watchAll.variants?.length < 3 && (
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  type="button" 
-                  onClick={addVariant} 
-                  className="rounded-2xl border-dashed h-[50px] w-[50px] shrink-0 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-600 dark:hover:bg-indigo-950/20 transition-all active:scale-95"
-                  title="Add new audience version"
-                >
-                  <Plus size={20} />
+                <Button variant="outline" size="icon" type="button" onClick={addVariant} className="rounded-2xl border-2 border-dashed h-14 w-14 shrink-0 hover:bg-primary/5 hover:border-primary/40">
+                  <Plus size={24} />
                 </Button>
               )}
             </div>
             <Form {...form}>
-              <div className="space-y-6">
-                <div className="bg-card p-6 md:p-8 rounded-3xl border shadow-sm space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                  <div className="flex items-center justify-between border-b border-dashed pb-4">
-                    <div className="flex items-center gap-2">
-                      <div className="p-1.5 rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40">
-                        <LayoutGrid size={14} />
-                      </div>
-                      <h3 className="text-xs font-black uppercase tracking-widest text-indigo-600">Variant Context</h3>
+              <div className="space-y-12">
+                <div className="bg-card p-8 md:p-10 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-soft space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-400">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-xl bg-primary/10 text-primary"><LayoutGrid size={18} /></div>
+                      <h3 className="text-sm font-black uppercase tracking-widest">Version: {currentVariant?.name}</h3>
                     </div>
                     {watchAll.variants.length > 1 && (
                       <Button variant="ghost" size="sm" type="button" onClick={() => {
                         const filtered = watchAll.variants.filter((_, i) => i !== activeVariantIndex);
                         form.setValue('variants', filtered);
                         setActiveVariantIndex(0);
-                      }} className="h-8 text-destructive text-[10px] uppercase font-black hover:bg-destructive/10">
-                        <Trash2 size={14} className="mr-1.5" /> Remove Version
+                      }} className="text-destructive font-black text-[10px] uppercase tracking-widest hover:bg-destructive/5">
+                        <Trash2 size={16} className="mr-2" /> Delete
                       </Button>
                     )}
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField control={form.control} name={`variants.${activeVariantIndex}.name`} render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Version Display Name</FormLabel>
-                        <FormControl><Input className="bg-secondary/40 h-11 border-none focus-visible:ring-1" placeholder="e.g. For Recruiters" {...field} /></FormControl>
-                      </FormItem>
+                      <FormItem><FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Display Name</FormLabel><FormControl><Input className="bg-secondary/40 h-14 rounded-2xl border-none text-base" {...field} /></FormControl></FormItem>
                     )} />
                     <FormField control={form.control} name={`variants.${activeVariantIndex}.variantSlug`} render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">URL Sub-Path</FormLabel>
-                        <FormControl><Input className="bg-secondary/40 h-11 border-none focus-visible:ring-1" placeholder="e.g. recruiter" {...field} /></FormControl>
-                      </FormItem>
+                      <FormItem><FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Slug Path</FormLabel><FormControl><Input className="bg-secondary/40 h-14 rounded-2xl border-none text-base" {...field} /></FormControl></FormItem>
                     )} />
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField control={form.control} name={`variants.${activeVariantIndex}.focus`} render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Meeting Focus</FormLabel>
-                        <FormControl><Input className="bg-secondary/40 h-11 border-none focus-visible:ring-1" placeholder="Scale, Product, etc." {...field} /></FormControl>
-                      </FormItem>
+                      <FormItem><FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Primary Focus</FormLabel><FormControl><Input className="bg-secondary/40 h-14 rounded-2xl border-none text-base" {...field} /></FormControl></FormItem>
                     )} />
                     <FormField control={form.control} name={`variants.${activeVariantIndex}.topics`} render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Topics (CSV)</FormLabel>
-                        <FormControl><Input className="bg-secondary/40 h-11 border-none focus-visible:ring-1" placeholder="React, Node, GCP" {...field} /></FormControl>
-                      </FormItem>
+                      <FormItem><FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Skills / Topics</FormLabel><FormControl><Input className="bg-secondary/40 h-14 rounded-2xl border-none text-base" {...field} /></FormControl></FormItem>
                     )} />
                   </div>
                   <FormField control={form.control} name={`variants.${activeVariantIndex}.meetingNote`} render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Pre-Meeting Note</FormLabel>
-                      <FormControl><Textarea className="min-h-[100px] bg-secondary/40 border-none resize-none text-sm focus-visible:ring-1" placeholder="Add custom context for this specific audience..." {...field} /></FormControl>
-                    </FormItem>
+                    <FormItem><FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Before We Meet Note</FormLabel><FormControl><Textarea className="min-h-[120px] bg-secondary/40 rounded-2xl border-none resize-none text-base p-4" {...field} /></FormControl></FormItem>
                   )} />
                   <FormField control={form.control} name={`variants.${activeVariantIndex}.bio`} render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Custom Bio</FormLabel>
-                      <FormControl><Textarea className="min-h-[120px] bg-secondary/40 border-none resize-none text-sm focus-visible:ring-1" placeholder="Write a targeted bio for this meeting type..." {...field} /></FormControl>
+                      <FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Custom Biography</FormLabel>
+                      <FormControl><Textarea className="min-h-[140px] bg-secondary/40 rounded-2xl border-none resize-none text-base p-4" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
                 </div>
-                <div className="space-y-6 pt-8 border-t border-dashed">
-                  <div className="flex items-center gap-2 mb-4">
-                    <span className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Global Settings</span>
+                <div className="space-y-10 pt-10 border-t border-dashed">
+                  <div className="relative flex justify-center">
+                    <span className="absolute inset-0 flex items-center"><span className="w-full border-t border-slate-200 dark:border-slate-800"></span></span>
+                    <span className="relative bg-background px-6 text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/50">Global Identity</span>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField control={form.control} name="fullName" render={({ field }) => (
-                      <FormItem><FormLabel className="text-sm font-bold text-foreground">Full Name</FormLabel><FormControl><Input className="bg-secondary/40 h-11 border-none focus-visible:ring-1" {...field} /></FormControl></FormItem>
+                      <FormItem><FormLabel className="text-sm font-bold">Full Name</FormLabel><FormControl><Input className="bg-secondary/40 h-14 rounded-2xl border-none text-base" {...field} /></FormControl></FormItem>
                     )} />
                     <FormField control={form.control} name="jobTitle" render={({ field }) => (
-                      <FormItem><FormLabel className="text-sm font-bold text-foreground">Role / Title</FormLabel><FormControl><Input className="bg-secondary/40 h-11 border-none focus-visible:ring-1" {...field} /></FormControl></FormItem>
+                      <FormItem><FormLabel className="text-sm font-bold">Professional Title</FormLabel><FormControl><Input className="bg-secondary/40 h-14 rounded-2xl border-none text-base" {...field} /></FormControl></FormItem>
                     )} />
                   </div>
                   <FormField control={form.control} name="company" render={({ field }) => (
-                    <FormItem><FormLabel className="text-sm font-bold text-foreground">Company</FormLabel><FormControl><Input className="bg-secondary/40 h-11 border-none focus-visible:ring-1" {...field} /></FormControl></FormItem>
+                    <FormItem><FormLabel className="text-sm font-bold">Current Company</FormLabel><FormControl><Input className="bg-secondary/40 h-14 rounded-2xl border-none text-base" {...field} /></FormControl></FormItem>
                   )} />
                 </div>
               </div>
             </Form>
           </div>
-          <div className="lg:sticky lg:top-12 space-y-6">
-            <div className="flex items-center justify-between px-1">
-              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Live Preview: {currentVariant?.name}</span>
-              <a 
-                href={`/${slug}${currentVariant?.variantSlug === 'intro' ? '' : '/' + currentVariant?.variantSlug}`} 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="text-[10px] font-bold text-indigo-600 flex items-center gap-1.5 hover:underline transition-all group"
-              >
-                <ExternalLink size={12} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" /> 
-                Open Live Page
+          <div className="lg:sticky lg:top-12 space-y-8">
+            <div className="flex items-center justify-between px-2">
+              <span className="text-[11px] font-black text-muted-foreground uppercase tracking-[0.3em]">Audience Preview: {currentVariant?.name}</span>
+              <a href={`/${slug}${currentVariant?.variantSlug === 'intro' ? '' : '/' + currentVariant?.variantSlug}`} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-primary flex items-center gap-2 hover:underline group">
+                <ExternalLink size={14} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                Live View
               </a>
             </div>
-            <ProfileCard 
-              data={{ 
-                ...watchAll, 
-                bio: currentVariant?.bio, 
-                focus: currentVariant?.focus, 
-                topics: currentVariant?.topics, 
-                meetingNote: currentVariant?.meetingNote 
-              }} 
+            <ProfileCard
+              data={{
+                ...watchAll,
+                bio: currentVariant?.bio,
+                focus: currentVariant?.focus,
+                topics: currentVariant?.topics,
+                meetingNote: currentVariant?.meetingNote
+              }}
+              className="scale-[1.02] origin-top"
             />
             <CopyBlurbGroup
               fullName={watchAll.fullName}
               jobTitle={watchAll.jobTitle}
               company={watchAll.company}
               url={`${window.location.origin}/${slug}${currentVariant?.variantSlug === 'intro' ? '' : '/' + currentVariant?.variantSlug}`}
-              className="bg-card/50 p-6 rounded-3xl border shadow-sm border-dashed"
+              className="bg-card p-8 rounded-[2.5rem] border border-dashed border-slate-200"
             />
           </div>
         </div>
