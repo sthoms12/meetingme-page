@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'sonner';
 import QRCode from 'qrcode';
-import { Sparkles, Send, ShieldCheck, LayoutGrid, Info } from 'lucide-react';
+import { Sparkles, Send, ShieldCheck, LayoutGrid, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -58,6 +58,21 @@ export function HomePage() {
     }, 500);
     return () => clearTimeout(h);
   }, [customSlug]);
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 1024 * 1024) {
+        toast.error("Image too large (max 1MB)");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        form.setValue('profilePhoto', reader.result as string);
+        toast.success("Photo uploaded");
+      };
+      reader.readAsDataURL(file);
+    }
+  };
   const onSubmit = async (values: FormValues) => {
     setIsSubmitting(true);
     try {
@@ -80,10 +95,10 @@ export function HomePage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="py-12 md:py-20 lg:py-24 space-y-16">
-        <ThemeToggle />
+        <ThemeToggle type="button" />
         <header className="max-w-3xl space-y-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-widest">
-            <Sparkles size={14} /> <span>Professional Standard v4.0</span>
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-[11px] font-black uppercase tracking-[0.2em] shadow-sm border border-primary/5">
+            <Sparkles size={14} /> <span>Professional Standard v4.1</span>
           </div>
           <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-slate-900 dark:text-white leading-[1.05]">
             Share who you are <br />
@@ -127,7 +142,17 @@ export function HomePage() {
                       <FormItem>
                         <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Public Handle</FormLabel>
                         <FormControl><Input className="h-14 text-lg rounded-2xl border-slate-200" placeholder="jane-doe" {...field} /></FormControl>
-                        {customSlug && <FormDescription className={cn("text-[11px] font-bold", slugAvailable ? "text-green-600" : "text-destructive")}>{isCheckingSlug ? "Verifying..." : slugAvailable ? "✓ Slug is available" : "✗ Already taken"}</FormDescription>}
+                        {customSlug && customSlug.length >= 3 && (
+                          <FormDescription className={cn("text-[11px] font-bold flex items-center gap-1.5", isCheckingSlug ? "text-muted-foreground" : slugAvailable === true ? "text-green-600" : "text-destructive")}>
+                            {isCheckingSlug ? (
+                              <><Loader2 size={12} className="animate-spin" /> Verifying availability...</>
+                            ) : slugAvailable === true ? (
+                              "✓ Handle is available"
+                            ) : (
+                              "✗ This handle is already taken"
+                            )}
+                          </FormDescription>
+                        )}
                       </FormItem>
                     )} />
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -137,6 +162,21 @@ export function HomePage() {
                       <FormField control={form.control} name="jobTitle" render={({ field }) => (
                         <FormItem><FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Job Title</FormLabel><FormControl><Input className="h-14 text-lg rounded-2xl" {...field} /></FormControl></FormItem>
                       )} />
+                    </div>
+                    <div className="pt-2">
+                      <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70 mb-2 block">Profile Photo</FormLabel>
+                      <div className="flex items-center gap-4">
+                        <Button type="button" variant="outline" className="h-14 px-6 rounded-2xl border-dashed border-2 relative overflow-hidden group">
+                          <input type="file" accept="image/*" onChange={handlePhotoUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
+                          <ImageIcon size={18} className="mr-2 text-primary" />
+                          <span className="font-bold">Upload Photo</span>
+                        </Button>
+                        {watchAll.profilePhoto && (
+                          <div className="size-14 rounded-2xl border bg-muted overflow-hidden">
+                            <img src={watchAll.profilePhoto} alt="Preview" className="w-full h-full object-cover" />
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <div className="pt-8 border-t space-y-8">

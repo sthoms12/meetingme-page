@@ -48,16 +48,16 @@ export function ProfileCard({ data, className, slug }: ProfileCardProps) {
     <motion.div
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, cubicBezier: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
       className={cn("w-full max-w-md mx-auto print:max-w-none print:transform-none", className)}
     >
       <Card className="overflow-hidden border-border/60 shadow-soft rounded-[2.5rem] bg-white dark:bg-slate-950 print:border print:bg-white print:text-black">
         <CardHeader className="flex flex-col items-center pt-14 pb-8 print:pt-6">
-          <Avatar className="w-32 h-32 border-8 border-slate-50 dark:border-slate-900 shadow-sm print:border-slate-100 overflow-hidden">
+          <Avatar className="w-32 h-32 border-8 border-slate-50 dark:border-slate-900 shadow-sm print:border-slate-100 overflow-hidden bg-slate-100 dark:bg-slate-900">
             {profilePhoto && profilePhoto.trim() !== '' ? (
               <AvatarImage src={profilePhoto} alt={displayFullName} className="object-cover" />
             ) : null}
-            <AvatarFallback className="bg-slate-100 text-slate-400 dark:bg-slate-900 print:bg-slate-50">
+            <AvatarFallback className="bg-slate-100 text-slate-400 dark:bg-slate-900 dark:text-slate-600 print:bg-slate-50">
               <User size={48} />
             </AvatarFallback>
           </Avatar>
@@ -97,7 +97,7 @@ export function ProfileCard({ data, className, slug }: ProfileCardProps) {
               )}
             </div>
           )}
-          <div className="text-slate-600 text-center leading-relaxed text-base md:text-lg dark:text-slate-300 print:text-slate-700 font-medium italic px-2">
+          <div className="text-slate-600 text-center leading-relaxed text-base md:text-lg dark:text-slate-300 print:text-slate-700 font-medium italic px-2 whitespace-pre-wrap">
             "{displayBio}"
           </div>
           {meetingNote && meetingNote.trim() !== '' && (
@@ -108,7 +108,7 @@ export function ProfileCard({ data, className, slug }: ProfileCardProps) {
                 </div>
                 <span className="text-[11px] font-black uppercase tracking-[0.2em] text-primary">Pre-Meeting Context</span>
               </div>
-              <p className="text-sm md:text-base font-semibold text-slate-800 dark:text-slate-200 leading-relaxed print:text-black">
+              <p className="text-sm md:text-base font-semibold text-slate-800 dark:text-slate-200 leading-relaxed print:text-black whitespace-pre-wrap">
                 {meetingNote}
               </p>
             </div>

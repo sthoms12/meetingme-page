@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Save, ArrowLeft, Loader2, ShieldAlert, Plus, Trash2, LayoutGrid, ExternalLink } from 'lucide-react';
+import { Save, ArrowLeft, Loader2, ShieldAlert, Plus, Trash2, LayoutGrid, ExternalLink, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -78,6 +78,21 @@ export function EditPage() {
       });
     }
   }, [profile, form]);
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 1024 * 1024) {
+        toast.error("Image too large (max 1MB)");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        form.setValue('profilePhoto', reader.result as string);
+        toast.success("Identity photo updated");
+      };
+      reader.readAsDataURL(file);
+    }
+  };
   const onSubmit = async (values: FormValues) => {
     if (!editToken || !slug) return;
     setIsUpdating(true);
@@ -141,7 +156,7 @@ export function EditPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="py-12 md:py-20">
-        <ThemeToggle />
+        <ThemeToggle type="button" />
         <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-16 gap-8">
           <div className="space-y-4">
             <Link to={`/${slug}`} className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 hover:text-primary transition-colors">
@@ -171,12 +186,12 @@ export function EditPage() {
                 >
                   <LayoutGrid size={16} />
                   {v.name}
-                  <span className={cn(
-                    "text-[10px] px-2 py-0.5 rounded-full font-black",
-                    activeVariantIndex === i ? "bg-primary text-white" : "bg-muted text-muted-foreground"
+                  <Badge className={cn(
+                    "text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-tighter",
+                    activeVariantIndex === i ? "bg-primary text-white border-primary" : "bg-muted text-muted-foreground"
                   )}>
                     {v.views} views
-                  </span>
+                  </Badge>
                 </button>
               ))}
               {watchAll.variants?.length < 3 && (
@@ -191,13 +206,16 @@ export function EditPage() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="p-2 rounded-xl bg-primary/10 text-primary"><LayoutGrid size={18} /></div>
-                      <h3 className="text-sm font-black uppercase tracking-widest">Version: {currentVariant?.name}</h3>
+                      <h3 className="text-sm font-black uppercase tracking-widest">Version Settings: {currentVariant?.name}</h3>
                     </div>
                     {watchAll.variants.length > 1 && (
                       <Button variant="ghost" size="sm" type="button" onClick={() => {
-                        const filtered = watchAll.variants.filter((_, i) => i !== activeVariantIndex);
-                        form.setValue('variants', filtered);
-                        setActiveVariantIndex(0);
+                        if (confirm("Delete this version?")) {
+                          const filtered = watchAll.variants.filter((_, i) => i !== activeVariantIndex);
+                          form.setValue('variants', filtered);
+                          setActiveVariantIndex(0);
+                          toast.warning("Version removed from local draft");
+                        }
                       }} className="text-destructive font-black text-[10px] uppercase tracking-widest hover:bg-destructive/5">
                         <Trash2 size={16} className="mr-2" /> Delete
                       </Button>
@@ -216,7 +234,7 @@ export function EditPage() {
                       <FormItem><FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Primary Focus</FormLabel><FormControl><Input className="bg-secondary/40 h-14 rounded-2xl border-none text-base" {...field} /></FormControl></FormItem>
                     )} />
                     <FormField control={form.control} name={`variants.${activeVariantIndex}.topics`} render={({ field }) => (
-                      <FormItem><FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Skills / Topics</FormLabel><FormControl><Input className="bg-secondary/40 h-14 rounded-2xl border-none text-base" {...field} /></FormControl></FormItem>
+                      <FormItem><FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Skills / Topics (CSV)</FormLabel><FormControl><Input className="bg-secondary/40 h-14 rounded-2xl border-none text-base" {...field} /></FormControl></FormItem>
                     )} />
                   </div>
                   <FormField control={form.control} name={`variants.${activeVariantIndex}.meetingNote`} render={({ field }) => (
@@ -246,6 +264,21 @@ export function EditPage() {
                   <FormField control={form.control} name="company" render={({ field }) => (
                     <FormItem><FormLabel className="text-sm font-bold">Current Company</FormLabel><FormControl><Input className="bg-secondary/40 h-14 rounded-2xl border-none text-base" {...field} /></FormControl></FormItem>
                   )} />
+                  <div className="space-y-4">
+                    <FormLabel className="text-sm font-bold block">Global Profile Photo</FormLabel>
+                    <div className="flex items-center gap-4">
+                      <Button type="button" variant="outline" className="h-14 px-6 rounded-2xl border-dashed border-2 relative overflow-hidden group">
+                        <input type="file" accept="image/*" onChange={handlePhotoUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
+                        <ImageIcon size={18} className="mr-2 text-primary" />
+                        <span className="font-bold">Update Photo</span>
+                      </Button>
+                      {watchAll.profilePhoto && (
+                        <div className="size-14 rounded-2xl border bg-muted overflow-hidden">
+                          <img src={watchAll.profilePhoto} alt="Preview" className="w-full h-full object-cover" />
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             </Form>
