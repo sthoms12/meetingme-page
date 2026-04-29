@@ -24,6 +24,7 @@ export type ProfileFormData = Omit<Profile, 'slug' | 'editToken' | 'createdAt' |
   password?: string;
   variantName: string;
   variantSlug: string;
+  bio: string; // Initial bio for the first variant
 };
 export interface ProfilePublicResponse {
   fullName: string;
