@@ -60,9 +60,19 @@ export function EditPage() {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      fullName: '', jobTitle: '', company: '', profilePhoto: '', 
+      fullName: '', jobTitle: '', company: '', profilePhoto: '',
       linkedinUrl: '', websiteUrl: '', videoUrl: '',
-      variants: [], primaryVariantId: ''
+      variants: [{
+        id: 'initial',
+        name: 'Default',
+        variantSlug: 'intro',
+        bio: 'Loading your introduction...',
+        focus: '',
+        topics: '',
+        meetingNote: '',
+        views: 0
+      }],
+      primaryVariantId: 'initial'
     }
   });
   useEffect(() => {
@@ -98,7 +108,7 @@ export function EditPage() {
         body: JSON.stringify({ editToken, timestamp })
       });
       if (res.ok) {
-        toast.success('Version restored');
+        toast.success('Version restored successfully');
         queryClient.invalidateQueries({ queryKey: ['profile-manage', slug] });
       }
     } catch { toast.error('Restore failed'); }
@@ -261,53 +271,55 @@ export function EditPage() {
                 </div>
                 <Form {...form}>
                   <div className="space-y-12">
-                    <div className="bg-card p-8 md:p-10 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-soft space-y-8">
-                      <div className="flex items-center justify-between">
-                        <div className="flex flex-col gap-1">
-                          <h3 className="text-sm font-black uppercase tracking-widest text-primary">Variant Details: {currentVariant?.name}</h3>
-                          {watchAll.primaryVariantId === currentVariant?.id ? (
-                            <span className="text-[10px] text-green-600 font-bold uppercase tracking-widest flex items-center gap-1">
-                              <CheckCircle2 size={10} /> Currently Primary
-                            </span>
-                          ) : (
-                            <button 
-                              type="button" 
-                              onClick={() => currentVariant && setPrimary(currentVariant.id)}
-                              className="text-[10px] text-muted-foreground hover:text-primary font-bold uppercase tracking-widest text-left transition-colors"
-                            >
-                              Set as Primary Variant
-                            </button>
+                    {currentVariant && (
+                      <div className="bg-card p-8 md:p-10 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-soft space-y-8">
+                        <div className="flex items-center justify-between">
+                          <div className="flex flex-col gap-1">
+                            <h3 className="text-sm font-black uppercase tracking-widest text-primary">Variant Details: {currentVariant.name}</h3>
+                            {watchAll.primaryVariantId === currentVariant.id ? (
+                              <span className="text-[10px] text-green-600 font-bold uppercase tracking-widest flex items-center gap-1">
+                                <CheckCircle2 size={10} /> Currently Primary
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setPrimary(currentVariant.id)}
+                                className="text-[10px] text-muted-foreground hover:text-primary font-bold uppercase tracking-widest text-left transition-colors"
+                              >
+                                Set as Primary Variant
+                              </button>
+                            )}
+                          </div>
+                          {watchAll.variants.length > 1 && (
+                            <Button variant="ghost" size="sm" type="button" onClick={() => deleteVariant(activeVariantIndex)} className="text-destructive hover:bg-destructive/5 uppercase font-black text-[10px] tracking-widest">
+                              <Trash2 size={16} className="mr-2" /> Delete
+                            </Button>
                           )}
                         </div>
-                        {watchAll.variants.length > 1 && (
-                          <Button variant="ghost" size="sm" type="button" onClick={() => deleteVariant(activeVariantIndex)} className="text-destructive hover:bg-destructive/5 uppercase font-black text-[10px] tracking-widest">
-                            <Trash2 size={16} className="mr-2" /> Delete
-                          </Button>
-                        )}
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <FormField control={form.control} name={`variants.${activeVariantIndex}.name`} render={({ field }) => (
-                          <FormItem><FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Display Name</FormLabel><FormControl><Input className="bg-secondary/40 h-14 rounded-2xl border-none text-base" {...field} /></FormControl></FormItem>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <FormField control={form.control} name={`variants.${activeVariantIndex}.name`} render={({ field }) => (
+                            <FormItem><FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Display Name</FormLabel><FormControl><Input className="bg-secondary/40 h-14 rounded-2xl border-none text-base" {...field} /></FormControl></FormItem>
+                          )} />
+                          <FormField control={form.control} name={`variants.${activeVariantIndex}.variantSlug`} render={({ field }) => (
+                            <FormItem><FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Slug Path</FormLabel><FormControl><Input className="bg-secondary/40 h-14 rounded-2xl border-none text-base" {...field} /></FormControl></FormItem>
+                          )} />
+                        </div>
+                        <FormField control={form.control} name={`variants.${activeVariantIndex}.bio`} render={({ field }) => (
+                          <FormItem><FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Professional Bio</FormLabel><FormControl><Textarea className="min-h-[140px] bg-secondary/40 rounded-2xl border-none p-4" {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
-                        <FormField control={form.control} name={`variants.${activeVariantIndex}.variantSlug`} render={({ field }) => (
-                          <FormItem><FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Slug Path</FormLabel><FormControl><Input className="bg-secondary/40 h-14 rounded-2xl border-none text-base" {...field} /></FormControl></FormItem>
-                        )} />
-                      </div>
-                      <FormField control={form.control} name={`variants.${activeVariantIndex}.bio`} render={({ field }) => (
-                        <FormItem><FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Professional Bio</FormLabel><FormControl><Textarea className="min-h-[140px] bg-secondary/40 rounded-2xl border-none p-4" {...field} /></FormControl><FormMessage /></FormItem>
-                      )} />
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <FormField control={form.control} name={`variants.${activeVariantIndex}.focus`} render={({ field }) => (
-                          <FormItem><FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Context Focus</FormLabel><FormControl><Input className="bg-secondary/40 h-14 rounded-2xl border-none" {...field} /></FormControl></FormItem>
-                        )} />
-                        <FormField control={form.control} name={`variants.${activeVariantIndex}.topics`} render={({ field }) => (
-                          <FormItem><FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Topics (CSV)</FormLabel><FormControl><Input className="bg-secondary/40 h-14 rounded-2xl border-none" {...field} /></FormControl></FormItem>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <FormField control={form.control} name={`variants.${activeVariantIndex}.focus`} render={({ field }) => (
+                            <FormItem><FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Context Focus</FormLabel><FormControl><Input className="bg-secondary/40 h-14 rounded-2xl border-none" {...field} /></FormControl></FormItem>
+                          )} />
+                          <FormField control={form.control} name={`variants.${activeVariantIndex}.topics`} render={({ field }) => (
+                            <FormItem><FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Topics (CSV)</FormLabel><FormControl><Input className="bg-secondary/40 h-14 rounded-2xl border-none" {...field} /></FormControl></FormItem>
+                          )} />
+                        </div>
+                        <FormField control={form.control} name={`variants.${activeVariantIndex}.meetingNote`} render={({ field }) => (
+                          <FormItem><FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Meeting Context Note</FormLabel><FormControl><Textarea className="min-h-[100px] bg-secondary/40 rounded-2xl border-none p-4" {...field} /></FormControl></FormItem>
                         )} />
                       </div>
-                      <FormField control={form.control} name={`variants.${activeVariantIndex}.meetingNote`} render={({ field }) => (
-                        <FormItem><FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Meeting Context Note</FormLabel><FormControl><Textarea className="min-h-[100px] bg-secondary/40 rounded-2xl border-none p-4" {...field} /></FormControl></FormItem>
-                      )} />
-                    </div>
+                    )}
                     <div className="space-y-10 pt-10 border-t border-dashed">
                        <div className="flex items-center gap-3">
                         <LinkIcon className="text-primary size-5" />
@@ -358,7 +370,6 @@ export function EditPage() {
                         )} />
                       </div>
                     </div>
-
                     <div className="pt-20 border-t border-dashed">
                       <SecurityFAQ className="max-w-none" />
                     </div>

@@ -22,6 +22,11 @@ const router = createBrowserRouter([
     errorElement: <RouteErrorBoundary />,
   },
   {
+    path: "/:slug/edit",
+    element: <EditPage />,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
     path: "/:slug",
     element: <ProfilePage />,
     errorElement: <RouteErrorBoundary />,
@@ -29,11 +34,6 @@ const router = createBrowserRouter([
   {
     path: "/:slug/:variant",
     element: <ProfilePage />,
-    errorElement: <RouteErrorBoundary />,
-  },
-  {
-    path: "/:slug/edit",
-    element: <EditPage />,
     errorElement: <RouteErrorBoundary />,
   },
 ]);
