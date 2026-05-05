@@ -3,7 +3,7 @@
 A full-stack web application built on Cloudflare Workers with a modern React frontend, featuring persistent storage via Durable Objects, beautiful UI components, and seamless deployment.
 
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)]  
-[cloudflarebutton]
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/sthoms12/meetingme-page)
 
 ## ✨ Features
 
@@ -72,7 +72,7 @@ bun run deploy
 
 Or use the [Cloudflare Dashboard](https://dash.cloudflare.com/) to deploy directly.
 
-[cloudflarebutton]
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/sthoms12/meetingme-page)
 
 **Notes**:
 - Custom domain: Update `wrangler.jsonc` and run `wrangler deploy`.
