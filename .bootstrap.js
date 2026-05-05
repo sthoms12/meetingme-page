@@ -87,7 +87,8 @@ function runSetupCommands() {
     "bun add @radix-ui/react-select",
     "bun add @radix-ui/react-accordion",
     "bun add nanoid qrcode lucide-react @radix-ui/react-select @radix-ui/react-accordion",
-    "bun remove lucide-react"
+    "bun remove lucide-react",
+    "bun add lucide-react@latest"
 ];
     
     if (commands.length === 0) {
