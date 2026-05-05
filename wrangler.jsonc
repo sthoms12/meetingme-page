@@ -4,7 +4,7 @@
  */
  {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "meetingme-page-wm3fzj4fjmxrlnrsxaxep",
+	"name": "meetingme-page",
 	"main": "worker/index.ts",
 	"compatibility_date": "2025-04-24",
 	"assets": {
