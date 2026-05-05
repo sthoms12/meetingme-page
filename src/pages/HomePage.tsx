@@ -3,8 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'sonner';
-
-import { Sparkles, Send, ShieldCheck, LayoutGrid, Image as ImageIcon, Loader2, Link as LinkIcon, Linkedin, Globe, Video, Twitter, Github, Phone, Lock, Copy, Check } from 'lucide-react';
+import { Sparkles, Send, ShieldCheck, LayoutGrid, Image as ImageIcon, Loader2, Link as LinkIcon, Linkedin, Globe, Video, Twitter, Github, Phone, Lock, Copy, Check, Info, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -32,7 +31,7 @@ const formSchema = z.object({
   githubUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
   phone: z.string().optional().or(z.literal('')),
   customSlug: z.string().regex(/^[a-z0-9-]*$/, 'Lower, numbers, hyphens').min(3, '3+ chars').optional().or(z.literal('')),
-  password: z.string().min(4).optional().or(z.literal('')),
+  password: z.string().min(4, 'Min 4 characters').optional().or(z.literal('')),
   variantName: z.string().min(1, 'Required'),
   variantSlug: z.string().regex(/^[a-z0-9-]*$/, 'Invalid format').min(2, '2+ chars'),
 });
@@ -143,7 +142,7 @@ export function HomePage() {
                   </div>
                 </div>
                 <div className="p-6 md:p-8 rounded-3xl bg-slate-900 text-white space-y-4 border border-slate-800 shadow-xl relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-4 opacity-10">
+                  <div className="absolute top-0 right-0 p-4 opacity-10 text-white">
                     <Lock size={80} />
                   </div>
                   <div className="flex items-center gap-3">
@@ -156,9 +155,9 @@ export function HomePage() {
                   <p className="text-sm text-slate-400 leading-relaxed max-w-sm">
                     Bookmark this private URL to manage your page from any device. This contains your edit token—keep it secret.
                   </p>
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="secondary" 
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Button
+                      variant="secondary"
                       onClick={handleCopyPrivate}
                       className="flex-1 h-12 rounded-xl font-bold gap-2 text-slate-900"
                     >
@@ -207,12 +206,15 @@ export function HomePage() {
                     )} />
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <FormField control={form.control} name="fullName" render={({ field }) => (
-                        <FormItem><FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Full Name</FormLabel><FormControl><Input className="h-14 text-lg rounded-2xl" {...field} /></FormControl></FormItem>
+                        <FormItem><FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Full Name</FormLabel><FormControl><Input className="h-14 text-lg rounded-2xl" placeholder="John Doe" {...field} /></FormControl></FormItem>
                       )} />
                       <FormField control={form.control} name="jobTitle" render={({ field }) => (
-                        <FormItem><FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Job Title</FormLabel><FormControl><Input className="h-14 text-lg rounded-2xl" {...field} /></FormControl></FormItem>
+                        <FormItem><FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Job Title</FormLabel><FormControl><Input className="h-14 text-lg rounded-2xl" placeholder="Founder & CEO" {...field} /></FormControl></FormItem>
                       )} />
                     </div>
+                    <FormField control={form.control} name="company" render={({ field }) => (
+                      <FormItem><FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Organization</FormLabel><FormControl><Input className="h-14 text-lg rounded-2xl" placeholder="Acme Inc." {...field} /></FormControl></FormItem>
+                    )} />
                     <div className="pt-2">
                       <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70 mb-2 block">Profile Photo</FormLabel>
                       <div className="flex items-center gap-4">
@@ -222,7 +224,7 @@ export function HomePage() {
                           <span className="font-bold">Upload Photo</span>
                         </Button>
                         {watchAll.profilePhoto && (
-                          <div className="size-14 rounded-2xl border bg-muted overflow-hidden">
+                          <div className="size-14 rounded-2xl border bg-muted overflow-hidden shadow-sm">
                             <img src={watchAll.profilePhoto} alt="Preview" className="w-full h-full object-cover" />
                           </div>
                         )}
@@ -234,56 +236,117 @@ export function HomePage() {
                       <LinkIcon className="text-primary size-5" />
                       <span className="text-sm font-black uppercase tracking-[0.2em]">Professional Links</span>
                     </div>
-                    <div className="grid grid-cols-1 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <FormField control={form.control} name="linkedinUrl" render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">LinkedIn Profile</FormLabel>
                           <div className="relative">
                             <Linkedin className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                            <FormControl><Input className="h-12 pl-10 rounded-xl" placeholder="https://linkedin.com/in/username" {...field} /></FormControl>
+                            <FormControl><Input className="h-12 pl-10 rounded-xl" placeholder="https://..." {...field} /></FormControl>
                           </div>
                         </FormItem>
                       )} />
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <FormField control={form.control} name="twitterUrl" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Twitter / X</FormLabel>
-                            <div className="relative">
-                              <Twitter className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                              <FormControl><Input className="h-12 pl-10 rounded-xl" placeholder="https://x.com/username" {...field} /></FormControl>
-                            </div>
-                          </FormItem>
-                        )} />
-                        <FormField control={form.control} name="githubUrl" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">GitHub Profile</FormLabel>
-                            <div className="relative">
-                              <Github className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                              <FormControl><Input className="h-12 pl-10 rounded-xl" placeholder="https://github.com/username" {...field} /></FormControl>
-                            </div>
-                          </FormItem>
-                        )} />
-                      </div>
+                      <FormField control={form.control} name="websiteUrl" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Portfolio / Web</FormLabel>
+                          <div className="relative">
+                            <Globe className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                            <FormControl><Input className="h-12 pl-10 rounded-xl" placeholder="https://..." {...field} /></FormControl>
+                          </div>
+                        </FormItem>
+                      )} />
+                      <FormField control={form.control} name="videoUrl" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Video Intro URL</FormLabel>
+                          <div className="relative">
+                            <Video className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                            <FormControl><Input className="h-12 pl-10 rounded-xl" placeholder="Loom / YouTube link" {...field} /></FormControl>
+                          </div>
+                        </FormItem>
+                      )} />
+                      <FormField control={form.control} name="phone" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Phone Number</FormLabel>
+                          <div className="relative">
+                            <Phone className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                            <FormControl><Input className="h-12 pl-10 rounded-xl" placeholder="+1 (555) 000-0000" {...field} /></FormControl>
+                          </div>
+                        </FormItem>
+                      )} />
+                      <FormField control={form.control} name="twitterUrl" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Twitter / X</FormLabel>
+                          <div className="relative">
+                            <Twitter className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                            <FormControl><Input className="h-12 pl-10 rounded-xl" placeholder="https://x.com/..." {...field} /></FormControl>
+                          </div>
+                        </FormItem>
+                      )} />
+                      <FormField control={form.control} name="githubUrl" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">GitHub</FormLabel>
+                          <div className="relative">
+                            <Github className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                            <FormControl><Input className="h-12 pl-10 rounded-xl" placeholder="https://github.com/..." {...field} /></FormControl>
+                          </div>
+                        </FormItem>
+                      )} />
                     </div>
                   </div>
                   <div className="pt-8 border-t space-y-8">
                     <div className="flex items-center gap-3">
                       <LayoutGrid className="text-primary size-5" />
-                      <span className="text-sm font-black uppercase tracking-[0.2em]">Default Context</span>
+                      <span className="text-sm font-black uppercase tracking-[0.2em]">Initial Context</span>
                     </div>
-                    <FormField control={form.control} name="variantName" render={({ field }) => (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <FormField control={form.control} name="variantName" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Audience Group</FormLabel>
+                          <Select onValueChange={(val) => { field.onChange(val); form.setValue('variantSlug', val.toLowerCase().replace(/\s+/g, '-')) }} defaultValue={field.value}>
+                            <FormControl><SelectTrigger className="h-14 text-lg rounded-2xl"><SelectValue placeholder="Audience Profile" /></SelectTrigger></FormControl>
+                            <SelectContent className="rounded-2xl"><SelectItem value="Default">General Purpose</SelectItem><SelectItem value="Client Meeting">Client Facing</SelectItem><SelectItem value="Interview">Job Interview</SelectItem><SelectItem value="Investor">Investor Pitch</SelectItem></SelectContent>
+                          </Select>
+                        </FormItem>
+                      )} />
+                      <FormField control={form.control} name="focus" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Primary Focus</FormLabel>
+                          <FormControl><Input className="h-14 text-lg rounded-2xl" placeholder="Scale Engineering Teams" {...field} /></FormControl>
+                        </FormItem>
+                      )} />
+                    </div>
+                    <FormField control={form.control} name="topics" render={({ field }) => (
                       <FormItem>
-                        <Select onValueChange={(val) => { field.onChange(val); form.setValue('variantSlug', val.toLowerCase().replace(/\s+/g, '-')) }} defaultValue={field.value}>
-                          <FormControl><SelectTrigger className="h-14 text-lg rounded-2xl"><SelectValue placeholder="Audience Profile" /></SelectTrigger></FormControl>
-                          <SelectContent className="rounded-2xl"><SelectItem value="Default">General Purpose</SelectItem><SelectItem value="Client Meeting">Client Facing</SelectItem><SelectItem value="Interview">Job Interview</SelectItem><SelectItem value="Investor">Investor Pitch</SelectItem></SelectContent>
-                        </Select>
+                        <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Discussion Topics</FormLabel>
+                        <FormControl><Input className="h-14 text-lg rounded-2xl" placeholder="AI, SaaS, GTM Strategy (comma separated)" {...field} /></FormControl>
                       </FormItem>
                     )} />
                     <FormField control={form.control} name="bio" render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Short Bio</FormLabel>
-                        <FormControl><Textarea className="h-32 resize-none rounded-2xl p-4 text-base" placeholder="Brief intro (max 300 characters)..." {...field} /></FormControl>
+                        <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Quick Bio</FormLabel>
+                        <FormControl><Textarea className="h-32 resize-none rounded-2xl p-4 text-base" placeholder="Brief intro for this context..." {...field} /></FormControl>
                         <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="meetingNote" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Pre-Meeting Note</FormLabel>
+                        <FormControl><Textarea className="h-24 resize-none rounded-2xl p-4 text-base bg-primary/5 border-primary/10" placeholder="e.g. Really looking forward to our chat about the Q3 roadmap..." {...field} /></FormControl>
+                      </FormItem>
+                    )} />
+                  </div>
+                  <div className="pt-8 border-t space-y-6">
+                    <div className="flex items-center gap-3">
+                      <Lock className="text-primary size-5" />
+                      <span className="text-sm font-black uppercase tracking-[0.2em]">Privacy & Access</span>
+                    </div>
+                    <FormField control={form.control} name="password" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Optional Password</FormLabel>
+                        <FormControl><Input type="password" className="h-14 text-lg rounded-2xl" placeholder="Leave empty for public access" {...field} /></FormControl>
+                        <FormDescription className="text-[10px] leading-relaxed">
+                          If set, visitors must enter this password to view your card.
+                        </FormDescription>
                       </FormItem>
                     )} />
                   </div>
@@ -296,13 +359,22 @@ export function HomePage() {
           </div>
           <div className="lg:sticky lg:top-12 space-y-6">
             <div className="flex items-center justify-between px-2">
-              <span className="text-[11px] font-black text-muted-foreground uppercase tracking-[0.3em]">Live Preview</span>
+              <div className="flex items-center gap-2">
+                 <Target className="text-primary size-3.5" />
+                 <span className="text-[11px] font-black text-muted-foreground uppercase tracking-[0.3em]">Live Preview</span>
+              </div>
               <div className="flex gap-2 items-center">
                 <div className="size-2 rounded-full bg-green-500 shadow-glow animate-pulse" />
                 <span className="text-xs text-muted-foreground font-bold">{watchAll.variantName} Mode</span>
               </div>
             </div>
             <ProfileCard data={watchAll} className="scale-105 origin-top transition-transform" />
+            <div className="p-6 rounded-3xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-start gap-4">
+               <Info className="size-5 text-primary shrink-0 mt-0.5" />
+               <p className="text-xs text-muted-foreground leading-relaxed">
+                 Professional cards are optimized for mobile consumption and quick context setting. All changes here update the preview in real-time.
+               </p>
+            </div>
           </div>
         </div>
         <section className="pt-20 pb-12 border-t border-slate-200 dark:border-slate-800">

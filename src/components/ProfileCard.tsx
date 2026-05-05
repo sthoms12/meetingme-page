@@ -45,8 +45,8 @@ export function ProfileCard({ data, className, slug }: ProfileCardProps) {
     githubUrl,
     phone,
   } = data;
-  const displayFullName = fullName || 'Your Name';
-  const displayJobTitle = jobTitle || 'Professional Title';
+  const displayFullName = fullName || 'Professional Name';
+  const displayJobTitle = jobTitle || 'Professional Role';
   const displayCompany = company || 'Organization';
   const displayBio = bio || 'Craft a brief, powerful introduction to share before your next high-stakes meeting. Introduce yourself on your own terms.';
   const topicsArray = Array.isArray(topics)
@@ -80,11 +80,11 @@ export function ProfileCard({ data, className, slug }: ProfileCardProps) {
               <User size={48} />
             </AvatarFallback>
           </Avatar>
-          <div className="text-center mt-8 space-y-3">
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white leading-none tracking-tighter">
+          <div className="text-center mt-8 space-y-3 px-6">
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white leading-none tracking-tighter break-words">
               {displayFullName}
             </h2>
-            <p className="text-[11px] font-black text-primary uppercase tracking-[0.25em] leading-none">
+            <p className="text-[11px] font-black text-primary uppercase tracking-[0.25em] leading-tight">
               {displayJobTitle} <span className="text-slate-300 dark:text-slate-700 px-1">/</span> {displayCompany}
             </p>
           </div>
@@ -106,9 +106,9 @@ export function ProfileCard({ data, className, slug }: ProfileCardProps) {
                 </div>
               )}
               {topicsArray.length > 0 && (
-                <div className="flex flex-wrap gap-2.5 pt-1">
+                <div className="flex flex-wrap gap-2 pt-1">
                   {topicsArray.map((topic, i) => (
-                    <Badge key={i} variant="secondary" className="bg-white dark:bg-slate-800 border-slate-200/60 text-[10px] font-black uppercase px-3 py-1 shadow-sm hover:scale-105 transition-transform cursor-default">
+                    <Badge key={i} variant="secondary" className="bg-white dark:bg-slate-800 border-slate-200/60 text-[10px] font-black uppercase px-3 py-1 shadow-sm hover:scale-105 transition-transform cursor-default break-words max-w-full">
                       {topic}
                     </Badge>
                   ))}
@@ -116,7 +116,7 @@ export function ProfileCard({ data, className, slug }: ProfileCardProps) {
               )}
             </div>
           )}
-          <div className="text-slate-600 text-center leading-relaxed text-base md:text-lg dark:text-slate-300 print:text-slate-700 font-medium italic px-2 whitespace-pre-wrap">
+          <div className="text-slate-600 text-center leading-relaxed text-base md:text-lg dark:text-slate-300 print:text-slate-700 font-medium italic px-2 whitespace-pre-wrap break-words">
             "{displayBio}"
           </div>
           {meetingNote && meetingNote.trim() !== '' && (
@@ -125,9 +125,9 @@ export function ProfileCard({ data, className, slug }: ProfileCardProps) {
                 <div className="p-1.5 rounded-lg bg-primary text-white shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform">
                   <Info size={14} />
                 </div>
-                <span className="text-[11px] font-black uppercase tracking-[0.2em] text-primary">Pre-Meeting Context</span>
+                <span className="text-[11px] font-black uppercase tracking-[0.2em] text-primary">Meeting Context</span>
               </div>
-              <p className="text-sm md:text-base font-bold text-slate-800 dark:text-slate-200 leading-relaxed print:text-black whitespace-pre-wrap">
+              <p className="text-sm md:text-base font-bold text-slate-800 dark:text-slate-200 leading-relaxed print:text-black whitespace-pre-wrap break-words">
                 {meetingNote}
               </p>
             </div>
@@ -137,79 +137,63 @@ export function ProfileCard({ data, className, slug }: ProfileCardProps) {
               onClick={handleCalendarExport}
               className="w-full justify-start gap-4 h-14 rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98] bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 text-white font-bold"
             >
-              <div className="p-2 rounded-lg bg-white/20">
-                <Calendar className="size-5 text-white" />
-              </div>
+              <div className="p-2 rounded-lg bg-white/20"><Calendar className="size-5 text-white" /></div>
               <span className="text-[15px]">Add to Calendar</span>
             </Button>
             {linkedinUrl && linkedinUrl.trim() !== '' && (
-              <Button asChild variant="outline" className="w-full justify-start gap-4 h-14 rounded-2xl transition-all active:scale-[0.98] border-slate-200 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900 group">
+              <Button asChild variant="outline" className="w-full justify-start gap-4 h-14 rounded-2xl transition-all active:scale-[0.98] group">
                 <a href={linkedinUrl} target="_blank" rel="noopener noreferrer">
-                  <div className="p-2 rounded-lg bg-[#0077b5]/10 group-hover:bg-[#0077b5]/20 transition-colors">
-                    <Linkedin className="size-5 text-[#0077b5]" />
-                  </div>
-                  <span className="font-bold text-[15px] group-hover:text-slate-900 dark:group-hover:text-white transition-colors">LinkedIn Profile</span>
+                  <div className="p-2 rounded-lg bg-[#0077b5]/10 group-hover:bg-[#0077b5]/20 transition-colors"><Linkedin className="size-5 text-[#0077b5]" /></div>
+                  <span className="font-bold text-[15px]">LinkedIn Profile</span>
                 </a>
               </Button>
             )}
             {twitterUrl && twitterUrl.trim() !== '' && (
-              <Button asChild variant="outline" className="w-full justify-start gap-4 h-14 rounded-2xl transition-all active:scale-[0.98] border-slate-200 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900 group">
+              <Button asChild variant="outline" className="w-full justify-start gap-4 h-14 rounded-2xl transition-all active:scale-[0.98] group">
                 <a href={twitterUrl} target="_blank" rel="noopener noreferrer">
-                  <div className="p-2 rounded-lg bg-slate-900/10 group-hover:bg-slate-900/20 transition-colors">
-                    <Twitter className="size-5 text-slate-900 dark:text-white" />
-                  </div>
-                  <span className="font-bold text-[15px] group-hover:text-slate-900 dark:group-hover:text-white transition-colors">Twitter / X</span>
+                  <div className="p-2 rounded-lg bg-slate-900/10 group-hover:bg-slate-900/20 transition-colors"><Twitter className="size-5 text-slate-900 dark:text-white" /></div>
+                  <span className="font-bold text-[15px]">Twitter / X</span>
                 </a>
               </Button>
             )}
             {githubUrl && githubUrl.trim() !== '' && (
-              <Button asChild variant="outline" className="w-full justify-start gap-4 h-14 rounded-2xl transition-all active:scale-[0.98] border-slate-200 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900 group">
+              <Button asChild variant="outline" className="w-full justify-start gap-4 h-14 rounded-2xl transition-all active:scale-[0.98] group">
                 <a href={githubUrl} target="_blank" rel="noopener noreferrer">
-                  <div className="p-2 rounded-lg bg-slate-800/10 group-hover:bg-slate-800/20 transition-colors">
-                    <Github className="size-5 text-slate-800 dark:text-white" />
-                  </div>
-                  <span className="font-bold text-[15px] group-hover:text-slate-900 dark:group-hover:text-white transition-colors">GitHub Repos</span>
+                  <div className="p-2 rounded-lg bg-slate-800/10 group-hover:bg-slate-800/20 transition-colors"><Github className="size-5 text-slate-800 dark:text-white" /></div>
+                  <span className="font-bold text-[15px]">GitHub Repos</span>
                 </a>
               </Button>
             )}
             {phone && phone.trim() !== '' && (
-              <Button asChild variant="outline" className="w-full justify-start gap-4 h-14 rounded-2xl transition-all active:scale-[0.98] border-slate-200 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900 group">
+              <Button asChild variant="outline" className="w-full justify-start gap-4 h-14 rounded-2xl transition-all active:scale-[0.98] group">
                 <a href={`tel:${phone}`}>
-                  <div className="p-2 rounded-lg bg-indigo-500/10 group-hover:bg-indigo-500/20 transition-colors">
-                    <Phone className="size-5 text-indigo-500" />
-                  </div>
-                  <span className="font-bold text-[15px] group-hover:text-slate-900 dark:group-hover:text-white transition-colors">Call Direct</span>
+                  <div className="p-2 rounded-lg bg-indigo-500/10 group-hover:bg-indigo-500/20 transition-colors"><Phone className="size-5 text-indigo-500" /></div>
+                  <span className="font-bold text-[15px]">Call Direct</span>
                 </a>
               </Button>
             )}
             {websiteUrl && websiteUrl.trim() !== '' && (
-              <Button asChild variant="outline" className="w-full justify-start gap-4 h-14 rounded-2xl transition-all active:scale-[0.98] border-slate-200 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900 group">
+              <Button asChild variant="outline" className="w-full justify-start gap-4 h-14 rounded-2xl transition-all active:scale-[0.98] group">
                 <a href={websiteUrl} target="_blank" rel="noopener noreferrer">
-                  <div className="p-2 rounded-lg bg-emerald-500/10 group-hover:bg-emerald-500/20 transition-colors">
-                    <Globe className="size-5 text-emerald-500" />
-                  </div>
-                  <span className="font-bold text-[15px] group-hover:text-slate-900 dark:group-hover:text-white transition-colors">Personal Website</span>
+                  <div className="p-2 rounded-lg bg-emerald-500/10 group-hover:bg-emerald-500/20 transition-colors"><Globe className="size-5 text-emerald-500" /></div>
+                  <span className="font-bold text-[15px]">Personal Website</span>
                 </a>
               </Button>
             )}
             {videoUrl && videoUrl.trim() !== '' && (
-              <Button asChild variant="outline" className="w-full justify-start gap-4 h-14 rounded-2xl transition-all active:scale-[0.98] border-slate-200 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900 group">
+              <Button asChild variant="outline" className="w-full justify-start gap-4 h-14 rounded-2xl transition-all active:scale-[0.98] group">
                 <a href={videoUrl} target="_blank" rel="noopener noreferrer">
-                  <div className="p-2 rounded-lg bg-rose-500/10 group-hover:bg-rose-500/20 transition-colors">
-                    <Video className="size-5 text-rose-500" />
-                  </div>
-                  <span className="font-bold text-[15px] group-hover:text-slate-900 dark:group-hover:text-white transition-colors">Video Introduction</span>
+                  <div className="p-2 rounded-lg bg-rose-500/10 group-hover:bg-rose-500/20 transition-colors"><Video className="size-5 text-rose-500" /></div>
+                  <span className="font-bold text-[15px]">Video Introduction</span>
                 </a>
               </Button>
             )}
           </div>
           <div className="hidden print:block space-y-3 pt-8 border-t border-slate-100">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Digital Portfolio</p>
-            {linkedinUrl && <div className="flex items-center gap-3 text-sm text-slate-600 truncate"><Linkedin size={14} className="text-slate-400" /> {linkedinUrl}</div>}
-            {twitterUrl && <div className="flex items-center gap-3 text-sm text-slate-600 truncate"><Twitter size={14} className="text-slate-400" /> {twitterUrl}</div>}
-            {githubUrl && <div className="flex items-center gap-3 text-sm text-slate-600 truncate"><Github size={14} className="text-slate-400" /> {githubUrl}</div>}
-            {phone && <div className="flex items-center gap-3 text-sm text-slate-600 truncate"><Phone size={14} className="text-slate-400" /> {phone}</div>}
-            {websiteUrl && <div className="flex items-center gap-3 text-sm text-slate-600 truncate"><Globe size={14} className="text-slate-400" /> {websiteUrl}</div>}
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Digital Identity</p>
+            {linkedinUrl && <div className="flex items-center gap-3 text-sm text-slate-600 truncate"><Linkedin size={14} /> {linkedinUrl}</div>}
+            {websiteUrl && <div className="flex items-center gap-3 text-sm text-slate-600 truncate"><Globe size={14} /> {websiteUrl}</div>}
+            {phone && <div className="flex items-center gap-3 text-sm text-slate-600 truncate"><Phone size={14} /> {phone}</div>}
             {slug && <div className="flex items-center gap-2 text-sm font-black text-primary truncate mt-6 pt-6 border-t border-slate-50"><LinkIcon size={14} /> meetingme.page/{slug}</div>}
           </div>
         </CardContent>
