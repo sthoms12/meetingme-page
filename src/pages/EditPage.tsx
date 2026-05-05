@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useMemo } from 'react';
-import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -50,26 +50,63 @@ export function EditPage() {
   const queryClient = useQueryClient();
   const [isUpdating, setIsUpdating] = useState(false);
   const [activeVariantIndex, setActiveVariantIndex] = useState(0);
+  const [sessionResolved, setSessionResolved] = useState(false);
+  const [hasSessionAccess, setHasSessionAccess] = useState(true);
   useEffect(() => {
     const tokenFromUrl = searchParams.get('token');
-    if (tokenFromUrl && slug) {
-      localStorage.setItem(`profile_${slug}_token`, tokenFromUrl);
-      const newParams = new URLSearchParams(searchParams);
-      newParams.delete('token');
-      setSearchParams(newParams, { replace: true });
-      toast.success('Management access restored');
+    if (!slug) {
+      setSessionResolved(true);
+      return;
     }
-  }, [searchParams, slug, setSearchParams]);
-  const editToken = useMemo(() => slug ? localStorage.getItem(`profile_${slug}_token`) : null, [slug]);
+    if (!tokenFromUrl) {
+      setSessionResolved(true);
+      return;
+    }
+    let cancelled = false;
+    setSessionResolved(false);
+    fetch(`/api/profiles/${slug}/session`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ editToken: tokenFromUrl }),
+    })
+      .then(async (response) => {
+        const payload = await response.json();
+        if (!response.ok || !payload.success) {
+          throw new Error(payload.error || 'Management link expired');
+        }
+        if (cancelled) return;
+        const newParams = new URLSearchParams(searchParams);
+        newParams.delete('token');
+        setSearchParams(newParams, { replace: true });
+        setHasSessionAccess(true);
+        toast.success('Management access restored');
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        setHasSessionAccess(false);
+        toast.error(error instanceof Error ? error.message : 'Management link expired');
+      })
+      .finally(() => {
+        if (!cancelled) setSessionResolved(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [searchParams, setSearchParams, slug]);
   const { data: profile, isLoading } = useQuery<Profile>({
-    queryKey: ['profile-manage', slug, editToken],
+    queryKey: ['profile-manage', slug],
     queryFn: async () => {
-      const res = await fetch(`/api/profiles/${slug}?editToken=${editToken}`);
+      const res = await fetch(`/api/profiles/${slug}/manage`);
       const json = await res.json() as ApiResponse<Profile>;
-      if (!json.success || !json.data) throw new Error(json.error || 'Failed to fetch profile');
+      if (!json.success || !json.data) {
+        if (res.status === 401) setHasSessionAccess(false);
+        throw new Error(json.error || 'Failed to fetch profile');
+      }
+      setHasSessionAccess(true);
       return json.data;
     },
-    enabled: !!slug && !!editToken,
+    retry: false,
+    enabled: !!slug && sessionResolved,
   });
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -109,12 +146,11 @@ export function EditPage() {
   }, [profile, form]);
   const handleRestore = async (timestamp: string) => {
     if (!confirm('Restore this version history? Current variant details will be moved to history.')) return;
-    if (!editToken) return;
     try {
       const res = await fetch(`/api/profiles/${slug}/history/restore`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ editToken, timestamp })
+        body: JSON.stringify({ timestamp })
       });
       if (res.ok) {
         toast.success('Version restored successfully');
@@ -123,12 +159,11 @@ export function EditPage() {
     } catch { toast.error('Restore failed'); }
   };
   const onSubmit = async (values: FormValues) => {
-    if (!editToken || !slug) return;
+    if (!slug) return;
     setIsUpdating(true);
     try {
       const payload = {
         ...values,
-        editToken,
         variants: values.variants.map(v => ({
           ...v,
           topics: v.topics ? v.topics.split(',').map(t => t.trim()).filter(Boolean) : []
@@ -171,7 +206,8 @@ export function EditPage() {
     form.setValue('primaryVariantId', id);
     toast.success('Primary variant updated', { description: 'Save changes to apply globally.' });
   };
-  if (!editToken) return (
+  if (!sessionResolved) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary size-10" /></div>;
+  if (!hasSessionAccess) return (
     <div className="max-w-xl mx-auto py-32 text-center px-6">
       <div className="size-20 rounded-3xl bg-slate-100 flex items-center justify-center mx-auto mb-8"><Lock size={40} className="text-slate-400" /></div>
       <h2 className="text-3xl font-bold mb-4">Access Restricted</h2>
@@ -180,6 +216,14 @@ export function EditPage() {
     </div>
   );
   if (isLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary size-10" /></div>;
+  if (!profile) return (
+    <div className="max-w-xl mx-auto py-32 text-center px-6">
+      <div className="size-20 rounded-3xl bg-slate-100 flex items-center justify-center mx-auto mb-8"><Lock size={40} className="text-slate-400" /></div>
+      <h2 className="text-3xl font-bold mb-4">Management Unavailable</h2>
+      <p className="text-muted-foreground mb-8 text-lg">Refresh the magic link or sign in again to continue.</p>
+      <Button asChild size="lg" className="rounded-2xl h-14 w-full font-bold shadow-soft"><Link to="/">Back to Home</Link></Button>
+    </div>
+  );
   const watchAll = form.watch();
   const currentVariant = watchAll.variants?.[activeVariantIndex];
   const embedCode = `<iframe src="${window.location.origin}/${slug}?embed=1" style="width:100%; max-width:480px; height:680px; border:none; border-radius:2.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.1);" title="MeetingMe Card"></iframe>`;

@@ -17,8 +17,6 @@ export function ProfilePage() {
   const { slug, variant: variantSlug } = useParams<{ slug: string; variant?: string }>();
   const [searchParams] = useSearchParams();
   const isEmbed = searchParams.get('embed') === '1';
-  const editToken = slug ? localStorage.getItem(`profile_${slug}_token`) : null;
-  const isOwner = !!editToken;
   const [password, setPassword] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [unlockedData, setUnlockedData] = useState<any>(null);
@@ -38,6 +36,7 @@ export function ProfilePage() {
   });
   const displayData = unlockedData || initialData;
   const isLocked = displayData?.isLocked && !unlockedData;
+  const canManage = !!displayData?.canManage;
   const handleVerify = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!password || !slug) return;
@@ -216,7 +215,7 @@ export function ProfilePage() {
                   }
                  />
               </div>
-              {isOwner && (
+              {canManage && (
                 <motion.div 
                   initial={{ opacity: 0 }} 
                   animate={{ opacity: 1 }} 
@@ -229,7 +228,7 @@ export function ProfilePage() {
                       <span className="text-xs font-black uppercase tracking-[0.3em]">Owner Dashboard</span>
                     </div>
                     <Button variant="ghost" asChild className="text-[10px] uppercase font-black tracking-widest text-muted-foreground hover:text-primary rounded-xl">
-                      <Link to={`/${slug}/edit?token=${editToken}`}>Manage Introduction</Link>
+                      <Link to={`/${slug}/edit`}>Manage Introduction</Link>
                     </Button>
                   </div>
                   <CopyBlurbGroup 

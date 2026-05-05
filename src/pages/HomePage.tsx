@@ -3,7 +3,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'sonner';
-import QRCode from 'qrcode';
 import { Sparkles, Send, ShieldCheck, LayoutGrid, Image as ImageIcon, Loader2, Link as LinkIcon, Linkedin, Globe, Video, Twitter, Github, Phone, Lock, Copy, Check, Info, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,6 +15,7 @@ import { CopyBlurbGroup } from '@/components/CopyBlurbGroup';
 import { SecurityFAQ } from '@/components/SecurityFAQ';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { generateQrCodeDataUrl } from '@/lib/qrcode';
 const formSchema = z.object({
   fullName: z.string().min(2, 'Name is required'),
   jobTitle: z.string().min(2, 'Title is required'),
@@ -32,7 +32,7 @@ const formSchema = z.object({
   githubUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
   phone: z.string().optional().or(z.literal('')),
   customSlug: z.string().regex(/^[a-z0-9-]*$/, 'Lower, numbers, hyphens').min(3, '3+ chars').optional().or(z.literal('')),
-  password: z.string().min(4, 'Min 4 characters').optional().or(z.literal('')),
+  password: z.string().min(8, 'Min 8 characters').optional().or(z.literal('')),
   variantName: z.string().min(1, 'Required'),
   variantSlug: z.string().regex(/^[a-z0-9-]*$/, 'Invalid format').min(2, '2+ chars'),
 });
@@ -95,16 +95,8 @@ export function HomePage() {
         const slug = result.data.slug;
         const editToken = result.data.editToken;
         setPublishedData({ slug, editToken });
-        localStorage.setItem(`profile_${slug}_token`, editToken);
         const url = `${window.location.origin}/${slug}`;
-        const qr = await QRCode.toDataURL(url, {
-          width: 600,
-          margin: 2,
-          color: {
-            dark: '#0f172a',
-            light: '#ffffff',
-          },
-        });
+        const qr = await generateQrCodeDataUrl(url);
         setQrCodeData(qr);
         toast.success('Your MeetingMe page is live!');
       } else { toast.error(result.error); }
@@ -178,7 +170,7 @@ export function HomePage() {
                       {copiedPrivate ? "Copied" : "Copy Private Link"}
                     </Button>
                     <Button variant="outline" asChild className="h-12 rounded-xl px-4 border-slate-700 bg-transparent text-white hover:bg-slate-800">
-                      <Link to={`/${publishedData.slug}/edit?token=${publishedData.editToken}`}>
+                      <Link to={`/${publishedData.slug}/edit`}>
                         Open Dashboard
                       </Link>
                     </Button>

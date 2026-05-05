@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import QRCode from 'qrcode';
-import { Download, Link as LinkIcon, QrCode, Check, X } from 'lucide-react';
+import { Download, Link as LinkIcon, QrCode, Check } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -11,6 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { generateQrCodeDataUrl } from '@/lib/qrcode';
 interface QRCodeDialogProps {
   url: string;
   label?: string;
@@ -20,14 +20,7 @@ export function QRCodeDialog({ url, label = "Introduction", trigger }: QRCodeDia
   const [qrUrl, setQrUrl] = useState<string>('');
   const [copied, setCopied] = useState(false);
   useEffect(() => {
-    QRCode.toDataURL(url, {
-      width: 600,
-      margin: 2,
-      color: {
-        dark: '#0f172a',
-        light: '#ffffff',
-      },
-    }).then(setQrUrl).catch(console.error);
+    generateQrCodeDataUrl(url).then(setQrUrl).catch(console.error);
   }, [url]);
   const handleDownload = () => {
     const link = document.createElement('a');
