@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'sonner';
+import QRCode from 'qrcode';
 import { Sparkles, Send, ShieldCheck, LayoutGrid, Image as ImageIcon, Loader2, Link as LinkIcon, Linkedin, Globe, Video, Twitter, Github, Phone, Lock, Copy, Check, Info, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -91,14 +92,26 @@ export function HomePage() {
       });
       const result = await res.json();
       if (result.success) {
-        setPublishedData({ slug: result.data.slug, editToken: result.data.editToken });
-        localStorage.setItem(`profile_${result.data.slug}_token`, result.data.editToken);
-        const url = `${window.location.origin}/${result.data.slug}`;
-        setQrCodeData(await (await import('qrcode')).default.toDataURL(url));
+        const slug = result.data.slug;
+        const editToken = result.data.editToken;
+        setPublishedData({ slug, editToken });
+        localStorage.setItem(`profile_${slug}_token`, editToken);
+        const url = `${window.location.origin}/${slug}`;
+        const qr = await QRCode.toDataURL(url, {
+          width: 600,
+          margin: 2,
+          color: {
+            dark: '#0f172a',
+            light: '#ffffff',
+          },
+        });
+        setQrCodeData(qr);
         toast.success('Your MeetingMe page is live!');
       } else { toast.error(result.error); }
-    } catch { toast.error('Error publishing'); }
-    finally { setIsSubmitting(false); }
+    } catch (err) {
+      console.error('Publishing error:', err);
+      toast.error('Error publishing');
+    } finally { setIsSubmitting(false); }
   };
   const handleCopyPrivate = () => {
     if (!publishedData) return;
@@ -137,7 +150,7 @@ export function HomePage() {
                     </div>
                   </div>
                   <div className="flex flex-col items-center gap-3">
-                    <img src={qrCodeData} alt="QR" className="size-32 bg-white p-2 rounded-2xl border-2 border-muted" />
+                    {qrCodeData && <img src={qrCodeData} alt="QR" className="size-32 bg-white p-2 rounded-2xl border-2 border-muted" />}
                     <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Public Scan</span>
                   </div>
                 </div>
