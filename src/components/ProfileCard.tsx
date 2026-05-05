@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Linkedin, Globe, Video, User, Link as LinkIcon, Target, Info, Calendar, Twitter, GitHub, Phone } from 'lucide-react';
+import { Linkedin, Globe, Video, User, Link as LinkIcon, Target, Info, Calendar, Twitter, Github, Phone } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -166,7 +166,7 @@ export function ProfileCard({ data, className, slug }: ProfileCardProps) {
               <Button asChild variant="outline" className="w-full justify-start gap-4 h-14 rounded-2xl transition-all active:scale-[0.98] border-slate-200 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900 group">
                 <a href={githubUrl} target="_blank" rel="noopener noreferrer">
                   <div className="p-2 rounded-lg bg-slate-800/10 group-hover:bg-slate-800/20 transition-colors">
-                    <GitHub className="size-5 text-slate-800 dark:text-white" />
+                    <Github className="size-5 text-slate-800 dark:text-white" />
                   </div>
                   <span className="font-bold text-[15px] group-hover:text-slate-900 dark:group-hover:text-white transition-colors">GitHub Repos</span>
                 </a>
@@ -207,7 +207,7 @@ export function ProfileCard({ data, className, slug }: ProfileCardProps) {
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Digital Portfolio</p>
             {linkedinUrl && <div className="flex items-center gap-3 text-sm text-slate-600 truncate"><Linkedin size={14} className="text-slate-400" /> {linkedinUrl}</div>}
             {twitterUrl && <div className="flex items-center gap-3 text-sm text-slate-600 truncate"><Twitter size={14} className="text-slate-400" /> {twitterUrl}</div>}
-            {githubUrl && <div className="flex items-center gap-3 text-sm text-slate-600 truncate"><GitHub size={14} className="text-slate-400" /> {githubUrl}</div>}
+            {githubUrl && <div className="flex items-center gap-3 text-sm text-slate-600 truncate"><Github size={14} className="text-slate-400" /> {githubUrl}</div>}
             {phone && <div className="flex items-center gap-3 text-sm text-slate-600 truncate"><Phone size={14} className="text-slate-400" /> {phone}</div>}
             {websiteUrl && <div className="flex items-center gap-3 text-sm text-slate-600 truncate"><Globe size={14} className="text-slate-400" /> {websiteUrl}</div>}
             {slug && <div className="flex items-center gap-2 text-sm font-black text-primary truncate mt-6 pt-6 border-t border-slate-50"><LinkIcon size={14} /> meetingme.page/{slug}</div>}

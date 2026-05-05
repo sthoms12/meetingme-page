@@ -3,8 +3,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'sonner';
-import QRCode from 'qrcode';
-import { Sparkles, Send, ShieldCheck, LayoutGrid, Image as ImageIcon, Loader2, Link as LinkIcon, Linkedin, Globe, Video, Twitter, GitHub, Phone, Lock, Copy, Check } from 'lucide-react';
+
+import { Sparkles, Send, ShieldCheck, LayoutGrid, Image as ImageIcon, Loader2, Link as LinkIcon, Linkedin, Globe, Video, Twitter, Github, Phone, Lock, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -95,7 +95,7 @@ export function HomePage() {
         setPublishedData({ slug: result.data.slug, editToken: result.data.editToken });
         localStorage.setItem(`profile_${result.data.slug}_token`, result.data.editToken);
         const url = `${window.location.origin}/${result.data.slug}`;
-        setQrCodeData(await QRCode.toDataURL(url));
+        setQrCodeData(await (await import('qrcode')).default.toDataURL(url));
         toast.success('Your MeetingMe page is live!');
       } else { toast.error(result.error); }
     } catch { toast.error('Error publishing'); }
@@ -258,7 +258,7 @@ export function HomePage() {
                           <FormItem>
                             <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">GitHub Profile</FormLabel>
                             <div className="relative">
-                              <GitHub className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                              <Github className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                               <FormControl><Input className="h-12 pl-10 rounded-xl" placeholder="https://github.com/username" {...field} /></FormControl>
                             </div>
                           </FormItem>
