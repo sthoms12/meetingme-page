@@ -1,122 +1,155 @@
 # MeetingMe Page
 
-A full-stack web application built on Cloudflare Workers with a modern React frontend, featuring persistent storage via Durable Objects, beautiful UI components, and seamless deployment.
+MeetingMe is a lightweight personal intro page for people who want to give useful context before a meeting.
 
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)]  
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/sthoms12/meetingme-page)
+It is a bit like Linktree, but the intent is different. Linktree is mainly a list of outbound links. MeetingMe is a short briefing page: who you are, what you work on, what the meeting is about, and the links someone may need before they talk to you.
 
-## ✨ Features
+## How users use it
 
-- **Full-Stack Architecture**: React + Vite frontend served via Cloudflare Pages with Hono-powered API backend on Cloudflare Workers.
-- **Durable Objects**: Stateful storage for counters, lists, and custom data with global consistency.
-- **Modern UI**: Tailwind CSS + shadcn/ui components, dark mode, animations, and responsive design.
-- **TypeScript Everywhere**: End-to-end type safety with shared types between frontend and backend.
-- **Developer Experience**: Hot reload, error reporting, TanStack Query, React Router, and more.
-- **Production-Ready**: CORS, logging, health checks, client error reporting, and automatic SPA routing.
-- **Demo Endpoints**: Counter increment/decrement, CRUD for demo items using Durable Objects.
+1. A user creates a MeetingMe page from the homepage.
+2. They choose a public handle, such as `/jane-doe`.
+3. They add their name, role, company, photo, short bio, focus area, discussion topics, and optional meeting note.
+4. They add links like LinkedIn, website, video intro, GitHub, X, or phone.
+5. They publish the page and get:
+   - A public page URL
+   - A QR code
+   - A private management link
+   - Copy-ready blurbs for calendar invites, email, and chat
+6. They share the page before meetings so the other person can get oriented quickly.
 
-## 🛠️ Tech Stack
+A visitor sees a polished profile card with the user's role, focus, topics, meeting note, and links. They can add the intro to their calendar, open links, scan/share a QR code, or view a password prompt if the page is protected.
 
-- **Frontend**: React 18, Vite, TypeScript, Tailwind CSS, shadcn/ui, Lucide React, Framer Motion, TanStack Query, React Router, Sonner (toasts), Zod
-- **Backend**: Hono, Cloudflare Workers, Durable Objects
-- **Styling**: Tailwind CSS + Tailwind Animate, CSS Variables for theming
-- **Utilities**: Immer, clsx, tw-merge, date-fns, UUID
-- **Build Tools**: Bun, Wrangler, Cloudflare Vite Plugin
-- **Dev Tools**: ESLint, TypeScript ESLint, Prettier (via shadcn)
+The page owner can return through the private management link to update the page, create audience-specific variants, view basic analytics, embed the card elsewhere, and restore previous versions.
 
-## 🚀 Quick Start (Local Development)
+## Linktree comparison
 
-### Prerequisites
-- [Bun](https://bun.sh/) installed
-- [Cloudflare Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/install-and-update/) (`bun install -g wrangler`)
+MeetingMe overlaps with Linktree in one way: both give someone a single URL that collects useful links.
 
-### 1. Clone & Install
+The difference is the job-to-be-done:
+
+- Linktree answers: "Where can people find me?"
+- MeetingMe answers: "What should someone know before they meet me?"
+
+MeetingMe is better suited for warm intros, sales calls, interviews, client meetings, advisory calls, and networking follow-ups. The page can still include links, but the core product is context.
+
+## Features
+
+- Public intro pages at `/:slug`
+- Audience-specific variants at `/:slug/:variant`
+- Private edit sessions through a secure management link
+- Optional password protection for public pages
+- QR code sharing
+- Calendar invite export
+- Copy-ready blurbs for email, calendar invites, and chat
+- Embeddable profile card
+- Basic view analytics by variant/source
+- Up to three profile variants
+- Version snapshots and restore
+- Profile photo upload or external image URL
+- Persistent storage on Cloudflare Durable Objects
+
+## Architecture
+
+MeetingMe is a full-stack React app deployed to Cloudflare Workers.
+
+- Frontend: React 18, Vite, TypeScript, Tailwind CSS, shadcn/ui, Lucide, Framer Motion, TanStack Query, React Router
+- Backend: Hono routes running inside a Cloudflare Worker
+- Storage: Cloudflare Durable Objects
+- Validation: Zod schemas shared between frontend and backend
+- Build/deploy: Bun, Vite, Wrangler, Cloudflare Workers Builds
+
+The Worker serves both the React app and the API. Cloudflare's SPA asset handling serves the frontend while `/api/*` routes run through Hono.
+
+## Main routes
+
+| Route | Purpose |
+| --- | --- |
+| `/` | Create a new MeetingMe page |
+| `/:slug` | Public profile page |
+| `/:slug/:variant` | Public page for a specific audience variant |
+| `/:slug/edit` | Owner dashboard, unlocked by session or management token |
+
+## API routes
+
+All API responses use this shape:
+
+```ts
+{
+  success: boolean;
+  data?: unknown;
+  error?: string;
+}
+```
+
+| Endpoint | Method | Purpose |
+| --- | --- | --- |
+| `/api/health` | GET | Health check |
+| `/api/profiles/availability/:slug` | GET | Check whether a public handle is available |
+| `/api/profiles` | POST | Create a new profile and return `slug` plus private `editToken` |
+| `/api/profiles/:slug` | GET | Fetch public profile data |
+| `/api/profiles/:slug` | PUT | Update a profile as the owner |
+| `/api/profiles/:slug/session` | POST | Exchange an edit token for a secure owner session |
+| `/api/profiles/:slug/session` | DELETE | Clear the owner session cookie |
+| `/api/profiles/:slug/manage` | GET | Fetch owner-only management data |
+| `/api/profiles/:slug/verify` | POST | Unlock a password-protected public profile |
+| `/api/profiles/:slug/photo` | GET | Serve stored profile photo assets |
+| `/api/profiles/:slug/analytics` | GET | Fetch owner-only analytics |
+| `/api/profiles/:slug/history/restore` | POST | Restore a saved version snapshot |
+| `/api/client-errors` | POST | Report client-side errors |
+
+## Local development
+
+Prerequisites:
+
+- Bun
+- Wrangler, if deploying manually
+
+Install dependencies:
+
 ```bash
-git clone <your-repo-url>
-cd meetingme-page-wm3fzj4fjmxrlnrsxaxep
 bun install
 ```
 
-### 2. Generate Types (Workers)
-```bash
-bun run cf-typegen
-```
+Run the development server:
 
-### 3. Development Server
 ```bash
 bun run dev
 ```
-- Frontend: http://localhost:3000
-- API: http://localhost:3000/api/*
 
-Access:
-- `/` - Demo home page
-- `/api/health` - Health check
-- `/api/counter` - Get counter value
-- `/api/counter/increment` - Increment counter
-- `/api/demo` - Get demo items (CRUD available)
+The app runs at:
 
-## 🔨 Build & Preview
-```bash
-bun run build
-bun run preview
+```text
+http://localhost:3000/
 ```
 
-## ☁️ Deployment
+Run checks:
 
-Deploy to Cloudflare with one command:
+```bash
+bun run lint
+bun run build
+```
+
+## Deployment
+
+The app is deployed through Cloudflare Workers Builds from GitHub. Pushing to `main` triggers the Cloudflare build/deploy pipeline.
+
+Manual deploy is also supported if `CLOUDFLARE_API_TOKEN` is available:
 
 ```bash
 bun run deploy
 ```
 
-Or use the [Cloudflare Dashboard](https://dash.cloudflare.com/) to deploy directly.
+The Worker name is configured in `wrangler.jsonc` as `meetingme-page`.
 
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/sthoms12/meetingme-page)
+## Security notes
 
-**Notes**:
-- Custom domain: Update `wrangler.jsonc` and run `wrangler deploy`.
-- Environment variables/bindings: Add via Wrangler secrets or Dashboard.
-- Durable Objects: Automatically migrated on deploy.
+- The edit token is generated at creation time and only the hash is stored.
+- The management link exchanges the edit token for a cookie-backed owner session.
+- Owner sessions are capped and expired server-side.
+- Optional public page passwords are hashed before storage.
+- Password verification, session exchange, restore, and update flows are rate-limited.
+- Uploaded photos are limited to supported image types and 1 MB.
 
-## 📚 API Reference
+## License
 
-All API routes under `/api/*` with JSON responses `{ success: boolean, data?: T, error?: string }`.
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/health` | GET | Health check |
-| `/api/counter` | GET | Get counter value |
-| `/api/counter/increment` | POST | Increment counter |
-| `/api/demo` | GET | List demo items |
-| `/api/demo` | POST | Add demo item |
-| `/api/demo/:id` | PUT | Update demo item |
-| `/api/demo/:id` | DELETE | Delete demo item |
-| `/api/test` | GET | Test endpoint |
-| `/api/client-errors` | POST | Report client errors |
-
-**Example (fetch)**:
-```ts
-const res = await fetch('/api/demo');
-const { data } = await res.json();
-```
-
-## 🤝 Contributing
-
-1. Fork the repo
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## 📄 License
-
-MIT License - see [LICENSE](LICENSE) for details.
-
-## 🙌 Support
-
-- [Cloudflare Workers Docs](https://developers.cloudflare.com/workers/)
-- [shadcn/ui](https://ui.shadcn.com/)
-- Questions? Open an issue!
-
-Built with ❤️ for Cloudflare's edge platform.
+MIT
