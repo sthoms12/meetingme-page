@@ -6,7 +6,6 @@ export default {
   	extend: {
   		fontFamily: {
   			sans: [
-  				'Inter',
   				'-apple-system',
   				'BlinkMacSystemFont',
   				'Segoe UI',
@@ -14,9 +13,9 @@ export default {
   				'sans-serif'
   			],
 			display: [
-				'Inter',
-				'system-ui',
-				'sans-serif'
+				'Georgia',
+				'ui-serif',
+				'serif'
 			],
   			mono: [
   				'JetBrains Mono',

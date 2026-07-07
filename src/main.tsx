@@ -15,7 +15,7 @@ const HomePage = lazy(() => import('@/pages/HomePage').then((module) => ({ defau
 const ProfilePage = lazy(() => import('@/pages/ProfilePage').then((module) => ({ default: module.ProfilePage })));
 const EditPage = lazy(() => import('@/pages/EditPage').then((module) => ({ default: module.EditPage })));
 
-const RouteFallback = () => (
+const routeFallback = (
   <div className="min-h-screen bg-background flex items-center justify-center p-6">
     <div className="w-full max-w-md space-y-6">
       <Skeleton className="h-[500px] w-full rounded-[2.5rem]" />
@@ -24,7 +24,7 @@ const RouteFallback = () => (
 );
 
 const withSuspense = (Component: ComponentType) => (
-  <Suspense fallback={<RouteFallback />}>
+  <Suspense fallback={routeFallback}>
     <Component />
   </Suspense>
 );

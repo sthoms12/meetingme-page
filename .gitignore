@@ -1,3 +1,11 @@
 
 # Bootstrap marker
 .bootstrap-complete
+
+# Dependencies and local caches
+node_modules/
+.eslintcache
+.wrangler/
+
+# Build output
+dist/

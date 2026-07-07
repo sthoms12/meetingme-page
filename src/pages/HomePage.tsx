@@ -115,24 +115,42 @@ export function HomePage() {
   };
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="py-12 md:py-20 lg:py-24 space-y-16">
-        <ThemeToggle />
-        <header className="max-w-3xl space-y-6">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-[11px] font-black uppercase tracking-[0.2em] shadow-sm border border-primary/5">
-            <Sparkles size={14} /> <span>Professional Network Tools</span>
+      <div className="py-8 md:py-14 lg:py-16 space-y-12">
+        <ThemeToggle className="fixed top-5 right-5 rounded-full border bg-card/80 backdrop-blur" />
+        <header className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-end">
+          <div className="max-w-4xl space-y-7">
+            <div className="inline-flex items-center gap-2 rounded-full border bg-card/80 px-4 py-2 text-[11px] font-black uppercase tracking-[0.18em] text-primary shadow-soft backdrop-blur">
+              <Sparkles size={14} /> <span>MeetingMe Page</span>
+            </div>
+            <h1 className="font-display text-6xl md:text-7xl lg:text-8xl tracking-normal text-foreground leading-[0.92]">
+              Send the context before the calendar invite.
+            </h1>
+            <p className="text-muted-foreground text-lg md:text-xl max-w-2xl leading-relaxed">
+              Build a concise meeting intro page with the facts, links, topics, and private context people need before they talk to you.
+            </p>
           </div>
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-slate-900 dark:text-white leading-[1.05]">
-            Professional context <br />
-            <span className="text-primary">before the meeting</span>.
-          </h1>
-          <p className="text-slate-500 dark:text-slate-400 text-lg md:text-xl max-w-2xl leading-relaxed">
-            Send a single link to introduce yourself. No ads, no fluff, just the facts your audience needs to know.
-          </p>
+          <div className="hairline-panel rounded-2xl p-5">
+            <div className="grid grid-cols-3 gap-3 text-center">
+              {[
+                ['01', 'Create'],
+                ['02', 'Share'],
+                ['03', 'Meet'],
+              ].map(([number, label]) => (
+                <div key={label} className="rounded-xl border bg-background/60 p-4">
+                  <div className="font-display text-3xl text-primary">{number}</div>
+                  <div className="mt-1 text-[10px] font-black uppercase tracking-[0.18em] text-muted-foreground">{label}</div>
+                </div>
+              ))}
+            </div>
+            <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+              Designed for warm intros, client calls, interviews, advisory chats, and any meeting where a short briefing beats a long bio.
+            </p>
+          </div>
         </header>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.02fr)_minmax(360px,0.98fr)] gap-10 xl:gap-14 items-start">
           <div className="space-y-12">
             {publishedData ? (
-              <div className="bg-card border-2 border-primary/10 rounded-4xl p-8 md:p-10 shadow-soft space-y-10 animate-scale-in">
+              <div className="hairline-panel rounded-3xl p-8 md:p-10 space-y-10 animate-scale-in">
                 <div className="flex flex-col md:flex-row gap-8 items-center">
                   <div className="flex-1 space-y-4 w-full text-center md:text-left">
                     <div className="size-14 rounded-2xl bg-green-500/10 text-green-600 flex items-center justify-center mx-auto md:mx-0"><ShieldCheck size={28} /></div>
@@ -190,12 +208,21 @@ export function HomePage() {
               </div>
             ) : (
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-10 bg-card p-8 md:p-12 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-soft">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-9 hairline-panel p-6 md:p-8 rounded-3xl">
+                  <div className="flex items-center justify-between gap-4 border-b pb-5">
+                    <div>
+                      <h2 className="text-xl font-bold tracking-tight">Create your intro</h2>
+                      <p className="mt-1 text-sm text-muted-foreground">Start with the public handle, then add the context people should know first.</p>
+                    </div>
+                    <div className="hidden sm:flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                      <Send size={20} />
+                    </div>
+                  </div>
                   <div className="space-y-6">
                     <FormField control={form.control} name="customSlug" render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Public Handle</FormLabel>
-                        <FormControl><Input className="h-14 text-lg rounded-2xl border-slate-200" placeholder="jane-doe" {...field} /></FormControl>
+                        <FormLabel className="text-xs font-black uppercase tracking-[0.16em] text-muted-foreground">Public Handle</FormLabel>
+                        <FormControl><Input className="h-12 text-base rounded-xl border bg-background/80" placeholder="jane-doe" {...field} /></FormControl>
                         {customSlug && customSlug.length >= 3 && (
                           <FormDescription className={cn("text-[11px] font-bold flex items-center gap-1.5", isCheckingSlug ? "text-muted-foreground" : slugAvailable === true ? "text-green-600" : "text-destructive")}>
                             {isCheckingSlug ? (
@@ -211,19 +238,19 @@ export function HomePage() {
                     )} />
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <FormField control={form.control} name="fullName" render={({ field }) => (
-                        <FormItem><FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Full Name</FormLabel><FormControl><Input className="h-14 text-lg rounded-2xl" placeholder="John Doe" {...field} /></FormControl></FormItem>
+                        <FormItem><FormLabel className="text-xs font-black uppercase tracking-[0.16em] text-muted-foreground">Full Name</FormLabel><FormControl><Input className="h-12 rounded-xl bg-background/80" placeholder="John Doe" {...field} /></FormControl></FormItem>
                       )} />
                       <FormField control={form.control} name="jobTitle" render={({ field }) => (
-                        <FormItem><FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Job Title</FormLabel><FormControl><Input className="h-14 text-lg rounded-2xl" placeholder="Founder & CEO" {...field} /></FormControl></FormItem>
+                        <FormItem><FormLabel className="text-xs font-black uppercase tracking-[0.16em] text-muted-foreground">Job Title</FormLabel><FormControl><Input className="h-12 rounded-xl bg-background/80" placeholder="Founder & CEO" {...field} /></FormControl></FormItem>
                       )} />
                     </div>
                     <FormField control={form.control} name="company" render={({ field }) => (
-                      <FormItem><FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Organization</FormLabel><FormControl><Input className="h-14 text-lg rounded-2xl" placeholder="Acme Inc." {...field} /></FormControl></FormItem>
+                      <FormItem><FormLabel className="text-xs font-black uppercase tracking-[0.16em] text-muted-foreground">Organization</FormLabel><FormControl><Input className="h-12 rounded-xl bg-background/80" placeholder="Acme Inc." {...field} /></FormControl></FormItem>
                     )} />
                     <div className="pt-2">
-                      <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70 mb-2 block">Profile Photo</FormLabel>
+                      <FormLabel className="text-xs font-black uppercase tracking-[0.16em] text-muted-foreground mb-2 block">Profile Photo</FormLabel>
                       <div className="flex items-center gap-4">
-                        <Button type="button" variant="outline" className="h-14 px-6 rounded-2xl border-dashed border-2 relative overflow-hidden group">
+                        <Button type="button" variant="outline" className="h-12 px-5 rounded-xl border-dashed border-2 relative overflow-hidden group bg-background/80">
                           <input type="file" accept="image/*" onChange={handlePhotoUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
                           <ImageIcon size={18} className="mr-2 text-primary" />
                           <span className="font-bold">Upload Photo</span>
@@ -236,10 +263,10 @@ export function HomePage() {
                       </div>
                     </div>
                   </div>
-                  <div className="pt-8 border-t space-y-8">
+                  <div className="pt-7 border-t space-y-7">
                     <div className="flex items-center gap-3">
                       <LinkIcon className="text-primary size-5" />
-                      <span className="text-sm font-black uppercase tracking-[0.2em]">Professional Links</span>
+                      <span className="text-sm font-black uppercase tracking-[0.16em]">Professional Links</span>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <FormField control={form.control} name="linkedinUrl" render={({ field }) => (
@@ -298,10 +325,10 @@ export function HomePage() {
                       )} />
                     </div>
                   </div>
-                  <div className="pt-8 border-t space-y-8">
+                  <div className="pt-7 border-t space-y-7">
                     <div className="flex items-center gap-3">
                       <LayoutGrid className="text-primary size-5" />
-                      <span className="text-sm font-black uppercase tracking-[0.2em]">Initial Context</span>
+                      <span className="text-sm font-black uppercase tracking-[0.16em]">Initial Context</span>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <FormField control={form.control} name="variantName" render={({ field }) => (
@@ -329,40 +356,40 @@ export function HomePage() {
                     <FormField control={form.control} name="bio" render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Quick Bio</FormLabel>
-                        <FormControl><Textarea className="h-32 resize-none rounded-2xl p-4 text-base" placeholder="Brief intro for this context..." {...field} /></FormControl>
+                          <FormControl><Textarea className="h-32 resize-none rounded-xl bg-background/80 p-4 text-base" placeholder="Brief intro for this context..." {...field} /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )} />
                     <FormField control={form.control} name="meetingNote" render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Pre-Meeting Note</FormLabel>
-                        <FormControl><Textarea className="h-24 resize-none rounded-2xl p-4 text-base bg-primary/5 border-primary/10" placeholder="e.g. Really looking forward to our chat about the Q3 roadmap..." {...field} /></FormControl>
+                        <FormControl><Textarea className="h-24 resize-none rounded-xl p-4 text-base bg-primary/5 border-primary/10" placeholder="e.g. Really looking forward to our chat about the Q3 roadmap..." {...field} /></FormControl>
                       </FormItem>
                     )} />
                   </div>
-                  <div className="pt-8 border-t space-y-6">
+                  <div className="pt-7 border-t space-y-6">
                     <div className="flex items-center gap-3">
                       <Lock className="text-primary size-5" />
-                      <span className="text-sm font-black uppercase tracking-[0.2em]">Privacy & Access</span>
+                      <span className="text-sm font-black uppercase tracking-[0.16em]">Privacy & Access</span>
                     </div>
                     <FormField control={form.control} name="password" render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Optional Password</FormLabel>
-                        <FormControl><Input type="password" className="h-14 text-lg rounded-2xl" placeholder="Leave empty for public access" {...field} /></FormControl>
+                        <FormControl><Input type="password" className="h-12 rounded-xl bg-background/80" placeholder="Leave empty for public access" {...field} /></FormControl>
                         <FormDescription className="text-[10px] leading-relaxed">
                           If set, visitors must enter this password to view your card.
                         </FormDescription>
                       </FormItem>
                     )} />
                   </div>
-                  <Button type="submit" size="lg" className="w-full h-16 text-xl rounded-2xl font-bold shadow-lg shadow-primary/20 hover:scale-[1.01] active:scale-95 transition-all" disabled={isSubmitting || slugAvailable === false}>
+                  <Button type="submit" size="lg" className="w-full h-14 text-base rounded-xl font-bold active:scale-[0.99] transition-all" disabled={isSubmitting || slugAvailable === false}>
                     {isSubmitting ? "Publishing..." : "Create My Page"} <Send size={20} className="ml-3" />
                   </Button>
                 </form>
               </Form>
             )}
           </div>
-          <div className="lg:sticky lg:top-12 space-y-6">
+          <div className="lg:sticky lg:top-8 space-y-6">
             <div className="flex items-center justify-between px-2">
               <div className="flex items-center gap-2">
                  <Target className="text-primary size-3.5" />
@@ -373,11 +400,11 @@ export function HomePage() {
                 <span className="text-xs text-muted-foreground font-bold">{watchAll.variantName} Mode</span>
               </div>
             </div>
-            <ProfileCard data={watchAll} className="scale-105 origin-top transition-transform" />
-            <div className="p-6 rounded-3xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-start gap-4">
+            <ProfileCard data={watchAll} className="origin-top transition-transform" />
+            <div className="p-5 rounded-2xl bg-card/80 border flex items-start gap-4 shadow-soft backdrop-blur">
                <Info className="size-5 text-primary shrink-0 mt-0.5" />
                <p className="text-xs text-muted-foreground leading-relaxed">
-                 Professional cards are optimized for mobile consumption and quick context setting. All changes here update the preview in real-time.
+                 This preview updates in real time. Keep it skimmable: role, focus, topics, and one useful meeting note.
                </p>
             </div>
           </div>
