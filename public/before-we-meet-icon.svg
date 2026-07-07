@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="beforeWeMeetTitle">
+  <title id="beforeWeMeetTitle">Before We Meet</title>
+  <defs>
+    <linearGradient id="beforeWeMeetGradient" x1="0%" x2="100%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#163f35" />
+      <stop offset="100%" stop-color="#d89134" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#beforeWeMeetGradient)" />
+  <path d="M17 18h14c5.5 0 9 3.1 9 7.8 0 2.8-1.4 5-3.8 6.2 3.3 1.1 5.2 3.6 5.2 7 0 5.3-3.9 8.9-10.2 8.9H17V18Zm8 12h4.9c1.9 0 3.1-1 3.1-2.7s-1.2-2.7-3.1-2.7H25V30Zm0 11.3h5.7c2.3 0 3.6-1.1 3.6-3s-1.3-3-3.6-3H25v6Z" fill="#fffaf0" />
+  <path d="M42 18h6l-4.8 30h-5.8l-3.1-14.4-3.2 14.4h-5.8L20.5 18h6l2.3 16.1L32 18h4.6l3.2 16.1L42 18Z" fill="#fffaf0" opacity=".82" />
+</svg>

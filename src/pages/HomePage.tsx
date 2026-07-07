@@ -98,7 +98,7 @@ export function HomePage() {
         const url = `${window.location.origin}/${slug}`;
         const qr = await generateQrCodeDataUrl(url);
         setQrCodeData(qr);
-        toast.success('Your MeetingMe page is live!');
+        toast.success('Your Before We Meet page is live!');
       } else { toast.error(result.error); }
     } catch (err) {
       console.error('Publishing error:', err);
@@ -120,7 +120,7 @@ export function HomePage() {
         <header className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-end">
           <div className="max-w-4xl space-y-7">
             <div className="inline-flex items-center gap-2 rounded-full border bg-card/80 px-4 py-2 text-[11px] font-black uppercase tracking-[0.18em] text-primary shadow-soft backdrop-blur">
-              <Sparkles size={14} /> <span>MeetingMe Page</span>
+              <Sparkles size={14} /> <span>Before We Meet</span>
             </div>
             <h1 className="font-display text-6xl md:text-7xl lg:text-8xl tracking-normal text-foreground leading-[0.92]">
               Send the context before the calendar invite.

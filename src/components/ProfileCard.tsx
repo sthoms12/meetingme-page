@@ -169,7 +169,7 @@ export function ProfileCard({ data, className, slug }: ProfileCardProps) {
             {linkedinUrl && <div className="flex items-center gap-3 text-sm text-slate-600 truncate"><Linkedin size={14} /> {linkedinUrl}</div>}
             {websiteUrl && <div className="flex items-center gap-3 text-sm text-slate-600 truncate"><Globe size={14} /> {websiteUrl}</div>}
             {phone && <div className="flex items-center gap-3 text-sm text-slate-600 truncate"><Phone size={14} /> {phone}</div>}
-            {slug && <div className="flex items-center gap-2 text-sm font-black text-primary truncate mt-6 pt-6 border-t border-slate-50"><LinkIcon size={14} /> meetingme.page/{slug}</div>}
+            {slug && <div className="flex items-center gap-2 text-sm font-black text-primary truncate mt-6 pt-6 border-t border-slate-50"><LinkIcon size={14} /> beforewemeet.app/{slug}</div>}
           </div>
         </CardContent>
       </Card>
