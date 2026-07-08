@@ -57,7 +57,7 @@ export function ProfilePage() {
   };
   const handleShare = async () => {
     const shareData = {
-      title: `Before We Meet | ${displayData.fullName}`,
+      title: `B4WeMeet | ${displayData.fullName}`,
       text: `Quick intro before our meeting: ${displayData.fullName} (${displayData.jobTitle})`,
       url: window.location.href,
     };

@@ -34,7 +34,7 @@ export function SecurityFAQ({ className }: SecurityFAQProps) {
       id: 'privacy',
       icon: <EyeOff className="size-4 text-primary" />,
       question: "What about visitor privacy?",
-      answer: "Before We Meet is built for professional transparency, not tracking. We log anonymous view counts to give you feedback, but we do not collect PII (Personally Identifiable Information), email addresses, or use cross-site tracking cookies. Your visitors remain anonymous."
+      answer: "B4WeMeet is built for professional transparency, not tracking. We log anonymous view counts to give you feedback, but we do not collect PII (Personally Identifiable Information), email addresses, or use cross-site tracking cookies. Your visitors remain anonymous."
     },
     {
       id: 'infrastructure',
@@ -52,7 +52,7 @@ export function SecurityFAQ({ className }: SecurityFAQProps) {
         </div>
         <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Security & Privacy</h2>
         <p className="text-muted-foreground text-sm max-w-xl">
-          We built Before We Meet with a "privacy-first" architecture. Here is how we protect your professional identity.
+          We built B4WeMeet with a "privacy-first" architecture. Here is how we protect your professional identity.
         </p>
       </div>
       <Accordion type="single" collapsible className="w-full space-y-3">

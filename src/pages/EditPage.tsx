@@ -294,7 +294,7 @@ export function EditPage() {
   );
   const watchAll = form.watch();
   const currentVariant = watchAll.variants?.[activeVariantIndex];
-  const embedCode = `<iframe src="${window.location.origin}/${slug}?embed=1" style="width:100%; max-width:480px; height:680px; border:none; border-radius:2.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.1);" title="Before We Meet Card"></iframe>`;
+  const embedCode = `<iframe src="${window.location.origin}/${slug}?embed=1" style="width:100%; max-width:480px; height:680px; border:none; border-radius:2.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.1);" title="B4WeMeet Card"></iframe>`;
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="py-12 md:py-20">

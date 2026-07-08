@@ -140,7 +140,7 @@ export function ProfileCard({ data, className, slug }: ProfileCardProps) {
                 <div className="p-1.5 rounded-md bg-primary text-primary-foreground shadow-sm flex items-center justify-center">
                   <Info size={14} />
                 </div>
-                <span className="text-[11px] font-black uppercase tracking-[0.18em] text-primary">Before We Meet</span>
+                <span className="text-[11px] font-black uppercase tracking-[0.18em] text-primary">B4WeMeet</span>
               </div>
               <p className="text-sm md:text-base font-bold text-foreground leading-relaxed print:text-black whitespace-pre-wrap break-words">
                 {meetingNote}
@@ -169,7 +169,7 @@ export function ProfileCard({ data, className, slug }: ProfileCardProps) {
             {linkedinUrl && <div className="flex items-center gap-3 text-sm text-slate-600 truncate"><Linkedin size={14} /> {linkedinUrl}</div>}
             {websiteUrl && <div className="flex items-center gap-3 text-sm text-slate-600 truncate"><Globe size={14} /> {websiteUrl}</div>}
             {phone && <div className="flex items-center gap-3 text-sm text-slate-600 truncate"><Phone size={14} /> {phone}</div>}
-            {slug && <div className="flex items-center gap-2 text-sm font-black text-primary truncate mt-6 pt-6 border-t border-slate-50"><LinkIcon size={14} /> beforewemeet.app/{slug}</div>}
+            {slug && <div className="flex items-center gap-2 text-sm font-black text-primary truncate mt-6 pt-6 border-t border-slate-50"><LinkIcon size={14} /> b4wemeet.app/{slug}</div>}
           </div>
         </CardContent>
       </Card>

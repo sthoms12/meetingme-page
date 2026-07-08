@@ -1,12 +1,12 @@
-# Before We Meet
+# B4WeMeet
 
-Before We Meet is a lightweight personal intro page for people who want to give useful context before a meeting.
+B4WeMeet is a lightweight personal intro page for people who want to give useful context before a meeting.
 
-It is a bit like Linktree, but the intent is different. Linktree is mainly a list of outbound links. Before We Meet is a short briefing page: who you are, what you work on, what the meeting is about, and the links someone may need before they talk to you.
+It is a bit like Linktree, but the intent is different. Linktree is mainly a list of outbound links. B4WeMeet is a short briefing page: who you are, what you work on, what the meeting is about, and the links someone may need before they talk to you.
 
 ## How users use it
 
-1. A user creates a Before We Meet page from the homepage.
+1. A user creates a B4WeMeet page from the homepage.
 2. They choose a public handle, such as `/jane-doe`.
 3. They add their name, role, company, photo, short bio, focus area, discussion topics, and optional meeting note.
 4. They add links like LinkedIn, website, video intro, GitHub, X, or phone.
@@ -23,14 +23,14 @@ The page owner can return through the private management link to update the page
 
 ## Linktree comparison
 
-Before We Meet overlaps with Linktree in one way: both give someone a single URL that collects useful links.
+B4WeMeet overlaps with Linktree in one way: both give someone a single URL that collects useful links.
 
 The difference is the job-to-be-done:
 
 - Linktree answers: "Where can people find me?"
-- Before We Meet answers: "What should someone know before they meet me?"
+- B4WeMeet answers: "What should someone know before they meet me?"
 
-Before We Meet is better suited for warm intros, sales calls, interviews, client meetings, advisory calls, and networking follow-ups. The page can still include links, but the core product is context.
+B4WeMeet is better suited for warm intros, sales calls, interviews, client meetings, advisory calls, and networking follow-ups. The page can still include links, but the core product is context.
 
 ## Features
 
@@ -50,7 +50,7 @@ Before We Meet is better suited for warm intros, sales calls, interviews, client
 
 ## Architecture
 
-Before We Meet is a full-stack React app deployed to Cloudflare Workers.
+B4WeMeet is a full-stack React app deployed to Cloudflare Workers.
 
 - Frontend: React 18, Vite, TypeScript, Tailwind CSS, shadcn/ui, Lucide, Framer Motion, TanStack Query, React Router
 - Backend: Hono routes running inside a Cloudflare Worker
@@ -64,7 +64,7 @@ The Worker serves both the React app and the API. Cloudflare's SPA asset handlin
 
 | Route | Purpose |
 | --- | --- |
-| `/` | Create a new Before We Meet page |
+| `/` | Create a new B4WeMeet page |
 | `/:slug` | Public profile page |
 | `/:slug/:variant` | Public page for a specific audience variant |
 | `/:slug/edit` | Owner dashboard, unlocked by session or management token |
@@ -139,7 +139,7 @@ Manual deploy is also supported if `CLOUDFLARE_API_TOKEN` is available:
 bun run deploy
 ```
 
-The public product name is Before We Meet. Some Cloudflare infrastructure identifiers still use the original `meetingme-page` name so the live Worker, Durable Object data, existing profile slugs, and auto-deploy pipeline stay connected. Rename those only as part of a planned Cloudflare migration.
+The public product name is B4WeMeet. Some Cloudflare infrastructure identifiers still use the original `meetingme-page` name so the live Worker, Durable Object data, existing profile slugs, and auto-deploy pipeline stay connected. Rename those only as part of a planned Cloudflare migration.
 
 ## Security notes
 

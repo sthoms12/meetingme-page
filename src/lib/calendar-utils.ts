@@ -21,7 +21,7 @@ export function downloadMeetingICS(profile: {
   const icsLines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//Before We Meet//Professional Intro//EN',
+    'PRODID:-//B4WeMeet//Professional Intro//EN',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
     'BEGIN:VEVENT',
@@ -36,7 +36,7 @@ export function downloadMeetingICS(profile: {
     'BEGIN:VALARM',
     'TRIGGER:-PT15M',
     'ACTION:DISPLAY',
-    'DESCRIPTION:Before We Meet Intro Reminder',
+    'DESCRIPTION:B4WeMeet Intro Reminder',
     'END:VALARM',
     'END:VEVENT',
     'END:VCALENDAR'

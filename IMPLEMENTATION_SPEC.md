@@ -1,4 +1,4 @@
-# Before We Meet Durability and Recovery Spec
+# B4WeMeet Durability and Recovery Spec
 
 ## Goal
 

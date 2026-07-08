@@ -67,7 +67,7 @@ const PASSKEY_CEREMONY_LIMIT = 10;
 const PASSKEY_CEREMONY_WINDOW_MS = 15 * 60 * 1000;
 const RECOVERY_CODE_ATTEMPT_LIMIT = 5;
 const RECOVERY_CODE_ATTEMPT_WINDOW_MS = 15 * 60 * 1000;
-const RP_NAME = "Before We Meet";
+const RP_NAME = "B4WeMeet";
 const generateSlugCandidate = () => nanoid(12).toLowerCase().replace(/_/g, "x").slice(0, 10);
 
 const getIndexStub = (env: Env) =>

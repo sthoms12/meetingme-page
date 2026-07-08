@@ -25,7 +25,7 @@ export function QRCodeDialog({ url, label = "Introduction", trigger }: QRCodeDia
   const handleDownload = () => {
     const link = document.createElement('a');
     link.href = qrUrl;
-    link.download = `BeforeWeMeet_${label.replace(/\s+/g, '_')}_QR.png`;
+    link.download = `B4WeMeet_${label.replace(/\s+/g, '_')}_QR.png`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
