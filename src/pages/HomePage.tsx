@@ -17,6 +17,13 @@ import { SecurityFAQ } from '@/components/SecurityFAQ';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { generateQrCodeDataUrl } from '@/lib/qrcode';
+
+const xHandleOrUrlSchema = z.string().trim().refine((value) => {
+  if (!value) return true;
+  if (/^@?[A-Za-z0-9_]{1,15}$/.test(value)) return true;
+  return z.string().url().safeParse(value).success;
+}, 'Enter an X handle like @name or a full profile URL');
+
 const formSchema = z.object({
   fullName: z.string().min(2, 'Name is required'),
   jobTitle: z.string().min(2, 'Title is required'),
@@ -29,7 +36,7 @@ const formSchema = z.object({
   linkedinUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
   websiteUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
   videoUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
-  twitterUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
+  twitterUrl: xHandleOrUrlSchema.optional().or(z.literal('')),
   githubUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
   phone: z.string().optional().or(z.literal('')),
   customSlug: z.string().regex(/^[a-z0-9-]*$/, 'Lower, numbers, hyphens').min(3, '3+ chars').optional().or(z.literal('')),
@@ -94,6 +101,8 @@ export function HomePage() {
     }, 500);
     return () => clearTimeout(h);
   }, [customSlug]);
+
+  const normalizeSlugInput = (value: string) => value.toLowerCase().replace(/\s+/g, '-');
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -305,7 +314,7 @@ export function HomePage() {
                     <FormField control={form.control} name="customSlug" render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-xs font-black uppercase tracking-[0.16em] text-muted-foreground">Public Handle</FormLabel>
-                        <FormControl><Input className="h-12 text-base rounded-xl border bg-background/80" placeholder="jane-doe" {...field} /></FormControl>
+                        <FormControl><Input className="h-12 text-base rounded-xl border bg-background/80" placeholder="jane-doe" autoCapitalize="none" autoCorrect="off" spellCheck={false} {...field} value={field.value ?? ''} onChange={(event) => field.onChange(normalizeSlugInput(event.target.value))} /></FormControl>
                         {customSlug && customSlug.length >= 3 && (
                           <FormDescription className={cn("text-[11px] font-bold flex items-center gap-1.5", isCheckingSlug ? "text-muted-foreground" : slugStatus === 'available' ? "text-green-600" : "text-destructive")}>
                             {isCheckingSlug ? (
@@ -402,7 +411,7 @@ export function HomePage() {
                           <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Twitter / X</FormLabel>
                           <div className="relative">
                             <Twitter className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                            <FormControl><Input className="h-12 pl-10 rounded-xl" placeholder="https://x.com/..." {...field} /></FormControl>
+                            <FormControl><Input className="h-12 pl-10 rounded-xl" placeholder="@handle or https://x.com/handle" autoCapitalize="none" autoCorrect="off" spellCheck={false} {...field} /></FormControl>
                           </div>
                           <FormMessage />
                         </FormItem>

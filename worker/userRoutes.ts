@@ -13,6 +13,7 @@ import type {
 } from "@simplewebauthn/server";
 import {
   createProfileInputSchema,
+  normalizeTwitterInput,
   passkeyAuthCompleteInputSchema,
   passkeyRegisterCompleteInputSchema,
   recoveryCodeRedeemInputSchema,
@@ -313,7 +314,7 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
         linkedinUrl: body.linkedinUrl || undefined,
         websiteUrl: body.websiteUrl || undefined,
         videoUrl: body.videoUrl || undefined,
-        twitterUrl: body.twitterUrl || undefined,
+        twitterUrl: normalizeTwitterInput(body.twitterUrl) || undefined,
         githubUrl: body.githubUrl || undefined,
         phone: body.phone || undefined,
         createdAt: new Date().toISOString(),
@@ -671,7 +672,7 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
         linkedinUrl: body.linkedinUrl || undefined,
         websiteUrl: body.websiteUrl || undefined,
         videoUrl: body.videoUrl || undefined,
-        twitterUrl: body.twitterUrl || undefined,
+        twitterUrl: normalizeTwitterInput(body.twitterUrl) || undefined,
         githubUrl: body.githubUrl || undefined,
         phone: body.phone || undefined,
         primaryVariantId: body.primaryVariantId,

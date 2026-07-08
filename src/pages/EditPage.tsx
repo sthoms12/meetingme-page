@@ -22,6 +22,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { nanoid } from 'nanoid';
 import { cn } from '@/lib/utils';
 import type { Profile, ApiResponse } from '@shared/types';
+
+const xHandleOrUrlSchema = z.string().trim().refine((value) => {
+  if (!value) return true;
+  if (/^@?[A-Za-z0-9_]{1,15}$/.test(value)) return true;
+  return z.string().url().safeParse(value).success;
+}, 'Enter an X handle like @name or a full profile URL');
+
 const formSchema = z.object({
   fullName: z.string().min(2),
   jobTitle: z.string().min(2),
@@ -30,7 +37,7 @@ const formSchema = z.object({
   linkedinUrl: z.string().url().optional().or(z.literal('')),
   websiteUrl: z.string().url().optional().or(z.literal('')),
   videoUrl: z.string().url().optional().or(z.literal('')),
-  twitterUrl: z.string().url().optional().or(z.literal('')),
+  twitterUrl: xHandleOrUrlSchema.optional().or(z.literal('')),
   githubUrl: z.string().url().optional().or(z.literal('')),
   phone: z.string().optional().or(z.literal('')),
   variants: z.array(z.object({

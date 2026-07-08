@@ -3,6 +3,7 @@ import { z } from "zod";
 const slugPattern = /^[a-z0-9-]{3,30}$/;
 const variantSlugPattern = /^[a-z0-9-]{2,30}$/;
 const dataImagePattern = /^data:image\/(?:png|jpeg|jpg|webp|gif);base64,[a-z0-9+/=]+$/i;
+const xHandlePattern = /^@?[A-Za-z0-9_]{1,15}$/;
 
 const optionalUrl = z
   .string()
@@ -12,6 +13,44 @@ const optionalUrl = z
   .refine((value) => value === "" || z.string().url().safeParse(value).success, {
     message: "Must be a valid URL",
   });
+
+export const normalizeTwitterInput = (value?: string | null) => {
+  const trimmed = (value ?? "").trim();
+  if (!trimmed) return "";
+
+  if (xHandlePattern.test(trimmed)) {
+    return `https://x.com/${trimmed.replace(/^@/, "")}`;
+  }
+
+  try {
+    const url = new URL(trimmed);
+    const host = url.hostname.toLowerCase();
+    if (["x.com", "www.x.com", "twitter.com", "www.twitter.com"].includes(host)) {
+      const handle = url.pathname.split("/").filter(Boolean)[0];
+      if (handle && xHandlePattern.test(handle)) {
+        return `https://x.com/${handle.replace(/^@/, "")}`;
+      }
+    }
+  } catch {
+    return trimmed;
+  }
+
+  return trimmed;
+};
+
+const optionalTwitterProfile = z
+  .string()
+  .trim()
+  .optional()
+  .transform((value) => value ?? "")
+  .refine((value) => {
+    if (value === "") return true;
+    if (xHandlePattern.test(value)) return true;
+    return z.string().url().safeParse(value).success;
+  }, {
+    message: "Enter an X handle like @name or a full profile URL",
+  })
+  .transform((value) => normalizeTwitterInput(value));
 
 export const slugSchema = z
   .string()
@@ -55,7 +94,7 @@ const baseProfileFields = {
   linkedinUrl: optionalUrl,
   websiteUrl: optionalUrl,
   videoUrl: optionalUrl,
-  twitterUrl: optionalUrl,
+  twitterUrl: optionalTwitterProfile,
   githubUrl: optionalUrl,
   phone: z.string().trim().max(40).optional().transform((value) => value ?? ""),
 };

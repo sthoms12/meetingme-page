@@ -8,6 +8,16 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { downloadMeetingICS } from '@/lib/calendar-utils';
 import { toast } from 'sonner';
+
+function toTwitterHref(value?: string) {
+  const trimmed = value?.trim();
+  if (!trimmed) return '';
+  if (/^@?[A-Za-z0-9_]{1,15}$/.test(trimmed)) {
+    return `https://x.com/${trimmed.replace(/^@/, '')}`;
+  }
+  return trimmed;
+}
+
 interface ProfileCardProps {
   data: {
     fullName?: string;
@@ -63,9 +73,10 @@ export function ProfileCard({ data, className, slug }: ProfileCardProps) {
     });
     toast.success('Meeting invite downloaded');
   };
+  const twitterHref = toTwitterHref(twitterUrl);
   const actions = [
     linkedinUrl && { href: linkedinUrl, icon: Linkedin, label: 'LinkedIn', tone: 'text-[#0077b5]' },
-    twitterUrl && { href: twitterUrl, icon: Twitter, label: 'X / Twitter', tone: 'text-slate-900 dark:text-white' },
+    twitterHref && { href: twitterHref, icon: Twitter, label: 'X / Twitter', tone: 'text-slate-900 dark:text-white' },
     githubUrl && { href: githubUrl, icon: Github, label: 'GitHub', tone: 'text-slate-800 dark:text-white' },
     phone && { href: `tel:${phone}`, icon: Phone, label: 'Call Direct', tone: 'text-primary' },
     websiteUrl && { href: websiteUrl, icon: Globe, label: 'Website', tone: 'text-emerald-600 dark:text-emerald-400' },
