@@ -6,7 +6,7 @@ const PASSWORD_HASH_PREFIX = "pbkdf2_sha256";
 
 const textEncoder = new TextEncoder();
 
-const toBase64Url = (bytes: Uint8Array) =>
+export const toBase64Url = (bytes: Uint8Array) =>
   btoa(String.fromCharCode(...bytes))
     .replace(/\+/g, "-")
     .replace(/\//g, "_")
@@ -14,6 +14,12 @@ const toBase64Url = (bytes: Uint8Array) =>
 
 const fromBase64 = (value: string) =>
   Uint8Array.from(atob(value), (char) => char.charCodeAt(0));
+
+export const fromBase64Url = (value: string) => {
+  const padded = value.replace(/-/g, "+").replace(/_/g, "/");
+  const padLength = (4 - (padded.length % 4)) % 4;
+  return fromBase64(padded + "=".repeat(padLength));
+};
 
 const toHex = (bytes: Uint8Array) =>
   Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
@@ -89,7 +95,7 @@ export const verifyPassword = async (password: string, storedHash?: string) => {
   return timingSafeEqual(derivedHash, hashRaw);
 };
 
-export const parseCookies = (cookieHeader: string | null) => {
+export const parseCookies = (cookieHeader: string | null | undefined) => {
   const cookies = new Map<string, string>();
 
   if (!cookieHeader) return cookies;
@@ -128,3 +134,32 @@ export const createSessionRecord = async (token: string): Promise<StoredSession>
 
 export const isSessionExpired = (session: StoredSession) =>
   new Date(session.expiresAt).getTime() <= Date.now();
+
+const RECOVERY_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
+export const generateRecoveryCode = () => {
+  const groups: string[] = [];
+
+  for (let group = 0; group < 3; group += 1) {
+    let chunk = "";
+    const bytes = new Uint8Array(4);
+    crypto.getRandomValues(bytes);
+    for (const byte of bytes) {
+      chunk += RECOVERY_CODE_ALPHABET[byte % RECOVERY_CODE_ALPHABET.length];
+    }
+    groups.push(chunk);
+  }
+
+  return groups.join("-");
+};
+
+export const normalizeRecoveryCode = (code: string) =>
+  code.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+
+export const hashRecoveryCode = (code: string) => sha256Hex(normalizeRecoveryCode(code));
+
+export const deriveRpId = (request: Request) => new URL(request.url).hostname;
+
+export const deriveExpectedOrigin = (request: Request) => new URL(request.url).origin;
+
+export const generateWebauthnChallenge = () => randomToken(32);

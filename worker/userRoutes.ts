@@ -1,7 +1,21 @@
 import { Hono } from "hono";
 import { nanoid } from "nanoid";
 import {
+  generateAuthenticationOptions,
+  generateRegistrationOptions,
+  verifyAuthenticationResponse,
+  verifyRegistrationResponse,
+} from "@simplewebauthn/server";
+import type {
+  AuthenticationResponseJSON,
+  AuthenticatorTransportFuture,
+  RegistrationResponseJSON,
+} from "@simplewebauthn/server";
+import {
   createProfileInputSchema,
+  passkeyAuthCompleteInputSchema,
+  passkeyRegisterCompleteInputSchema,
+  recoveryCodeRedeemInputSchema,
   restoreSnapshotInputSchema,
   sessionExchangeInputSchema,
   slugSchema,
@@ -9,6 +23,7 @@ import {
   verifyPasswordInputSchema,
 } from "@shared/schemas";
 import type {
+  AccessInfo,
   ApiResponse,
   Profile,
   ProfileCreateResponse,
@@ -20,15 +35,21 @@ import {
   clearSessionCookie,
   createPasswordHash,
   createSessionRecord,
+  deriveExpectedOrigin,
+  deriveRpId,
+  fromBase64Url,
+  generateRecoveryCode,
+  hashRecoveryCode,
   isSessionExpired,
   parseCookies,
   randomToken,
   sessionCookie,
   sessionCookieName,
   sha256Hex,
+  toBase64Url,
   verifyPassword,
 } from "./auth";
-import type { StoredPhotoAsset, StoredProfile, StoredSession } from "./types";
+import type { PasskeyCredential, StoredPhotoAsset, StoredProfile, StoredSession } from "./types";
 
 const INDEX_DO_NAME = "__meetingme_slug_index__";
 const PASSWORD_ATTEMPT_LIMIT = 5;
@@ -40,6 +61,13 @@ const UPDATE_WINDOW_MS = 10 * 60 * 1000;
 const MAX_ACTIVE_SESSIONS = 5;
 const MAX_IMAGE_BYTES = 1024 * 1024;
 const SUPPORTED_IMAGE_PREFIXES = ["image/png", "image/jpeg", "image/webp", "image/gif"];
+const MAX_PASSKEYS = 5;
+const CHALLENGE_TTL_MS = 5 * 60 * 1000;
+const PASSKEY_CEREMONY_LIMIT = 10;
+const PASSKEY_CEREMONY_WINDOW_MS = 15 * 60 * 1000;
+const RECOVERY_CODE_ATTEMPT_LIMIT = 5;
+const RECOVERY_CODE_ATTEMPT_WINDOW_MS = 15 * 60 * 1000;
+const RP_NAME = "Before We Meet";
 const generateSlugCandidate = () => nanoid(12).toLowerCase().replace(/_/g, "x").slice(0, 10);
 
 const getIndexStub = (env: Env) =>
@@ -66,8 +94,13 @@ const cleanSessions = (sessions: StoredSession[]) =>
 const toPublicProfile = (profile: StoredProfile): Profile => {
   const {
     editTokenHash: _editTokenHash,
+    editTokenRotatedAt: _editTokenRotatedAt,
     passwordHash: _passwordHash,
     managementSessions: _managementSessions,
+    passkeys: _passkeys,
+    recoveryCode: _recoveryCode,
+    pendingChallenge: _pendingChallenge,
+    lastManagementAccessMethod: _lastManagementAccessMethod,
     ...publicProfile
   } = profile;
 
@@ -131,7 +164,7 @@ const resolvePhotoInput = async (
 };
 
 const resolveManager = async (
-  cookieHeader: string | null,
+  cookieHeader: string | null | undefined,
   profile: StoredProfile,
   profileStub: ReturnType<typeof getProfileStub>,
 ) => {
@@ -173,6 +206,32 @@ const getVariant = (profile: StoredProfile, variantSlug?: string) =>
   variantSlug
     ? profile.variants.find((variant) => variant.variantSlug === variantSlug)
     : profile.variants.find((variant) => variant.id === profile.primaryVariantId);
+
+const getWebauthnUserId = async (slug: string) => {
+  const buffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`webauthn:${slug}`));
+  return new Uint8Array(buffer);
+};
+
+const toAccessInfo = (profile: StoredProfile): AccessInfo => ({
+  passkeys: (profile.passkeys || []).map((passkey) => ({
+    id: passkey.id,
+    deviceLabel: passkey.deviceLabel,
+    createdAt: passkey.createdAt,
+    lastUsedAt: passkey.lastUsedAt,
+  })),
+  recoveryCodeConfigured: Boolean(profile.recoveryCode),
+  recoveryCodeLastRotatedAt: profile.recoveryCode?.lastRotatedAt,
+  editTokenRotatedAt: profile.editTokenRotatedAt,
+  lastManagementAccessMethod: profile.lastManagementAccessMethod,
+  sessions: cleanSessions(profile.managementSessions || []).map((session) => ({
+    createdAt: session.createdAt,
+    expiresAt: session.expiresAt,
+    lastUsedAt: session.lastUsedAt,
+  })),
+});
+
+const isChallengeExpired = (createdAt: string) =>
+  Date.now() - new Date(createdAt).getTime() > CHALLENGE_TTL_MS;
 
 export function userRoutes(app: Hono<{ Bindings: Env }>) {
   app.get("/api/profiles/availability/:slug", async (c) => {
@@ -228,6 +287,7 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     const editToken = randomToken(32);
     const sessionToken = randomToken(32);
     const passwordHash = body.password ? await createPasswordHash(body.password) : undefined;
+    const recoveryCode = generateRecoveryCode();
 
     try {
       const initialVariant: ProfileVariant = {
@@ -264,6 +324,11 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
         editTokenHash: await sha256Hex(editToken),
         passwordHash,
         managementSessions: [await createSessionRecord(sessionToken)],
+        recoveryCode: {
+          codeHash: await hashRecoveryCode(recoveryCode),
+          createdAt: new Date().toISOString(),
+        },
+        lastManagementAccessMethod: "initial",
       };
 
       await profileStub.createProfile(storedProfile);
@@ -636,5 +701,469 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
         400,
       );
     }
+  });
+
+  app.get("/api/profiles/:slug/manage/access", async (c) => {
+    const parsedSlug = slugSchema.safeParse(c.req.param("slug"));
+    if (!parsedSlug.success) {
+      return c.json({ success: false, error: "Invalid slug" } satisfies ApiResponse, 400);
+    }
+
+    const profileStub = getProfileStub(c.env, parsedSlug.data);
+    const profile = await profileStub.getProfile();
+    if (!profile) {
+      return c.json({ success: false, error: "Profile not found" } satisfies ApiResponse, 404);
+    }
+
+    const managerState = await resolveManager(c.req.header("Cookie"), profile, profileStub);
+    if (!managerState.isManager) {
+      return c.json({ success: false, error: "Unauthorized" } satisfies ApiResponse, 401);
+    }
+
+    return c.json({ success: true, data: toAccessInfo(managerState.profile) satisfies AccessInfo });
+  });
+
+  app.post("/api/profiles/:slug/manage/regenerate", async (c) => {
+    const parsedSlug = slugSchema.safeParse(c.req.param("slug"));
+    if (!parsedSlug.success) {
+      return c.json({ success: false, error: "Invalid slug" } satisfies ApiResponse, 400);
+    }
+
+    const profileStub = getProfileStub(c.env, parsedSlug.data);
+    const profile = await profileStub.getProfile();
+    if (!profile) {
+      return c.json({ success: false, error: "Profile not found" } satisfies ApiResponse, 404);
+    }
+
+    const managerState = await resolveManager(c.req.header("Cookie"), profile, profileStub);
+    if (!managerState.isManager) {
+      return c.json({ success: false, error: "Unauthorized" } satisfies ApiResponse, 401);
+    }
+
+    const limiter = await profileStub.checkRateLimit(
+      `regenerate:${getClientKey(c.req.header("CF-Connecting-IP"), c.req.header("User-Agent"))}`,
+      UPDATE_LIMIT,
+      UPDATE_WINDOW_MS,
+    );
+
+    if (!limiter.allowed) {
+      return c.json(
+        { success: false, error: "Too many attempts. Try again later." } satisfies ApiResponse,
+        429,
+      );
+    }
+
+    const editToken = randomToken(32);
+    await profileStub.updateProfile({
+      editTokenHash: await sha256Hex(editToken),
+      editTokenRotatedAt: new Date().toISOString(),
+    });
+
+    return c.json({ success: true, data: { slug: parsedSlug.data, editToken } satisfies ProfileCreateResponse });
+  });
+
+  app.get("/api/profiles/:slug/export.json", async (c) => {
+    const parsedSlug = slugSchema.safeParse(c.req.param("slug"));
+    if (!parsedSlug.success) {
+      return c.json({ success: false, error: "Invalid slug" } satisfies ApiResponse, 400);
+    }
+
+    const profileStub = getProfileStub(c.env, parsedSlug.data);
+    const profile = await profileStub.getProfile();
+    if (!profile) {
+      return c.json({ success: false, error: "Profile not found" } satisfies ApiResponse, 404);
+    }
+
+    const managerState = await resolveManager(c.req.header("Cookie"), profile, profileStub);
+    if (!managerState.isManager) {
+      return c.json({ success: false, error: "Unauthorized" } satisfies ApiResponse, 401);
+    }
+
+    const payload = JSON.stringify(toPublicProfile(managerState.profile), null, 2);
+    return new Response(payload, {
+      headers: {
+        "content-type": "application/json",
+        "content-disposition": `attachment; filename="${parsedSlug.data}.json"`,
+      },
+    });
+  });
+
+  app.get("/api/profiles/:slug/export.md", async (c) => {
+    const parsedSlug = slugSchema.safeParse(c.req.param("slug"));
+    if (!parsedSlug.success) {
+      return c.json({ success: false, error: "Invalid slug" } satisfies ApiResponse, 400);
+    }
+
+    const profileStub = getProfileStub(c.env, parsedSlug.data);
+    const profile = await profileStub.getProfile();
+    if (!profile) {
+      return c.json({ success: false, error: "Profile not found" } satisfies ApiResponse, 404);
+    }
+
+    const managerState = await resolveManager(c.req.header("Cookie"), profile, profileStub);
+    if (!managerState.isManager) {
+      return c.json({ success: false, error: "Unauthorized" } satisfies ApiResponse, 401);
+    }
+
+    const publicProfile = toPublicProfile(managerState.profile);
+    const lines = [
+      `# ${publicProfile.fullName}`,
+      "",
+      `${publicProfile.jobTitle} at ${publicProfile.company}`,
+      "",
+    ];
+
+    if (publicProfile.linkedinUrl) lines.push(`- LinkedIn: ${publicProfile.linkedinUrl}`);
+    if (publicProfile.websiteUrl) lines.push(`- Website: ${publicProfile.websiteUrl}`);
+    if (publicProfile.videoUrl) lines.push(`- Video: ${publicProfile.videoUrl}`);
+    if (publicProfile.twitterUrl) lines.push(`- Twitter: ${publicProfile.twitterUrl}`);
+    if (publicProfile.githubUrl) lines.push(`- GitHub: ${publicProfile.githubUrl}`);
+    if (publicProfile.phone) lines.push(`- Phone: ${publicProfile.phone}`);
+
+    lines.push("", "## Variants", "");
+
+    for (const variant of publicProfile.variants) {
+      lines.push(`### ${variant.name} (/${variant.variantSlug})`, "", variant.bio, "");
+      if (variant.focus) lines.push(`Focus: ${variant.focus}`, "");
+      if (variant.topics.length) lines.push(`Topics: ${variant.topics.join(", ")}`, "");
+      if (variant.meetingNote) lines.push(`Meeting note: ${variant.meetingNote}`, "");
+    }
+
+    return new Response(lines.join("\n"), {
+      headers: {
+        "content-type": "text/markdown",
+        "content-disposition": `attachment; filename="${parsedSlug.data}.md"`,
+      },
+    });
+  });
+
+  app.post("/api/profiles/:slug/passkey/register/start", async (c) => {
+    const parsedSlug = slugSchema.safeParse(c.req.param("slug"));
+    if (!parsedSlug.success) {
+      return c.json({ success: false, error: "Invalid slug" } satisfies ApiResponse, 400);
+    }
+
+    const profileStub = getProfileStub(c.env, parsedSlug.data);
+    const profile = await profileStub.getProfile();
+    if (!profile) {
+      return c.json({ success: false, error: "Profile not found" } satisfies ApiResponse, 404);
+    }
+
+    const managerState = await resolveManager(c.req.header("Cookie"), profile, profileStub);
+    if (!managerState.isManager) {
+      return c.json({ success: false, error: "Unauthorized" } satisfies ApiResponse, 401);
+    }
+
+    const limiter = await profileStub.checkRateLimit(
+      `passkey-ceremony:${getClientKey(c.req.header("CF-Connecting-IP"), c.req.header("User-Agent"))}`,
+      PASSKEY_CEREMONY_LIMIT,
+      PASSKEY_CEREMONY_WINDOW_MS,
+    );
+
+    if (!limiter.allowed) {
+      return c.json(
+        { success: false, error: "Too many attempts. Try again later." } satisfies ApiResponse,
+        429,
+      );
+    }
+
+    if ((managerState.profile.passkeys || []).length >= MAX_PASSKEYS) {
+      return c.json({ success: false, error: "Passkey limit reached" } satisfies ApiResponse, 400);
+    }
+
+    const options = await generateRegistrationOptions({
+      rpName: RP_NAME,
+      rpID: deriveRpId(c.req.raw),
+      userName: parsedSlug.data,
+      userID: await getWebauthnUserId(parsedSlug.data),
+      userDisplayName: managerState.profile.fullName,
+      attestationType: "none",
+      excludeCredentials: (managerState.profile.passkeys || []).map((passkey) => ({
+        id: passkey.id,
+        transports: passkey.transports as AuthenticatorTransportFuture[] | undefined,
+      })),
+      authenticatorSelection: { residentKey: "preferred", userVerification: "preferred" },
+    });
+
+    await profileStub.updateProfile({
+      pendingChallenge: { challenge: options.challenge, type: "register", createdAt: new Date().toISOString() },
+    });
+
+    return c.json({ success: true, data: options });
+  });
+
+  app.post("/api/profiles/:slug/passkey/register/complete", async (c) => {
+    const parsedSlug = slugSchema.safeParse(c.req.param("slug"));
+    if (!parsedSlug.success) {
+      return c.json({ success: false, error: "Invalid slug" } satisfies ApiResponse, 400);
+    }
+
+    const profileStub = getProfileStub(c.env, parsedSlug.data);
+    const profile = await profileStub.getProfile();
+    if (!profile) {
+      return c.json({ success: false, error: "Profile not found" } satisfies ApiResponse, 404);
+    }
+
+    const managerState = await resolveManager(c.req.header("Cookie"), profile, profileStub);
+    if (!managerState.isManager) {
+      return c.json({ success: false, error: "Unauthorized" } satisfies ApiResponse, 401);
+    }
+
+    const pendingChallenge = managerState.profile.pendingChallenge;
+    if (!pendingChallenge || pendingChallenge.type !== "register" || isChallengeExpired(pendingChallenge.createdAt)) {
+      return c.json({ success: false, error: "Registration expired. Try again." } satisfies ApiResponse, 400);
+    }
+
+    const parsedBody = passkeyRegisterCompleteInputSchema.safeParse(await c.req.json());
+    if (!parsedBody.success) {
+      return c.json({ success: false, error: "Invalid passkey response" } satisfies ApiResponse, 400);
+    }
+
+    try {
+      const verification = await verifyRegistrationResponse({
+        response: parsedBody.data.response as unknown as RegistrationResponseJSON,
+        expectedChallenge: pendingChallenge.challenge,
+        expectedOrigin: deriveExpectedOrigin(c.req.raw),
+        expectedRPID: deriveRpId(c.req.raw),
+      });
+
+      if (!verification.verified || !verification.registrationInfo) {
+        return c.json({ success: false, error: "Could not verify passkey" } satisfies ApiResponse, 400);
+      }
+
+      const { credential } = verification.registrationInfo;
+      const newPasskey: PasskeyCredential = {
+        id: credential.id,
+        publicKey: toBase64Url(credential.publicKey),
+        counter: credential.counter,
+        transports: credential.transports,
+        deviceLabel: parsedBody.data.deviceLabel || undefined,
+        createdAt: new Date().toISOString(),
+      };
+
+      const passkeys = [...(managerState.profile.passkeys || []), newPasskey].slice(-MAX_PASSKEYS);
+      const updated = await profileStub.updateProfile({ passkeys, pendingChallenge: undefined });
+
+      return c.json({ success: true, data: updated ? toAccessInfo(updated) : null });
+    } catch (error) {
+      return c.json(
+        { success: false, error: error instanceof Error ? error.message : "Could not verify passkey" } satisfies ApiResponse,
+        400,
+      );
+    }
+  });
+
+  app.post("/api/profiles/:slug/passkey/auth/start", async (c) => {
+    const secureCookies = new URL(c.req.url).protocol === "https:";
+    const parsedSlug = slugSchema.safeParse(c.req.param("slug"));
+    if (!parsedSlug.success) {
+      return c.json({ success: false, error: "Invalid slug" } satisfies ApiResponse, 400);
+    }
+
+    const profileStub = getProfileStub(c.env, parsedSlug.data);
+    const profile = await profileStub.getProfile();
+    if (!profile || !(profile.passkeys || []).length) {
+      return c.json({ success: false, error: "No passkey configured" } satisfies ApiResponse, 400);
+    }
+
+    const limiter = await profileStub.checkRateLimit(
+      `passkey-ceremony:${getClientKey(c.req.header("CF-Connecting-IP"), c.req.header("User-Agent"))}`,
+      PASSKEY_CEREMONY_LIMIT,
+      PASSKEY_CEREMONY_WINDOW_MS,
+    );
+
+    if (!limiter.allowed) {
+      return c.json(
+        { success: false, error: "Too many attempts. Try again later." } satisfies ApiResponse,
+        429,
+      );
+    }
+
+    const options = await generateAuthenticationOptions({
+      rpID: deriveRpId(c.req.raw),
+      allowCredentials: (profile.passkeys || []).map((passkey) => ({
+        id: passkey.id,
+        transports: passkey.transports as AuthenticatorTransportFuture[] | undefined,
+      })),
+      userVerification: "preferred",
+    });
+
+    await profileStub.updateProfile({
+      pendingChallenge: { challenge: options.challenge, type: "auth", createdAt: new Date().toISOString() },
+    });
+
+    c.header("Set-Cookie", clearSessionCookie(parsedSlug.data, secureCookies), { append: true });
+    return c.json({ success: true, data: options });
+  });
+
+  app.post("/api/profiles/:slug/passkey/auth/complete", async (c) => {
+    const secureCookies = new URL(c.req.url).protocol === "https:";
+    const parsedSlug = slugSchema.safeParse(c.req.param("slug"));
+    if (!parsedSlug.success) {
+      return c.json({ success: false, error: "Invalid slug" } satisfies ApiResponse, 400);
+    }
+
+    const profileStub = getProfileStub(c.env, parsedSlug.data);
+    const profile = await profileStub.getProfile();
+    if (!profile) {
+      return c.json({ success: false, error: "Profile not found" } satisfies ApiResponse, 404);
+    }
+
+    const pendingChallenge = profile.pendingChallenge;
+    if (!pendingChallenge || pendingChallenge.type !== "auth" || isChallengeExpired(pendingChallenge.createdAt)) {
+      return c.json({ success: false, error: "Authentication expired. Try again." } satisfies ApiResponse, 400);
+    }
+
+    const parsedBody = passkeyAuthCompleteInputSchema.safeParse(await c.req.json());
+    if (!parsedBody.success) {
+      return c.json({ success: false, error: "Invalid passkey response" } satisfies ApiResponse, 400);
+    }
+
+    const response = parsedBody.data.response as unknown as AuthenticationResponseJSON;
+    const matchedPasskey = (profile.passkeys || []).find((passkey) => passkey.id === response.id);
+    if (!matchedPasskey) {
+      return c.json({ success: false, error: "Passkey not recognized" } satisfies ApiResponse, 400);
+    }
+
+    try {
+      const verification = await verifyAuthenticationResponse({
+        response,
+        expectedChallenge: pendingChallenge.challenge,
+        expectedOrigin: deriveExpectedOrigin(c.req.raw),
+        expectedRPID: deriveRpId(c.req.raw),
+        credential: {
+          id: matchedPasskey.id,
+          publicKey: fromBase64Url(matchedPasskey.publicKey),
+          counter: matchedPasskey.counter,
+          transports: matchedPasskey.transports as AuthenticatorTransportFuture[] | undefined,
+        },
+      });
+
+      if (!verification.verified) {
+        return c.json({ success: false, error: "Could not verify passkey" } satisfies ApiResponse, 400);
+      }
+
+      const now = new Date().toISOString();
+      const passkeys = (profile.passkeys || []).map((passkey) =>
+        passkey.id === matchedPasskey.id
+          ? { ...passkey, counter: verification.authenticationInfo.newCounter, lastUsedAt: now }
+          : passkey,
+      );
+
+      const sessionToken = randomToken(32);
+      const sessions = cleanSessions([...(profile.managementSessions || []), await createSessionRecord(sessionToken)]);
+
+      await profileStub.updateProfile({
+        passkeys,
+        managementSessions: sessions,
+        pendingChallenge: undefined,
+        lastManagementAccessMethod: "passkey",
+      });
+
+      c.header("Set-Cookie", sessionCookie(parsedSlug.data, sessionToken, secureCookies), { append: true });
+      return c.json({ success: true, data: { authenticated: true } });
+    } catch (error) {
+      return c.json(
+        { success: false, error: error instanceof Error ? error.message : "Could not verify passkey" } satisfies ApiResponse,
+        400,
+      );
+    }
+  });
+
+  app.get("/api/profiles/:slug/recovery-code/reveal", async (c) => {
+    const parsedSlug = slugSchema.safeParse(c.req.param("slug"));
+    if (!parsedSlug.success) {
+      return c.json({ success: false, error: "Invalid slug" } satisfies ApiResponse, 400);
+    }
+
+    const profileStub = getProfileStub(c.env, parsedSlug.data);
+    const profile = await profileStub.getProfile();
+    if (!profile) {
+      return c.json({ success: false, error: "Profile not found" } satisfies ApiResponse, 404);
+    }
+
+    const managerState = await resolveManager(c.req.header("Cookie"), profile, profileStub);
+    if (!managerState.isManager) {
+      return c.json({ success: false, error: "Unauthorized" } satisfies ApiResponse, 401);
+    }
+
+    const limiter = await profileStub.checkRateLimit(
+      `recovery-reveal:${getClientKey(c.req.header("CF-Connecting-IP"), c.req.header("User-Agent"))}`,
+      UPDATE_LIMIT,
+      UPDATE_WINDOW_MS,
+    );
+
+    if (!limiter.allowed) {
+      return c.json(
+        { success: false, error: "Too many attempts. Try again later." } satisfies ApiResponse,
+        429,
+      );
+    }
+
+    const code = generateRecoveryCode();
+    const now = new Date().toISOString();
+    await profileStub.updateProfile({
+      recoveryCode: {
+        codeHash: await hashRecoveryCode(code),
+        createdAt: managerState.profile.recoveryCode?.createdAt || now,
+        lastRotatedAt: now,
+        revealedAt: now,
+      },
+    });
+
+    return c.json({ success: true, data: { code } });
+  });
+
+  app.post("/api/profiles/:slug/recovery-code/redeem", async (c) => {
+    const secureCookies = new URL(c.req.url).protocol === "https:";
+    const parsedSlug = slugSchema.safeParse(c.req.param("slug"));
+    if (!parsedSlug.success) {
+      return c.json({ success: false, error: "Invalid slug" } satisfies ApiResponse, 400);
+    }
+
+    const profileStub = getProfileStub(c.env, parsedSlug.data);
+    const profile = await profileStub.getProfile();
+    if (!profile || !profile.recoveryCode) {
+      return c.json({ success: false, error: "Invalid recovery code" } satisfies ApiResponse, 400);
+    }
+
+    const limiter = await profileStub.checkRateLimit(
+      `recovery-redeem:${getClientKey(c.req.header("CF-Connecting-IP"), c.req.header("User-Agent"))}`,
+      RECOVERY_CODE_ATTEMPT_LIMIT,
+      RECOVERY_CODE_ATTEMPT_WINDOW_MS,
+    );
+
+    if (!limiter.allowed) {
+      return c.json(
+        { success: false, error: "Too many attempts. Try again later." } satisfies ApiResponse,
+        429,
+      );
+    }
+
+    const parsedBody = recoveryCodeRedeemInputSchema.safeParse(await c.req.json());
+    if (!parsedBody.success) {
+      return c.json({ success: false, error: "Invalid recovery code" } satisfies ApiResponse, 400);
+    }
+
+    const isValidCode = (await hashRecoveryCode(parsedBody.data.code)) === profile.recoveryCode.codeHash;
+    if (!isValidCode) {
+      return c.json({ success: false, error: "Invalid recovery code" } satisfies ApiResponse, 401);
+    }
+
+    const sessionToken = randomToken(32);
+    const sessions = cleanSessions([...(profile.managementSessions || []), await createSessionRecord(sessionToken)]);
+
+    await profileStub.updateProfile({
+      managementSessions: sessions,
+      recoveryCode: {
+        codeHash: await hashRecoveryCode(generateRecoveryCode()),
+        createdAt: profile.recoveryCode.createdAt,
+        lastRotatedAt: new Date().toISOString(),
+      },
+      lastManagementAccessMethod: "recovery-code",
+    });
+
+    c.header("Set-Cookie", sessionCookie(parsedSlug.data, sessionToken, secureCookies), { append: true });
+    return c.json({ success: true, data: { authenticated: true } });
   });
 }

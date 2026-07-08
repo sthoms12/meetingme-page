@@ -85,3 +85,25 @@ export interface DemoItem {
   name: string;
   value: number;
 }
+
+export interface PasskeySummary {
+  id: string;
+  deviceLabel?: string;
+  createdAt: string;
+  lastUsedAt?: string;
+}
+
+export interface SessionSummary {
+  createdAt: string;
+  expiresAt: string;
+  lastUsedAt: string;
+}
+
+export interface AccessInfo {
+  passkeys: PasskeySummary[];
+  recoveryCodeConfigured: boolean;
+  recoveryCodeLastRotatedAt?: string;
+  editTokenRotatedAt?: string;
+  lastManagementAccessMethod?: string;
+  sessions: SessionSummary[];
+}

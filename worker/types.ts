@@ -7,10 +7,38 @@ export interface StoredSession {
   lastUsedAt: string;
 }
 
+export interface PasskeyCredential {
+  id: string;
+  publicKey: string;
+  counter: number;
+  transports?: string[];
+  deviceLabel?: string;
+  createdAt: string;
+  lastUsedAt?: string;
+}
+
+export interface RecoveryCodeState {
+  codeHash: string;
+  createdAt: string;
+  lastRotatedAt?: string;
+  revealedAt?: string;
+}
+
+export interface PendingChallenge {
+  challenge: string;
+  type: "register" | "auth";
+  createdAt: string;
+}
+
 export interface StoredProfile extends Omit<Profile, "canManage"> {
   editTokenHash: string;
+  editTokenRotatedAt?: string;
   passwordHash?: string;
   managementSessions: StoredSession[];
+  passkeys?: PasskeyCredential[];
+  recoveryCode?: RecoveryCodeState;
+  pendingChallenge?: PendingChallenge;
+  lastManagementAccessMethod?: "initial" | "edit-token" | "passkey" | "recovery-code";
 }
 
 export interface StoredPhotoAsset {

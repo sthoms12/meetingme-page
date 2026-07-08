@@ -3,7 +3,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'sonner';
-import { Sparkles, Send, ShieldCheck, LayoutGrid, Image as ImageIcon, Loader2, Link as LinkIcon, Linkedin, Globe, Video, Twitter, Github, Phone, Lock, Copy, Check, Info, Target } from 'lucide-react';
+import { startRegistration } from '@simplewebauthn/browser';
+import { Sparkles, Send, ShieldCheck, LayoutGrid, Image as ImageIcon, Loader2, Link as LinkIcon, Linkedin, Globe, Video, Twitter, Github, Phone, Lock, Copy, Check, Info, Target, Fingerprint, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -44,6 +45,9 @@ export function HomePage() {
   const [slugAvailable, setSlugAvailable] = useState<boolean | null>(null);
   const [isCheckingSlug, setIsCheckingSlug] = useState(false);
   const [copiedPrivate, setCopiedPrivate] = useState(false);
+  const [isAddingPasskey, setIsAddingPasskey] = useState(false);
+  const [passkeyAdded, setPasskeyAdded] = useState(false);
+  const [passkeyPromptDismissed, setPasskeyPromptDismissed] = useState(false);
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -112,6 +116,30 @@ export function HomePage() {
     setCopiedPrivate(true);
     toast.success('Private management link copied');
     setTimeout(() => setCopiedPrivate(false), 2000);
+  };
+  const addPasskeyNow = async () => {
+    if (!publishedData) return;
+    setIsAddingPasskey(true);
+    try {
+      const startRes = await fetch(`/api/profiles/${publishedData.slug}/passkey/register/start`, { method: 'POST' });
+      const startJson = await startRes.json();
+      if (!startJson.success) throw new Error(startJson.error || 'Could not start passkey setup');
+      const attestation = await startRegistration({ optionsJSON: startJson.data });
+      const deviceLabel = typeof navigator !== 'undefined' ? navigator.userAgent.split(' ').slice(-2).join(' ') : undefined;
+      const completeRes = await fetch(`/api/profiles/${publishedData.slug}/passkey/register/complete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ response: attestation, deviceLabel }),
+      });
+      const completeJson = await completeRes.json();
+      if (!completeJson.success) throw new Error(completeJson.error || 'Could not save passkey');
+      setPasskeyAdded(true);
+      toast.success('Passkey added. You can now recover access without your management link.');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Could not add passkey');
+    } finally {
+      setIsAddingPasskey(false);
+    }
   };
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -194,6 +222,27 @@ export function HomePage() {
                     </Button>
                   </div>
                 </div>
+                {!passkeyAdded && !passkeyPromptDismissed && (
+                  <div className="p-6 rounded-3xl bg-primary/5 border border-primary/20 space-y-4 relative">
+                    <button type="button" onClick={() => setPasskeyPromptDismissed(true)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"><X size={16} /></button>
+                    <div className="flex items-center gap-3">
+                      <div className="size-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center"><Fingerprint size={20} /></div>
+                      <h4 className="text-lg font-bold pr-6">Secure this page with a passkey</h4>
+                    </div>
+                    <p className="text-sm text-muted-foreground leading-relaxed max-w-sm">
+                      If you ever lose your management link, a passkey lets you sign back in instantly with Face ID, Touch ID, or a security key.
+                    </p>
+                    <Button onClick={addPasskeyNow} disabled={isAddingPasskey} className="h-12 rounded-xl font-bold">
+                      {isAddingPasskey ? <Loader2 size={16} className="mr-2 animate-spin" /> : <Fingerprint size={16} className="mr-2" />}
+                      Add a passkey
+                    </Button>
+                  </div>
+                )}
+                {passkeyAdded && (
+                  <div className="p-4 rounded-2xl bg-green-500/10 text-green-700 dark:text-green-400 flex items-center gap-3 text-sm font-bold">
+                    <ShieldCheck size={18} /> Passkey added
+                  </div>
+                )}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Button asChild size="lg" className="h-14 text-lg font-bold rounded-2xl"><Link to={`/${publishedData.slug}`}>View Public Page</Link></Button>
                   <Button variant="outline" asChild size="lg" className="h-14 text-lg font-bold rounded-2xl"><Link to="/">Create Another</Link></Button>

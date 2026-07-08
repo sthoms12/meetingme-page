@@ -5,7 +5,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Save, ArrowLeft, Loader2, Plus, Trash2, LayoutGrid, ExternalLink, Image as ImageIcon, BarChart3, History, Code, Clock, Linkedin, Globe, Video, Link as LinkIcon, CheckCircle2, Twitter, Github, Phone, QrCode, Lock, Target, MessageSquare } from 'lucide-react';
+import { startAuthentication } from '@simplewebauthn/browser';
+import { Save, ArrowLeft, Loader2, Plus, Trash2, LayoutGrid, ExternalLink, Image as ImageIcon, BarChart3, History, Code, Clock, Linkedin, Globe, Video, Link as LinkIcon, CheckCircle2, Twitter, Github, Phone, QrCode, Lock, Target, MessageSquare, Fingerprint, ShieldCheck, KeyRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -16,6 +17,7 @@ import { ProfileCard } from '@/components/ProfileCard';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { CopyBlurbGroup } from '@/components/CopyBlurbGroup';
 import { QRCodeDialog } from '@/components/QRCodeDialog';
+import { AccessPanel } from '@/components/AccessPanel';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { nanoid } from 'nanoid';
 import { cn } from '@/lib/utils';
@@ -93,7 +95,7 @@ export function EditPage() {
       cancelled = true;
     };
   }, [searchParams, setSearchParams, slug]);
-  const { data: profile, isLoading } = useQuery<Profile>({
+  const { data: profile, isLoading, refetch } = useQuery<Profile>({
     queryKey: ['profile-manage', slug],
     queryFn: async () => {
       const res = await fetch(`/api/profiles/${slug}/manage`);
@@ -108,6 +110,53 @@ export function EditPage() {
     retry: false,
     enabled: !!slug && sessionResolved,
   });
+  const [isRecoveringPasskey, setIsRecoveringPasskey] = useState(false);
+  const [isRedeemingCode, setIsRedeemingCode] = useState(false);
+  const [recoveryCodeInput, setRecoveryCodeInput] = useState('');
+  const recoverWithPasskey = async () => {
+    if (!slug) return;
+    setIsRecoveringPasskey(true);
+    try {
+      const startRes = await fetch(`/api/profiles/${slug}/passkey/auth/start`, { method: 'POST' });
+      const startJson = await startRes.json();
+      if (!startJson.success) throw new Error(startJson.error || 'No passkey found for this page');
+      const assertion = await startAuthentication({ optionsJSON: startJson.data });
+      const completeRes = await fetch(`/api/profiles/${slug}/passkey/auth/complete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ response: assertion }),
+      });
+      const completeJson = await completeRes.json();
+      if (!completeJson.success) throw new Error(completeJson.error || 'Could not verify passkey');
+      setHasSessionAccess(true);
+      toast.success('Signed back in with passkey');
+      refetch();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Passkey sign-in failed');
+    } finally {
+      setIsRecoveringPasskey(false);
+    }
+  };
+  const redeemRecoveryCode = async () => {
+    if (!slug || !recoveryCodeInput.trim()) return;
+    setIsRedeemingCode(true);
+    try {
+      const res = await fetch(`/api/profiles/${slug}/recovery-code/redeem`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: recoveryCodeInput.trim() }),
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error || 'Invalid backup code');
+      setHasSessionAccess(true);
+      toast.success('Signed back in with backup code');
+      refetch();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Invalid backup code');
+    } finally {
+      setIsRedeemingCode(false);
+    }
+  };
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -208,11 +257,30 @@ export function EditPage() {
   };
   if (!sessionResolved) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary size-10" /></div>;
   if (!hasSessionAccess) return (
-    <div className="max-w-xl mx-auto py-32 text-center px-6">
-      <div className="size-20 rounded-3xl bg-slate-100 flex items-center justify-center mx-auto mb-8"><Lock size={40} className="text-slate-400" /></div>
-      <h2 className="text-3xl font-bold mb-4">Access Restricted</h2>
-      <p className="text-muted-foreground mb-8 text-lg">Magic Link required for management.</p>
-      <Button asChild size="lg" className="rounded-2xl h-14 w-full font-bold shadow-soft"><Link to="/">Back to Home</Link></Button>
+    <div className="max-w-xl mx-auto py-32 px-6">
+      <div className="text-center">
+        <div className="size-20 rounded-3xl bg-slate-100 flex items-center justify-center mx-auto mb-8"><Lock size={40} className="text-slate-400" /></div>
+        <h2 className="text-3xl font-bold mb-4">Access Restricted</h2>
+        <p className="text-muted-foreground mb-8 text-lg">Management link required. If you've set up a passkey or backup code, you can use those to sign back in instead.</p>
+      </div>
+      <div className="space-y-4">
+        <Button onClick={recoverWithPasskey} disabled={isRecoveringPasskey} size="lg" variant="outline" className="rounded-2xl h-14 w-full font-bold">
+          {isRecoveringPasskey ? <Loader2 className="size-5 animate-spin mr-3" /> : <Fingerprint size={20} className="mr-3" />}
+          Recover with passkey
+        </Button>
+        <div className="flex items-center gap-3">
+          <Input
+            placeholder="Backup code"
+            value={recoveryCodeInput}
+            onChange={(e) => setRecoveryCodeInput(e.target.value)}
+            className="h-14 rounded-2xl bg-secondary/40 border-none font-mono"
+          />
+          <Button onClick={redeemRecoveryCode} disabled={isRedeemingCode || !recoveryCodeInput.trim()} size="lg" variant="outline" className="rounded-2xl h-14 px-6 font-bold shrink-0">
+            {isRedeemingCode ? <Loader2 className="size-5 animate-spin" /> : <ShieldCheck size={20} />}
+          </Button>
+        </div>
+        <Button asChild size="lg" className="rounded-2xl h-14 w-full font-bold shadow-soft"><Link to="/">Back to Home</Link></Button>
+      </div>
     </div>
   );
   if (isLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary size-10" /></div>;
@@ -249,6 +317,7 @@ export function EditPage() {
             <TabsTrigger value="analytics" className="rounded-xl px-6 py-3 data-[state=active]:bg-background data-[state=active]:shadow-sm"><BarChart3 size={16} className="mr-2" /> Analytics</TabsTrigger>
             <TabsTrigger value="embed" className="rounded-xl px-6 py-3 data-[state=active]:bg-background data-[state=active]:shadow-sm"><Code size={16} className="mr-2" /> Embed</TabsTrigger>
             <TabsTrigger value="history" className="rounded-xl px-6 py-3 data-[state=active]:bg-background data-[state=active]:shadow-sm"><History size={16} className="mr-2" /> History</TabsTrigger>
+            <TabsTrigger value="access" className="rounded-xl px-6 py-3 data-[state=active]:bg-background data-[state=active]:shadow-sm"><KeyRound size={16} className="mr-2" /> Access</TabsTrigger>
           </TabsList>
           <TabsContent value="builder" className="m-0 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
@@ -372,6 +441,9 @@ export function EditPage() {
             <Card className="rounded-[2.5rem] border-none shadow-soft overflow-hidden"><CardHeader><CardTitle>Snapshots</CardTitle></CardHeader><CardContent className="p-0"><div className="divide-y border-t">{profile?.history?.length ? profile.history.map((h, i) => (
               <div key={i} className="p-6 flex items-center justify-between hover:bg-muted/30 transition-colors"><div><div className="font-bold text-lg">{h.label}</div><div className="text-sm text-muted-foreground">{new Date(h.timestamp).toLocaleString()}</div></div><Button variant="outline" className="rounded-xl px-6" onClick={() => handleRestore(h.timestamp)}>Restore</Button></div>
             )) : <div className="p-20 text-center text-muted-foreground italic">No history.</div>}</div></CardContent></Card>
+          </TabsContent>
+          <TabsContent value="access" className="m-0 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            {slug && <AccessPanel slug={slug} />}
           </TabsContent>
         </Tabs>
       </div>

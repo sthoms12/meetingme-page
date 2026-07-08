@@ -129,8 +129,24 @@ export const restoreSnapshotInputSchema = z.object({
   timestamp: z.string().datetime(),
 });
 
+export const passkeyRegisterCompleteInputSchema = z.object({
+  response: z.record(z.string(), z.unknown()),
+  deviceLabel: z.string().trim().max(60).optional(),
+});
+
+export const passkeyAuthCompleteInputSchema = z.object({
+  response: z.record(z.string(), z.unknown()),
+});
+
+export const recoveryCodeRedeemInputSchema = z.object({
+  code: z.string().trim().min(6).max(64),
+});
+
 export type CreateProfileInput = z.infer<typeof createProfileInputSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileInputSchema>;
 export type VerifyPasswordInput = z.infer<typeof verifyPasswordInputSchema>;
 export type SessionExchangeInput = z.infer<typeof sessionExchangeInputSchema>;
 export type RestoreSnapshotInput = z.infer<typeof restoreSnapshotInputSchema>;
+export type PasskeyRegisterCompleteInput = z.infer<typeof passkeyRegisterCompleteInputSchema>;
+export type PasskeyAuthCompleteInput = z.infer<typeof passkeyAuthCompleteInputSchema>;
+export type RecoveryCodeRedeemInput = z.infer<typeof recoveryCodeRedeemInputSchema>;
