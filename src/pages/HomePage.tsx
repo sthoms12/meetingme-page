@@ -58,6 +58,27 @@ export function HomePage() {
   });
   const watchAll = form.watch();
   const customSlug = watchAll.customSlug;
+  const errorLabels: Record<string, string> = {
+    fullName: 'Full Name',
+    jobTitle: 'Job Title',
+    company: 'Organization',
+    bio: 'Quick Bio',
+    focus: 'Primary Focus',
+    topics: 'Discussion Topics',
+    meetingNote: 'Pre-Meeting Note',
+    profilePhoto: 'Profile Photo',
+    linkedinUrl: 'LinkedIn Profile',
+    websiteUrl: 'Portfolio / Web',
+    videoUrl: 'Video Intro URL',
+    twitterUrl: 'Twitter / X',
+    githubUrl: 'GitHub',
+    phone: 'Phone Number',
+    customSlug: 'Public Handle',
+    password: 'Password',
+    variantName: 'Audience Group',
+    variantSlug: 'Audience Group',
+  };
+  const validationSummary = Object.keys(form.formState.errors).map((key) => errorLabels[key] || key);
   useEffect(() => {
     if (!customSlug || customSlug.length < 3) { setSlugStatus(null); return; }
     setIsCheckingSlug(true);
@@ -110,6 +131,11 @@ export function HomePage() {
       console.error('Publishing error:', err);
       toast.error('Error publishing');
     } finally { setIsSubmitting(false); }
+  };
+  const onInvalid = (errors: typeof form.formState.errors) => {
+    const names = Object.keys(errors).map((key) => errorLabels[key] || key);
+    toast.error(names.length ? `Please fix: ${names.join(', ')}` : 'Please check the highlighted fields');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
   const handleCopyPrivate = () => {
     if (!publishedData) return;
@@ -259,7 +285,7 @@ export function HomePage() {
               </div>
             ) : (
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-9 hairline-panel p-6 md:p-8 rounded-3xl">
+                <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="space-y-9 hairline-panel p-6 md:p-8 rounded-3xl">
                   <div className="flex items-center justify-between gap-4 border-b pb-5">
                     <div>
                       <h2 className="text-xl font-bold tracking-tight">Create your intro</h2>
@@ -269,6 +295,12 @@ export function HomePage() {
                       <Send size={20} />
                     </div>
                   </div>
+                  {validationSummary.length > 0 && (
+                    <div className="rounded-2xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                      <div className="font-bold">Finish these fields before creating your page:</div>
+                      <div className="mt-1">{validationSummary.join(', ')}</div>
+                    </div>
+                  )}
                   <div className="space-y-6">
                     <FormField control={form.control} name="customSlug" render={({ field }) => (
                       <FormItem>
@@ -289,18 +321,19 @@ export function HomePage() {
                             )}
                           </FormDescription>
                         )}
+                        <FormMessage />
                       </FormItem>
                     )} />
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <FormField control={form.control} name="fullName" render={({ field }) => (
-                        <FormItem><FormLabel className="text-xs font-black uppercase tracking-[0.16em] text-muted-foreground">Full Name</FormLabel><FormControl><Input className="h-12 rounded-xl bg-background/80" placeholder="John Doe" {...field} /></FormControl></FormItem>
+                        <FormItem><FormLabel className="text-xs font-black uppercase tracking-[0.16em] text-muted-foreground">Full Name</FormLabel><FormControl><Input className="h-12 rounded-xl bg-background/80" placeholder="John Doe" {...field} /></FormControl><FormMessage /></FormItem>
                       )} />
                       <FormField control={form.control} name="jobTitle" render={({ field }) => (
-                        <FormItem><FormLabel className="text-xs font-black uppercase tracking-[0.16em] text-muted-foreground">Job Title</FormLabel><FormControl><Input className="h-12 rounded-xl bg-background/80" placeholder="Founder & CEO" {...field} /></FormControl></FormItem>
+                        <FormItem><FormLabel className="text-xs font-black uppercase tracking-[0.16em] text-muted-foreground">Job Title</FormLabel><FormControl><Input className="h-12 rounded-xl bg-background/80" placeholder="Founder & CEO" {...field} /></FormControl><FormMessage /></FormItem>
                       )} />
                     </div>
                     <FormField control={form.control} name="company" render={({ field }) => (
-                      <FormItem><FormLabel className="text-xs font-black uppercase tracking-[0.16em] text-muted-foreground">Organization</FormLabel><FormControl><Input className="h-12 rounded-xl bg-background/80" placeholder="Acme Inc." {...field} /></FormControl></FormItem>
+                      <FormItem><FormLabel className="text-xs font-black uppercase tracking-[0.16em] text-muted-foreground">Organization</FormLabel><FormControl><Input className="h-12 rounded-xl bg-background/80" placeholder="Acme Inc." {...field} /></FormControl><FormMessage /></FormItem>
                     )} />
                     <div className="pt-2">
                       <FormLabel className="text-xs font-black uppercase tracking-[0.16em] text-muted-foreground mb-2 block">Profile Photo</FormLabel>
@@ -331,6 +364,7 @@ export function HomePage() {
                             <Linkedin className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                             <FormControl><Input className="h-12 pl-10 rounded-xl" placeholder="https://..." {...field} /></FormControl>
                           </div>
+                          <FormMessage />
                         </FormItem>
                       )} />
                       <FormField control={form.control} name="websiteUrl" render={({ field }) => (
@@ -340,6 +374,7 @@ export function HomePage() {
                             <Globe className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                             <FormControl><Input className="h-12 pl-10 rounded-xl" placeholder="https://..." {...field} /></FormControl>
                           </div>
+                          <FormMessage />
                         </FormItem>
                       )} />
                       <FormField control={form.control} name="videoUrl" render={({ field }) => (
@@ -349,6 +384,7 @@ export function HomePage() {
                             <Video className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                             <FormControl><Input className="h-12 pl-10 rounded-xl" placeholder="Loom / YouTube link" {...field} /></FormControl>
                           </div>
+                          <FormMessage />
                         </FormItem>
                       )} />
                       <FormField control={form.control} name="phone" render={({ field }) => (
@@ -358,6 +394,7 @@ export function HomePage() {
                             <Phone className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                             <FormControl><Input className="h-12 pl-10 rounded-xl" placeholder="+1 (555) 000-0000" {...field} /></FormControl>
                           </div>
+                          <FormMessage />
                         </FormItem>
                       )} />
                       <FormField control={form.control} name="twitterUrl" render={({ field }) => (
@@ -367,6 +404,7 @@ export function HomePage() {
                             <Twitter className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                             <FormControl><Input className="h-12 pl-10 rounded-xl" placeholder="https://x.com/..." {...field} /></FormControl>
                           </div>
+                          <FormMessage />
                         </FormItem>
                       )} />
                       <FormField control={form.control} name="githubUrl" render={({ field }) => (
@@ -376,6 +414,7 @@ export function HomePage() {
                             <Github className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                             <FormControl><Input className="h-12 pl-10 rounded-xl" placeholder="https://github.com/..." {...field} /></FormControl>
                           </div>
+                          <FormMessage />
                         </FormItem>
                       )} />
                     </div>
@@ -399,6 +438,7 @@ export function HomePage() {
                         <FormItem>
                           <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Primary Focus</FormLabel>
                           <FormControl><Input className="h-14 text-lg rounded-2xl" placeholder="Scale Engineering Teams" {...field} /></FormControl>
+                          <FormMessage />
                         </FormItem>
                       )} />
                     </div>
@@ -406,6 +446,7 @@ export function HomePage() {
                       <FormItem>
                         <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Discussion Topics</FormLabel>
                         <FormControl><Input className="h-14 text-lg rounded-2xl" placeholder="AI, SaaS, GTM Strategy (comma separated)" {...field} /></FormControl>
+                        <FormMessage />
                       </FormItem>
                     )} />
                     <FormField control={form.control} name="bio" render={({ field }) => (
@@ -419,6 +460,7 @@ export function HomePage() {
                       <FormItem>
                         <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Pre-Meeting Note</FormLabel>
                         <FormControl><Textarea className="h-24 resize-none rounded-xl p-4 text-base bg-primary/5 border-primary/10" placeholder="e.g. Really looking forward to our chat about the Q3 roadmap..." {...field} /></FormControl>
+                        <FormMessage />
                       </FormItem>
                     )} />
                   </div>
@@ -434,6 +476,7 @@ export function HomePage() {
                         <FormDescription className="text-[10px] leading-relaxed">
                           If set, visitors must enter this password to view your card.
                         </FormDescription>
+                        <FormMessage />
                       </FormItem>
                     )} />
                   </div>
