@@ -42,7 +42,7 @@ export function HomePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [publishedData, setPublishedData] = useState<{ slug: string; editToken: string } | null>(null);
   const [qrCodeData, setQrCodeData] = useState<string>('');
-  const [slugAvailable, setSlugAvailable] = useState<boolean | null>(null);
+  const [slugStatus, setSlugStatus] = useState<'available' | 'taken' | 'invalid' | 'error' | null>(null);
   const [isCheckingSlug, setIsCheckingSlug] = useState(false);
   const [copiedPrivate, setCopiedPrivate] = useState(false);
   const [isAddingPasskey, setIsAddingPasskey] = useState(false);
@@ -59,14 +59,16 @@ export function HomePage() {
   const watchAll = form.watch();
   const customSlug = watchAll.customSlug;
   useEffect(() => {
-    if (!customSlug || customSlug.length < 3) { setSlugAvailable(null); return; }
+    if (!customSlug || customSlug.length < 3) { setSlugStatus(null); return; }
     setIsCheckingSlug(true);
     const h = setTimeout(async () => {
       try {
         const res = await fetch(`/api/profiles/availability/${customSlug}`);
         const result = await res.json();
-        setSlugAvailable(result.success ? result.data.available : null);
-      } catch { setSlugAvailable(null); }
+        if (!result.success) { setSlugStatus('error'); }
+        else if (result.data.error) { setSlugStatus('invalid'); }
+        else { setSlugStatus(result.data.available ? 'available' : 'taken'); }
+      } catch { setSlugStatus('error'); }
       finally { setIsCheckingSlug(false); }
     }, 500);
     return () => clearTimeout(h);
@@ -273,11 +275,15 @@ export function HomePage() {
                         <FormLabel className="text-xs font-black uppercase tracking-[0.16em] text-muted-foreground">Public Handle</FormLabel>
                         <FormControl><Input className="h-12 text-base rounded-xl border bg-background/80" placeholder="jane-doe" {...field} /></FormControl>
                         {customSlug && customSlug.length >= 3 && (
-                          <FormDescription className={cn("text-[11px] font-bold flex items-center gap-1.5", isCheckingSlug ? "text-muted-foreground" : slugAvailable === true ? "text-green-600" : "text-destructive")}>
+                          <FormDescription className={cn("text-[11px] font-bold flex items-center gap-1.5", isCheckingSlug ? "text-muted-foreground" : slugStatus === 'available' ? "text-green-600" : "text-destructive")}>
                             {isCheckingSlug ? (
                               <><Loader2 size={12} className="animate-spin" /> Verifying availability...</>
-                            ) : slugAvailable === true ? (
+                            ) : slugStatus === 'available' ? (
                               "✓ Handle is available"
+                            ) : slugStatus === 'invalid' ? (
+                              "✗ Use 3-30 lowercase letters, numbers, or hyphens"
+                            ) : slugStatus === 'error' ? (
+                              "⚠ Couldn't check availability, try again"
                             ) : (
                               "✗ This handle is already taken"
                             )}
@@ -431,7 +437,7 @@ export function HomePage() {
                       </FormItem>
                     )} />
                   </div>
-                  <Button type="submit" size="lg" className="w-full h-14 text-base rounded-xl font-bold active:scale-[0.99] transition-all" disabled={isSubmitting || slugAvailable === false}>
+                  <Button type="submit" size="lg" className="w-full h-14 text-base rounded-xl font-bold active:scale-[0.99] transition-all" disabled={isSubmitting || slugStatus === 'taken' || slugStatus === 'invalid'}>
                     {isSubmitting ? "Publishing..." : "Create My Page"} <Send size={20} className="ml-3" />
                   </Button>
                 </form>
