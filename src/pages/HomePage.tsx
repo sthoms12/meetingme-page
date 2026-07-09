@@ -129,10 +129,14 @@ export function HomePage() {
   const onSubmit = async (values: FormValues) => {
     setIsSubmitting(true);
     try {
+      const payload = {
+        ...values,
+        password: values.password?.trim() ? values.password : undefined,
+      };
       const res = await fetch('/api/profiles', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(values),
+        body: JSON.stringify(payload),
       });
       const result = await res.json();
       if (result.success) {

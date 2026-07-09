@@ -86,7 +86,7 @@ export function AccessPanel({ slug }: AccessPanelProps) {
       const res = await fetch(`/api/profiles/${slug}/manage/regenerate`, { method: 'POST' });
       const json = await res.json() as ApiResponse<ProfileCreateResponse>;
       if (!json.success || !json.data) throw new Error(json.error || 'Could not regenerate management link');
-      setNewManagementLink(`${window.location.origin}/edit/${slug}?token=${json.data.editToken}`);
+      setNewManagementLink(`${window.location.origin}/${slug}/edit?token=${json.data.editToken}`);
       queryClient.invalidateQueries({ queryKey: ['profile-access', slug] });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Could not regenerate management link');

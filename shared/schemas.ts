@@ -46,7 +46,12 @@ const optionalTwitterProfile = z
   .refine((value) => {
     if (value === "") return true;
     if (xHandlePattern.test(value)) return true;
-    return z.string().url().safeParse(value).success;
+    try {
+      const url = new URL(value);
+      return ["x.com", "www.x.com", "twitter.com", "www.twitter.com"].includes(url.hostname.toLowerCase());
+    } catch {
+      return false;
+    }
   }, {
     message: "Enter an X handle like @name or a full profile URL",
   })
@@ -102,7 +107,7 @@ const baseProfileFields = {
 export const createProfileInputSchema = z.object({
   ...baseProfileFields,
   customSlug: z.string().trim().toLowerCase().optional().transform((value) => value ?? ""),
-  password: z.string().min(8).max(128).optional().transform((value) => value ?? ""),
+  password: z.string().trim().optional().transform((value) => value ?? ""),
   variantName: z.string().trim().min(1).max(40),
   variantSlug: z
     .string()
@@ -119,6 +124,14 @@ export const createProfileInputSchema = z.object({
       code: z.ZodIssueCode.custom,
       path: ["customSlug"],
       message: "Slug must be 3-30 characters using lowercase letters, numbers, or hyphens",
+    });
+  }
+
+  if (value.password && value.password.length < 8) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["password"],
+      message: "Password must be at least 8 characters",
     });
   }
 });
