@@ -91,7 +91,7 @@ export const verifyPassword = async (password: string, storedHash?: string) => {
     return false;
   }
 
-  const derivedHash = await derivePasswordHash(password, fromBase64(saltRaw));
+  const derivedHash = await derivePasswordHash(password, fromBase64Url(saltRaw));
   return timingSafeEqual(derivedHash, hashRaw);
 };
 

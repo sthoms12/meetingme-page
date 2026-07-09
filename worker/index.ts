@@ -64,6 +64,9 @@ const absoluteUrl = (request: Request, path: string) => new URL(path, request.ur
 
 const isAssetRequest = (pathname: string) =>
   pathname.startsWith('/assets/') ||
+  pathname.startsWith('/src/') ||
+  pathname.startsWith('/@vite/') ||
+  pathname === '/@react-refresh' ||
   pathname === '/favicon.ico' ||
   pathname === '/b4wemeet-icon.svg' ||
   ASSET_EXTENSIONS.test(pathname);

@@ -95,6 +95,12 @@ const isDeprecatedReactWarningMessage = (message: string): boolean => {
   return deprecatedPatterns.some((p) => p.test(message));
 };
 
+const isThirdPartyNoise = (message: string, stack?: string): boolean => {
+  if (/Ignoring Event:/i.test(message)) return true;
+  if (/analytics\.ahrefs\.com/i.test(stack || "")) return true;
+  return false;
+};
+
 const hasRelevantSourceInStack = (stack?: string): boolean => {
   if (!stack) return false;
   const lines = stack.split("\n");
@@ -475,6 +481,10 @@ class ErrorReporter {
       return { shouldReport: false, reason: "deprecated_react_warning" };
     }
 
+    if (isThirdPartyNoise(message, stack)) {
+      return { shouldReport: false, reason: "third_party_noise" };
+    }
+
     // For uncaught errors, require relevant source code in stack trace
     if (
       level === "error" &&
@@ -698,6 +708,8 @@ const shouldReportImmediate = (context: ErrorContext): boolean => {
     deprecatedPatterns.some((pattern) => pattern.test(message))
   )
     return false;
+
+  if (isThirdPartyNoise(message, stack)) return false;
 
   // For errors without proper source code, skip them
   const hasSourceCode = stack
