@@ -17,6 +17,7 @@ import { SecurityFAQ } from '@/components/SecurityFAQ';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { generateQrCodeDataUrl } from '@/lib/qrcode';
+import { setPageSeo } from '@/lib/seo';
 
 const xHandleOrUrlSchema = z.string().trim().refine((value) => {
   if (!value) return true;
@@ -86,6 +87,13 @@ export function HomePage() {
     variantSlug: 'Audience Group',
   };
   const validationSummary = Object.keys(form.formState.errors).map((key) => errorLabels[key] || key);
+  useEffect(() => {
+    setPageSeo({
+      title: 'B4WeMeet | Pre-meeting intro pages for better meetings',
+      description: 'Create a concise pre-meeting intro page with your bio, role, links, focus areas, and talking points so people arrive prepared.',
+      canonicalPath: '/',
+    });
+  }, []);
   useEffect(() => {
     if (!customSlug || customSlug.length < 3) { setSlugStatus(null); return; }
     setIsCheckingSlug(true);
@@ -294,7 +302,7 @@ export function HomePage() {
               </div>
             ) : (
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="space-y-9 hairline-panel p-6 md:p-8 rounded-3xl">
+                <form id="create-page" onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="space-y-9 hairline-panel p-6 md:p-8 rounded-3xl">
                   <div className="flex items-center justify-between gap-4 border-b pb-5">
                     <div>
                       <h2 className="text-xl font-bold tracking-tight">Create your intro</h2>
@@ -496,7 +504,7 @@ export function HomePage() {
               </Form>
             )}
           </div>
-          <div className="lg:sticky lg:top-8 space-y-6">
+          <div id="preview" className="lg:sticky lg:top-8 space-y-6">
             <div className="flex items-center justify-between px-2">
               <div className="flex items-center gap-2">
                  <Target className="text-primary size-3.5" />
@@ -516,7 +524,7 @@ export function HomePage() {
             </div>
           </div>
         </div>
-        <section className="pt-20 pb-12 border-t border-slate-200 dark:border-slate-800">
+        <section id="security" className="pt-20 pb-12 border-t border-slate-200 dark:border-slate-800">
           <SecurityFAQ />
         </section>
       </div>

@@ -22,6 +22,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { nanoid } from 'nanoid';
 import { cn } from '@/lib/utils';
 import type { Profile, ApiResponse } from '@shared/types';
+import { setPageSeo } from '@/lib/seo';
 
 const xHandleOrUrlSchema = z.string().trim().refine((value) => {
   if (!value) return true;
@@ -61,6 +62,15 @@ export function EditPage() {
   const [activeVariantIndex, setActiveVariantIndex] = useState(0);
   const [sessionResolved, setSessionResolved] = useState(false);
   const [hasSessionAccess, setHasSessionAccess] = useState(true);
+  useEffect(() => {
+    if (!slug) return;
+    setPageSeo({
+      title: `Manage ${slug} | B4WeMeet`,
+      description: 'Private B4WeMeet dashboard for managing your meeting intro page.',
+      canonicalPath: `/${slug}/edit`,
+      robots: 'noindex,nofollow',
+    });
+  }, [slug]);
   useEffect(() => {
     const tokenFromUrl = searchParams.get('token');
     if (!slug) {

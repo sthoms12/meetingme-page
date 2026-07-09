@@ -14,6 +14,11 @@ const PROFILE_KEY = "profile";
 const PHOTO_KEY = "profile_photo";
 
 export class GlobalDurableObject extends DurableObject {
+  async listReservedSlugs(): Promise<string[]> {
+    const entries = await this.ctx.storage.list<boolean>({ prefix: "slug_" });
+    return Array.from(entries.keys()).map((key) => key.replace(/^slug_/, ""));
+  }
+
   async isSlugReserved(slug: string): Promise<boolean> {
     return (await this.ctx.storage.get<boolean>(`slug_${slug}`)) ?? false;
   }

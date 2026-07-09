@@ -13,6 +13,7 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { CopyBlurbGroup } from '@/components/CopyBlurbGroup';
 import { toast } from 'sonner';
 import { downloadMeetingICS } from '@/lib/calendar-utils';
+import { setPageSeo } from '@/lib/seo';
 export function ProfilePage() {
   const { slug, variant: variantSlug } = useParams<{ slug: string; variant?: string }>();
   const [searchParams] = useSearchParams();
@@ -37,6 +38,33 @@ export function ProfilePage() {
   const displayData = unlockedData || initialData;
   const isLocked = displayData?.isLocked && !unlockedData;
   const canManage = !!displayData?.canManage;
+  React.useEffect(() => {
+    if (!slug) return;
+
+    if (!displayData) {
+      setPageSeo({
+        title: 'Introduction Not Found | B4WeMeet',
+        description: 'This B4WeMeet page is unavailable or the handle has changed.',
+        canonicalPath: variantSlug ? `/${slug}/${variantSlug}` : `/${slug}`,
+        robots: 'noindex,nofollow',
+      });
+      return;
+    }
+
+    const canonicalPath = variantSlug ? `/${slug}/${variantSlug}` : `/${slug}`;
+    const description = displayData.isLocked
+      ? `${displayData.fullName} has shared a password-protected B4WeMeet intro page.`
+      : `${displayData.fullName} is ${displayData.jobTitle} at ${displayData.company}. ${displayData.activeVariant?.focus || displayData.activeVariant?.bio || ''}`.trim();
+
+    setPageSeo({
+      title: displayData.isLocked
+        ? `${displayData.fullName} | Protected intro | B4WeMeet`
+        : `${displayData.fullName} | ${displayData.jobTitle} at ${displayData.company} | B4WeMeet`,
+      description: description.slice(0, 160),
+      canonicalPath,
+      robots: displayData.isLocked ? 'noindex,nofollow' : 'index,follow',
+    });
+  }, [displayData, slug, variantSlug]);
   const handleVerify = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!password || !slug) return;
@@ -178,6 +206,7 @@ export function ProfilePage() {
             </motion.div>
           ) : (
             <motion.div key="unlocked" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
+              <h1 className="sr-only">{displayData.fullName} on B4WeMeet</h1>
               <div className="relative group/card">
                  <ProfileCard data={{ ...displayData, bio: displayData.activeVariant?.bio }} slug={slug} />
                  <div className="absolute -right-20 top-0 hidden lg:flex flex-col gap-3 no-print">
