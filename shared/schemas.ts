@@ -5,13 +5,22 @@ const variantSlugPattern = /^[a-z0-9-]{2,30}$/;
 const dataImagePattern = /^data:image\/(?:png|jpeg|jpg|webp|gif);base64,[a-z0-9+/=]+$/i;
 const xHandlePattern = /^@?[A-Za-z0-9_]{1,15}$/;
 
+const isHttpUrl = (value: string) => {
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+};
+
 const optionalUrl = z
   .string()
   .trim()
   .optional()
   .transform((value) => value ?? "")
-  .refine((value) => value === "" || z.string().url().safeParse(value).success, {
-    message: "Must be a valid URL",
+  .refine((value) => value === "" || isHttpUrl(value), {
+    message: "Must be a valid HTTP or HTTPS URL",
   });
 
 export const normalizeTwitterInput = (value?: string | null) => {
@@ -87,7 +96,7 @@ const profilePhotoSchema = z
     (value) =>
       value === "" ||
       dataImagePattern.test(value) ||
-      z.string().url().safeParse(value).success,
+      isHttpUrl(value),
     { message: "Profile photo must be a valid URL or supported image upload" },
   );
 
