@@ -1,10 +1,21 @@
 import { Hono } from 'hono';
-import { cors } from 'hono/cors';
+import { bodyLimit } from 'hono/body-limit';
 import { logger } from 'hono/logger';
 import { Env as CoreEnv } from './core-utils';
 import type { ProfileVariant } from '@shared/types';
 import type { StoredProfile } from './types';
 import { userRoutes } from './userRoutes';
+import {
+  CLIENT_ERROR_LIMIT,
+  CLIENT_ERROR_WINDOW_MS,
+  MAX_API_BODY_BYTES,
+  MAX_CLIENT_ERROR_BODY_BYTES,
+  clientErrorReportSchema,
+  getClientKey,
+  retryAfterSeconds,
+  securityHeaders,
+  withSecurityHeaders,
+} from './security';
 
 export * from './core-utils';
 
@@ -18,25 +29,61 @@ const ASSET_EXTENSIONS = /\.(?:css|js|mjs|map|svg|png|jpg|jpeg|gif|webp|ico|txt|
 
 app.use('*', logger());
 
-app.use('/api/*', cors({ origin: '*', allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], allowHeaders: ['Content-Type', 'Authorization'] }));
+app.use('*', async (c, next) => {
+  await next();
+  for (const [name, value] of Object.entries(securityHeaders(c.req.raw))) {
+    c.header(name, value);
+  }
+});
+
+app.use('/api/*', bodyLimit({
+  maxSize: MAX_API_BODY_BYTES,
+  onError: (c) => c.json({ success: false, error: 'Request body too large' }, 413),
+}));
+
+app.use('/api/client-errors', bodyLimit({
+  maxSize: MAX_CLIENT_ERROR_BODY_BYTES,
+  onError: (c) => c.json({ success: false, error: 'Error report too large' }, 413),
+}));
 
 app.get('/api/health', (c) => c.json({ success: true, data: { status: 'healthy', timestamp: new Date().toISOString() } }));
 
 app.post('/api/client-errors', async (c) => {
   try {
-    const e = await c.req.json<ClientErrorReport>();
+    const limiter = await getIndexStub(c.env).checkRateLimit(
+      `client-error:${getClientKey(c.req.raw)}`,
+      CLIENT_ERROR_LIMIT,
+      CLIENT_ERROR_WINDOW_MS,
+    );
+    if (!limiter.allowed) {
+      c.header('Retry-After', retryAfterSeconds(limiter.retryAfterMs));
+      return c.json({ success: false, error: 'Too many error reports' }, 429);
+    }
+
+    const parsed = clientErrorReportSchema.safeParse(await c.req.json());
+    if (!parsed.success) {
+      return c.json({ success: false, error: 'Invalid error report' }, 400);
+    }
+
+    const e = parsed.data;
     console.error('[CLIENT ERROR]', JSON.stringify({ timestamp: e.timestamp || new Date().toISOString(), message: e.message, url: e.url, stack: e.stack, componentStack: e.componentStack, errorBoundary: e.errorBoundary }, null, 2));
     return c.json({ success: true });
   } catch (error) {
     console.error('[CLIENT ERROR HANDLER] Failed:', error);
-    return c.json({ success: false, error: 'Failed to process' }, 500);
+    return c.json({ success: false, error: 'Invalid error report' }, 400);
   }
 });
 
 userRoutes(app);
 
 app.notFound((c) => c.json({ success: false, error: 'Not Found' }, 404));
-app.onError((err, c) => { console.error(`[ERROR] ${err}`); return c.json({ success: false, error: 'Internal Server Error' }, 500); });
+app.onError((err, c) => {
+  if (err instanceof SyntaxError) {
+    return c.json({ success: false, error: 'Invalid JSON' }, 400);
+  }
+  console.error(`[ERROR] ${err}`);
+  return c.json({ success: false, error: 'Internal Server Error' }, 500);
+});
 
 const getIndexStub = (env: CoreEnv) =>
   env.GlobalDurableObject.get(env.GlobalDurableObject.idFromName(INDEX_DO_NAME));
@@ -289,8 +336,7 @@ ${entries.join('\n')}
 
 console.log('Server is running');
 
-export default {
-  async fetch(request: Request, env: AssetEnv, ctx: ExecutionContext) {
+const handleRequest = async (request: Request, env: AssetEnv, ctx: ExecutionContext) => {
     const url = new URL(request.url);
 
     if (url.pathname.startsWith('/api/')) {
@@ -395,5 +441,10 @@ export default {
     }
 
     return env.ASSETS.fetch(request);
+};
+
+export default {
+  async fetch(request: Request, env: AssetEnv, ctx: ExecutionContext) {
+    return withSecurityHeaders(await handleRequest(request, env, ctx), request);
   },
 } satisfies ExportedHandler<AssetEnv>;

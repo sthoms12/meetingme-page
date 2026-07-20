@@ -68,6 +68,8 @@ const PASSKEY_CEREMONY_LIMIT = 10;
 const PASSKEY_CEREMONY_WINDOW_MS = 15 * 60 * 1000;
 const RECOVERY_CODE_ATTEMPT_LIMIT = 5;
 const RECOVERY_CODE_ATTEMPT_WINDOW_MS = 15 * 60 * 1000;
+const PROFILE_CREATION_LIMIT = 5;
+const PROFILE_CREATION_WINDOW_MS = 60 * 60 * 1000;
 const RP_NAME = "B4WeMeet";
 const generateSlugCandidate = () => nanoid(12).toLowerCase().replace(/_/g, "x").slice(0, 10);
 
@@ -77,8 +79,8 @@ const getIndexStub = (env: Env) =>
 const getProfileStub = (env: Env, slug: string) =>
   env.GlobalDurableObject.get(env.GlobalDurableObject.idFromName(`profile:${slug}`));
 
-const getClientKey = (ip: string | undefined, userAgent: string | undefined) =>
-  `${ip ?? "unknown"}:${userAgent ?? "unknown"}`;
+const getClientKey = (ip: string | undefined, _userAgent: string | undefined) =>
+  ip ?? "unknown";
 
 const buildPhotoUrl = (slug: string, version: number) =>
   `/api/profiles/${slug}/photo?v=${version}`;
@@ -247,6 +249,21 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
 
   app.post("/api/profiles", async (c) => {
     const secureCookies = new URL(c.req.url).protocol === "https:";
+    const indexStub = getIndexStub(c.env);
+    const creationLimiter = await indexStub.checkRateLimit(
+      `profile-create:${getClientKey(c.req.header("CF-Connecting-IP"), c.req.header("User-Agent"))}`,
+      PROFILE_CREATION_LIMIT,
+      PROFILE_CREATION_WINDOW_MS,
+    );
+
+    if (!creationLimiter.allowed) {
+      c.header("Retry-After", Math.max(1, Math.ceil(creationLimiter.retryAfterMs / 1000)).toString());
+      return c.json(
+        { success: false, error: "Too many profile creation attempts. Try again later." } satisfies ApiResponse,
+        429,
+      );
+    }
+
     const parsedBody = createProfileInputSchema.safeParse(await c.req.json());
     if (!parsedBody.success) {
       return c.json(
@@ -259,8 +276,6 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     }
 
     const body = parsedBody.data;
-    const indexStub = getIndexStub(c.env);
-
     let slug = body.customSlug || "";
     let reserved = false;
 

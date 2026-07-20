@@ -108,10 +108,10 @@ export default ({ mode }: { mode: string }) => {
     plugins: [react(), cloudflare(), watchDependenciesPlugin(), reloadTriggerPlugin()],
     build: {
       minify: true,
-      sourcemap: mode === "development" ? "inline" : true, // Wrangler deploy expects file-based production source maps
+      sourcemap: mode === "development" ? "inline" : false,
       rollupOptions: {
         output: {
-          sourcemapExcludeSources: false, // Include original source in source maps
+          sourcemapExcludeSources: true,
         },
       },
     },

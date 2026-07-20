@@ -22,7 +22,7 @@ export function SecurityFAQ({ className }: SecurityFAQProps) {
       id: 'passwords',
       icon: <Lock className="size-4 text-primary" />,
       question: "How are passwords handled?",
-      answer: "We never store or see your plain-text password. When you set a password, it is transformed into a one-way SHA-256 hash at the network edge. We only store the hash to verify future access, making your original password unrecoverable even if the database were compromised."
+      answer: "We never store your plain-text password. At the network edge, it is processed with PBKDF2-SHA256 using a unique random salt and 310,000 iterations. Only the resulting one-way hash and salt are stored, so the original password cannot be recovered from the database."
     },
     {
       id: 'access',

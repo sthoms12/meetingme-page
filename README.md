@@ -125,9 +125,11 @@ http://localhost:3000/
 Run checks:
 
 ```bash
-bun run lint
-bun run build
+bun run check
+bun audit --audit-level=high
 ```
+
+`bun run check` runs linting, TypeScript validation, the automated test suite, and a production build.
 
 ## Deployment
 
