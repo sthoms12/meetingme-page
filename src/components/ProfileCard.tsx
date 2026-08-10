@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 import { Linkedin, Globe, Video, User, Link as LinkIcon, Target, Info, Calendar, Twitter, Github, Phone } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -83,12 +82,7 @@ export function ProfileCard({ data, className, slug }: ProfileCardProps) {
     videoUrl && { href: videoUrl, icon: Video, label: 'Video Intro', tone: 'text-rose-600 dark:text-rose-400' },
   ].filter(Boolean) as { href: string; icon: typeof Linkedin; label: string; tone: string }[];
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-      className={cn("w-full max-w-md mx-auto print:max-w-none print:transform-none", className)}
-    >
+    <div className={cn("w-full max-w-md mx-auto animate-scale-in print:max-w-none print:transform-none", className)}>
       <Card className="overflow-hidden border bg-card/95 shadow-soft rounded-3xl print:border print:bg-white print:text-black transition-colors duration-300">
         <CardHeader className="relative px-7 pt-7 pb-0 print:pt-6">
           <div className="absolute inset-x-0 top-0 h-28 bg-[linear-gradient(135deg,hsl(var(--primary)/0.16),hsl(var(--accent)/0.16))]" />
@@ -184,6 +178,6 @@ export function ProfileCard({ data, className, slug }: ProfileCardProps) {
           </div>
         </CardContent>
       </Card>
-    </motion.div>
+    </div>
   );
 }

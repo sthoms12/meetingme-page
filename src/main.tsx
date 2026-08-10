@@ -5,15 +5,14 @@ import {
   createBrowserRouter,
   RouterProvider,
 } from "react-router-dom";
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { RouteErrorBoundary } from '@/components/RouteErrorBoundary';
 import { Skeleton } from '@/components/ui/skeleton';
 import '@/index.css'
+import { HomePage } from '@/pages/HomePage';
 
-const HomePage = lazy(() => import('@/pages/HomePage').then((module) => ({ default: module.HomePage })));
-const ProfilePage = lazy(() => import('@/pages/ProfilePage').then((module) => ({ default: module.ProfilePage })));
-const EditPage = lazy(() => import('@/pages/EditPage').then((module) => ({ default: module.EditPage })));
+const ProfilePage = lazy(() => import('@/pages/ProfileRoute'));
+const EditPage = lazy(() => import('@/pages/EditRoute'));
 
 const routeFallback = (
   <div className="min-h-screen bg-background flex items-center justify-center p-6">
@@ -29,11 +28,10 @@ const withSuspense = (Component: ComponentType) => (
   </Suspense>
 );
 
-const queryClient = new QueryClient();
 const router = createBrowserRouter([
   {
     path: "/",
-    element: withSuspense(HomePage),
+    element: <HomePage />,
     errorElement: <RouteErrorBoundary />,
   },
   {
@@ -53,9 +51,7 @@ const router = createBrowserRouter([
   },
 ]);
 createRoot(document.getElementById('root')!).render(
-  <QueryClientProvider client={queryClient}>
-    <ErrorBoundary>
-      <RouterProvider router={router} />
-    </ErrorBoundary>
-  </QueryClientProvider>
+  <ErrorBoundary>
+    <RouterProvider router={router} />
+  </ErrorBoundary>
 )

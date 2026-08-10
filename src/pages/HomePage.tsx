@@ -1,22 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { Suspense, lazy, useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'sonner';
-import { startRegistration } from '@simplewebauthn/browser';
-import { Sparkles, Send, ShieldCheck, LayoutGrid, Image as ImageIcon, Loader2, Link as LinkIcon, Linkedin, Globe, Video, Twitter, Github, Phone, Lock, Copy, Check, Info, Target, Fingerprint, X } from 'lucide-react';
+import { Sparkles, Send, ShieldCheck, LayoutGrid, Image as ImageIcon, Loader2, Link as LinkIcon, Linkedin, Globe, Video, Twitter, Github, Phone, Lock, Copy, Check, Info, Target, Fingerprint, X, ArrowDown, Eye, SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ProfileCard } from '@/components/ProfileCard';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { CopyBlurbGroup } from '@/components/CopyBlurbGroup';
 import { SecurityFAQ } from '@/components/SecurityFAQ';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { generateQrCodeDataUrl } from '@/lib/qrcode';
 import { setPageSeo } from '@/lib/seo';
 import { buildManagementUrl } from '@/lib/management-link';
 
@@ -47,6 +44,10 @@ const formSchema = z.object({
   variantSlug: z.string().regex(/^[a-z0-9-]*$/, 'Invalid format').min(2, '2+ chars'),
 });
 type FormValues = z.infer<typeof formSchema>;
+const ProfileCard = lazy(() => import('@/components/ProfileCard').then((module) => ({ default: module.ProfileCard })));
+
+const previewFallback = <div className="mx-auto h-[34rem] w-full max-w-md animate-pulse rounded-3xl border bg-muted/60" aria-label="Loading preview" />;
+
 export function HomePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [publishedData, setPublishedData] = useState<{ slug: string; editToken: string } | null>(null);
@@ -57,6 +58,9 @@ export function HomePage() {
   const [isAddingPasskey, setIsAddingPasskey] = useState(false);
   const [passkeyAdded, setPasskeyAdded] = useState(false);
   const [passkeyPromptDismissed, setPasskeyPromptDismissed] = useState(false);
+  const [showMobilePreview, setShowMobilePreview] = useState(false);
+  const [showDesktopPreview, setShowDesktopPreview] = useState(false);
+  const [showMobileActions, setShowMobileActions] = useState(false);
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -95,6 +99,26 @@ export function HomePage() {
       canonicalPath: '/',
     });
   }, []);
+  useEffect(() => {
+    const media = window.matchMedia('(min-width: 1024px)');
+    const update = () => setShowDesktopPreview(media.matches);
+    update();
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, []);
+  useEffect(() => {
+    const update = () => {
+      const formElement = document.getElementById('create-page');
+      setShowMobileActions(Boolean(formElement && formElement.getBoundingClientRect().top < window.innerHeight * 0.88));
+    };
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update);
+    return () => {
+      window.removeEventListener('scroll', update);
+      window.removeEventListener('resize', update);
+    };
+  }, [publishedData]);
   useEffect(() => {
     if (!customSlug || customSlug.length < 3) { setSlugStatus(null); return; }
     setIsCheckingSlug(true);
@@ -145,6 +169,7 @@ export function HomePage() {
         const editToken = result.data.editToken;
         setPublishedData({ slug, editToken });
         const url = `${window.location.origin}/${slug}`;
+        const { generateQrCodeDataUrl } = await import('@/lib/qrcode');
         const qr = await generateQrCodeDataUrl(url);
         setQrCodeData(qr);
         toast.success('Your B4WeMeet page is live!');
@@ -174,6 +199,7 @@ export function HomePage() {
       const startRes = await fetch(`/api/profiles/${publishedData.slug}/passkey/register/start`, { method: 'POST' });
       const startJson = await startRes.json();
       if (!startJson.success) throw new Error(startJson.error || 'Could not start passkey setup');
+      const { startRegistration } = await import('@simplewebauthn/browser');
       const attestation = await startRegistration({ optionsJSON: startJson.data });
       const deviceLabel = typeof navigator !== 'undefined' ? navigator.userAgent.split(' ').slice(-2).join(' ') : undefined;
       const completeRes = await fetch(`/api/profiles/${publishedData.slug}/passkey/register/complete`, {
@@ -193,6 +219,7 @@ export function HomePage() {
   };
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <a href="#create-page" className="skip-link">Skip to page creator</a>
       <div className="py-8 md:py-14 lg:py-16 space-y-12">
         <ThemeToggle className="fixed top-5 right-5 rounded-full border bg-card/80 backdrop-blur" />
         <header className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-end">
@@ -206,6 +233,9 @@ export function HomePage() {
             <p className="text-muted-foreground text-lg md:text-xl max-w-2xl leading-relaxed">
               Build a concise meeting intro page with the facts, links, topics, and private context people need before they talk to you.
             </p>
+            <Button asChild size="lg" className="h-12 rounded-xl px-6 font-bold sm:w-fit">
+              <a href="#create-page">Create your page <ArrowDown size={17} className="ml-2" /></a>
+            </Button>
           </div>
           <div className="hairline-panel rounded-2xl p-5">
             <div className="grid grid-cols-3 gap-3 text-center">
@@ -357,28 +387,37 @@ export function HomePage() {
                     <FormField control={form.control} name="company" render={({ field }) => (
                       <FormItem><FormLabel className="text-xs font-black uppercase tracking-[0.16em] text-muted-foreground">Organization</FormLabel><FormControl><Input className="h-12 rounded-xl bg-background/80" placeholder="Acme Inc." {...field} /></FormControl><FormMessage /></FormItem>
                     )} />
-                    <div className="pt-2">
-                      <FormLabel className="text-xs font-black uppercase tracking-[0.16em] text-muted-foreground mb-2 block">Profile Photo</FormLabel>
-                      <div className="flex items-center gap-4">
-                        <Button type="button" variant="outline" className="h-12 px-5 rounded-xl border-dashed border-2 relative overflow-hidden group bg-background/80">
-                          <input type="file" accept="image/*" onChange={handlePhotoUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
+                    <details className="group rounded-2xl border bg-background/45 p-4">
+                      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                        <span className="flex items-center gap-2"><ImageIcon size={17} className="text-primary" /> Add a profile photo <span className="text-xs font-medium text-muted-foreground">Optional</span></span>
+                        <span className="text-xs text-muted-foreground group-open:hidden">Add</span>
+                        <span className="hidden text-xs text-muted-foreground group-open:inline">Close</span>
+                      </summary>
+                      <div className="pt-4">
+                        <div className="flex items-center gap-4">
+                        <label className="relative flex h-12 cursor-pointer items-center overflow-hidden rounded-xl border-2 border-dashed bg-background/80 px-5 transition-colors hover:border-primary/60">
+                          <input type="file" accept="image/*" onChange={handlePhotoUpload} className="absolute inset-0 cursor-pointer opacity-0" aria-label="Upload profile photo" />
                           <ImageIcon size={18} className="mr-2 text-primary" />
                           <span className="font-bold">Upload Photo</span>
-                        </Button>
+                        </label>
                         {watchAll.profilePhoto && (
                           <div className="size-14 rounded-2xl border bg-muted overflow-hidden shadow-sm">
-                            <img src={watchAll.profilePhoto} alt="Preview" className="w-full h-full object-cover" />
+                            <img src={watchAll.profilePhoto} alt="Profile photo preview" className="w-full h-full object-cover" />
                           </div>
                         )}
                       </div>
-                    </div>
+                      </div>
+                    </details>
                   </div>
-                  <div className="pt-7 border-t space-y-7">
-                    <div className="flex items-center gap-3">
+                  <details className="group border-t pt-7">
+                    <summary className="flex cursor-pointer list-none items-center justify-between gap-4 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                      <span className="flex items-center gap-3">
                       <LinkIcon className="text-primary size-5" />
-                      <span className="text-sm font-black uppercase tracking-[0.16em]">Professional Links</span>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <span><span className="block text-sm font-black uppercase tracking-[0.16em]">Professional links</span><span className="mt-1 block text-xs font-medium normal-case tracking-normal text-muted-foreground">LinkedIn, website, video, phone, X, and GitHub · Optional</span></span>
+                      </span>
+                      <SlidersHorizontal size={18} className="text-muted-foreground transition-transform group-open:rotate-90" />
+                    </summary>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-7">
                       <FormField control={form.control} name="linkedinUrl" render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">LinkedIn Profile</FormLabel>
@@ -440,7 +479,7 @@ export function HomePage() {
                         </FormItem>
                       )} />
                     </div>
-                  </div>
+                  </details>
                   <div className="pt-7 border-t space-y-7">
                     <div className="flex items-center gap-3">
                       <LayoutGrid className="text-primary size-5" />
@@ -456,11 +495,11 @@ export function HomePage() {
                           </Select>
                         </FormItem>
                       )} />
-                      <FormField control={form.control} name="focus" render={({ field }) => (
+                    <FormField control={form.control} name="focus" render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Primary Focus</FormLabel>
                           <FormControl><Input className="h-14 text-lg rounded-2xl" placeholder="Scale Engineering Teams" {...field} /></FormControl>
-                          <FormMessage />
+                          <div className="flex items-start justify-between gap-3"><FormMessage /><span className="ml-auto text-[10px] tabular-nums text-muted-foreground">{(field.value || '').length}/60</span></div>
                         </FormItem>
                       )} />
                     </div>
@@ -475,23 +514,26 @@ export function HomePage() {
                       <FormItem>
                         <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Quick Bio</FormLabel>
                           <FormControl><Textarea className="h-32 resize-none rounded-xl bg-background/80 p-4 text-base" placeholder="Brief intro for this context..." {...field} /></FormControl>
-                        <FormMessage />
+                        <div className="flex items-start justify-between gap-3"><FormMessage /><span className="ml-auto text-[10px] tabular-nums text-muted-foreground">{(field.value || '').length}/300</span></div>
                       </FormItem>
                     )} />
                     <FormField control={form.control} name="meetingNote" render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Pre-Meeting Note</FormLabel>
                         <FormControl><Textarea className="h-24 resize-none rounded-xl p-4 text-base bg-primary/5 border-primary/10" placeholder="e.g. Really looking forward to our chat about the Q3 roadmap..." {...field} /></FormControl>
-                        <FormMessage />
+                        <div className="flex items-start justify-between gap-3"><FormMessage /><span className="ml-auto text-[10px] tabular-nums text-muted-foreground">{(field.value || '').length}/200</span></div>
                       </FormItem>
                     )} />
                   </div>
-                  <div className="pt-7 border-t space-y-6">
-                    <div className="flex items-center gap-3">
+                  <details className="group border-t pt-7">
+                    <summary className="flex cursor-pointer list-none items-center justify-between gap-4 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                      <span className="flex items-center gap-3">
                       <Lock className="text-primary size-5" />
-                      <span className="text-sm font-black uppercase tracking-[0.16em]">Privacy & Access</span>
-                    </div>
-                    <FormField control={form.control} name="password" render={({ field }) => (
+                      <span><span className="block text-sm font-black uppercase tracking-[0.16em]">Privacy & access</span><span className="mt-1 block text-xs font-medium normal-case tracking-normal text-muted-foreground">Password protection · Optional</span></span>
+                      </span>
+                      <SlidersHorizontal size={18} className="text-muted-foreground transition-transform group-open:rotate-90" />
+                    </summary>
+                    <div className="pt-6"><FormField control={form.control} name="password" render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/70">Optional Password</FormLabel>
                         <FormControl><Input type="password" className="h-12 rounded-xl bg-background/80" placeholder="Leave empty for public access" {...field} /></FormControl>
@@ -500,8 +542,8 @@ export function HomePage() {
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
-                    )} />
-                  </div>
+                    )} /></div>
+                  </details>
                   <Button type="submit" size="lg" className="w-full h-14 text-base rounded-xl font-bold active:scale-[0.99] transition-all" disabled={isSubmitting || slugStatus === 'taken' || slugStatus === 'invalid'}>
                     {isSubmitting ? "Publishing..." : "Create My Page"} <Send size={20} className="ml-3" />
                   </Button>
@@ -520,7 +562,11 @@ export function HomePage() {
                 <span className="text-xs text-muted-foreground font-bold">{watchAll.variantName} Mode</span>
               </div>
             </div>
-            <ProfileCard data={watchAll} className="origin-top transition-transform" />
+            {showDesktopPreview ? (
+              <Suspense fallback={previewFallback}><ProfileCard data={watchAll} className="origin-top transition-transform" /></Suspense>
+            ) : (
+              <div className="rounded-2xl border bg-card/80 p-5 text-sm text-muted-foreground lg:hidden">Use Preview to see your page as you build it.</div>
+            )}
             <div className="p-5 rounded-2xl bg-card/80 border flex items-start gap-4 shadow-soft backdrop-blur">
                <Info className="size-5 text-primary shrink-0 mt-0.5" />
                <p className="text-xs text-muted-foreground leading-relaxed">
@@ -529,6 +575,36 @@ export function HomePage() {
             </div>
           </div>
         </div>
+        {!publishedData && showMobileActions && (
+          <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-12px_40px_-24px_rgba(15,23,42,0.55)] backdrop-blur lg:hidden">
+            <div className="mx-auto flex max-w-lg gap-3">
+              <Button type="button" variant="outline" className="h-12 flex-1 rounded-xl font-bold" onClick={() => setShowMobilePreview(true)}>
+                <Eye size={17} className="mr-2" /> Preview
+              </Button>
+              <Button type="submit" form="create-page" className="h-12 flex-[1.35] rounded-xl font-bold" disabled={isSubmitting || slugStatus === 'taken' || slugStatus === 'invalid'}>
+                {isSubmitting ? <><Loader2 size={17} className="mr-2 animate-spin" /> Publishing</> : <>Create page <Send size={17} className="ml-2" /></>}
+              </Button>
+            </div>
+          </div>
+        )}
+        {showMobilePreview && !publishedData && (
+          <div className="fixed inset-0 z-50 bg-foreground/35 p-3 backdrop-blur-sm lg:hidden" role="dialog" aria-modal="true" aria-labelledby="mobile-preview-title">
+            <div className="mx-auto flex h-full max-w-lg flex-col overflow-hidden rounded-3xl border bg-background shadow-2xl">
+              <div className="flex items-center justify-between border-b px-5 py-4">
+                <div>
+                  <h2 id="mobile-preview-title" className="text-lg font-bold">Page preview</h2>
+                  <p className="text-xs text-muted-foreground">Updates as you complete the form</p>
+                </div>
+                <Button type="button" variant="ghost" size="icon" className="rounded-full" onClick={() => setShowMobilePreview(false)} aria-label="Close preview">
+                  <X size={19} />
+                </Button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+                <Suspense fallback={previewFallback}><ProfileCard data={watchAll} /></Suspense>
+              </div>
+            </div>
+          </div>
+        )}
         <section id="security" className="pt-20 pb-12 border-t border-slate-200 dark:border-slate-800">
           <SecurityFAQ />
         </section>
