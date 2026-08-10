@@ -4,6 +4,20 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/b4wemeet-icon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      (() => {
+        const url = new URL(window.location.href);
+        if (!/^\/[^/]+\/edit$/.test(url.pathname)) return;
+        const hashParams = new URLSearchParams(url.hash.replace(/^#/, ''));
+        const token = hashParams.get('token') || url.searchParams.get('token');
+        if (!token) return;
+        window.__b4wemeetEditToken = token;
+        url.searchParams.delete('token');
+        hashParams.delete('token');
+        url.hash = hashParams.toString();
+        window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+      })();
+    </script>
     <script defer src="https://zoanalytics-thomstech.zocomputer.io/zowa.js" data-site="cloudflare-meetingme-page"></script>
     <title>B4WeMeet | Pre-meeting intro pages for better meetings</title>
   </head>

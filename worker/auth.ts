@@ -114,7 +114,7 @@ export const parseCookies = (cookieHeader: string | null | undefined) => {
 export const sessionCookieName = (slug: string) => `meetingme_manage_${slug}`;
 
 const cookieSecurityAttributes = (secure: boolean) =>
-  `${secure ? "Secure; " : ""}HttpOnly; SameSite=Lax; Path=/`;
+  `${secure ? "Secure; " : ""}HttpOnly; SameSite=Strict; Path=/`;
 
 export const sessionCookie = (slug: string, token: string, secure: boolean) =>
   `${sessionCookieName(slug)}=${token}; ${cookieSecurityAttributes(secure)}; Max-Age=${SESSION_TTL_SECONDS}`;

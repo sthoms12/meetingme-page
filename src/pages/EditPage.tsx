@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link, useSearchParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -23,6 +23,7 @@ import { nanoid } from 'nanoid';
 import { cn } from '@/lib/utils';
 import type { Profile, ApiResponse } from '@shared/types';
 import { setPageSeo } from '@/lib/seo';
+import { consumeManagementToken } from '@/lib/management-link';
 
 const xHandleOrUrlSchema = z.string().trim().refine((value) => {
   if (!value) return true;
@@ -56,7 +57,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 export function EditPage() {
   const { slug } = useParams<{ slug: string }>();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [managementToken] = useState(() => consumeManagementToken());
   const queryClient = useQueryClient();
   const [isUpdating, setIsUpdating] = useState(false);
   const [activeVariantIndex, setActiveVariantIndex] = useState(0);
@@ -72,7 +73,7 @@ export function EditPage() {
     });
   }, [slug]);
   useEffect(() => {
-    const tokenFromUrl = searchParams.get('token');
+    const tokenFromUrl = managementToken;
     if (!slug) {
       setSessionResolved(true);
       return;
@@ -94,9 +95,6 @@ export function EditPage() {
           throw new Error(payload.error || 'Management link expired');
         }
         if (cancelled) return;
-        const newParams = new URLSearchParams(searchParams);
-        newParams.delete('token');
-        setSearchParams(newParams, { replace: true });
         setHasSessionAccess(true);
         toast.success('Management access restored');
       })
@@ -111,7 +109,7 @@ export function EditPage() {
     return () => {
       cancelled = true;
     };
-  }, [searchParams, setSearchParams, slug]);
+  }, [managementToken, slug]);
   const { data: profile, isLoading, refetch } = useQuery<Profile>({
     queryKey: ['profile-manage', slug],
     queryFn: async () => {

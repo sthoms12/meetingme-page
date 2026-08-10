@@ -1086,7 +1086,7 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     }
   });
 
-  app.get("/api/profiles/:slug/recovery-code/reveal", async (c) => {
+  app.post("/api/profiles/:slug/recovery-code/reveal", async (c) => {
     const parsedSlug = slugSchema.safeParse(c.req.param("slug"));
     if (!parsedSlug.success) {
       return c.json({ success: false, error: "Invalid slug" } satisfies ApiResponse, 400);

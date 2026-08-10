@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import type { AccessInfo, ApiResponse, ProfileCreateResponse } from '@shared/types';
+import { buildManagementUrl } from '@/lib/management-link';
 
 interface AccessPanelProps {
   slug: string;
@@ -67,7 +68,7 @@ export function AccessPanel({ slug }: AccessPanelProps) {
   const revealRecoveryCode = async () => {
     setIsRevealingCode(true);
     try {
-      const res = await fetch(`/api/profiles/${slug}/recovery-code/reveal`);
+      const res = await fetch(`/api/profiles/${slug}/recovery-code/reveal`, { method: 'POST' });
       const json = await res.json();
       if (!json.success) throw new Error(json.error || 'Could not reveal backup code');
       setRevealedCode(json.data.code);
@@ -86,7 +87,7 @@ export function AccessPanel({ slug }: AccessPanelProps) {
       const res = await fetch(`/api/profiles/${slug}/manage/regenerate`, { method: 'POST' });
       const json = await res.json() as ApiResponse<ProfileCreateResponse>;
       if (!json.success || !json.data) throw new Error(json.error || 'Could not regenerate management link');
-      setNewManagementLink(`${window.location.origin}/${slug}/edit?token=${json.data.editToken}`);
+      setNewManagementLink(buildManagementUrl(window.location.origin, slug, json.data.editToken));
       queryClient.invalidateQueries({ queryKey: ['profile-access', slug] });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Could not regenerate management link');
