@@ -95,6 +95,7 @@ All API responses use this shape:
 | `/api/profiles/:slug/photo` | GET | Serve stored profile photo assets |
 | `/api/profiles/:slug/analytics` | GET | Fetch owner-only analytics |
 | `/api/profiles/:slug/history/restore` | POST | Restore a saved version snapshot |
+| `/api/profiles/:slug/recovery-code/reveal` | POST | Rotate and reveal the owner backup code |
 | `/api/client-errors` | POST | Report client-side errors |
 
 ## Local development
@@ -146,7 +147,7 @@ The public product name is B4WeMeet. Some Cloudflare infrastructure identifiers 
 ## Security notes
 
 - The edit token is generated at creation time and only the hash is stored.
-- The management link exchanges the edit token for a cookie-backed owner session.
+- New management links keep the edit token in the URL fragment and exchange it for a cookie-backed owner session. Existing query-token links remain compatible.
 - Owner sessions are capped and expired server-side.
 - Optional public page passwords are hashed before storage.
 - Password verification, session exchange, restore, and update flows are rate-limited.

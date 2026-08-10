@@ -18,6 +18,7 @@ import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { generateQrCodeDataUrl } from '@/lib/qrcode';
 import { setPageSeo } from '@/lib/seo';
+import { buildManagementUrl } from '@/lib/management-link';
 
 const xHandleOrUrlSchema = z.string().trim().refine((value) => {
   if (!value) return true;
@@ -160,7 +161,7 @@ export function HomePage() {
   };
   const handleCopyPrivate = () => {
     if (!publishedData) return;
-    const managementUrl = `${window.location.origin}/${publishedData.slug}/edit?token=${publishedData.editToken}`;
+    const managementUrl = buildManagementUrl(window.location.origin, publishedData.slug, publishedData.editToken);
     navigator.clipboard.writeText(managementUrl);
     setCopiedPrivate(true);
     toast.success('Private management link copied');

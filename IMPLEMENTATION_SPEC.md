@@ -191,7 +191,7 @@ The recovery code is kept, but demoted to a background safety net rather than a 
   - Creates owner session cookie
   - Optionally rotates `editTokenHash`
 
-- `GET /api/profiles/:slug/recovery-code/reveal`
+- `POST /api/profiles/:slug/recovery-code/reveal`
   - Requires owner session
   - Returns the raw recovery code exactly once per explicit reveal action, regenerating it immediately after reveal so a leaked view cannot be reused silently
   - Rate-limited hard, this is a sensitive read

@@ -35,7 +35,7 @@ describe("management sessions", () => {
     const cookie = sessionCookie("jane-doe", "secret", true);
     expect(cookie).toContain("Secure");
     expect(cookie).toContain("HttpOnly");
-    expect(cookie).toContain("SameSite=Lax");
+    expect(cookie).toContain("SameSite=Strict");
     expect(cookie).toContain("Max-Age=2592000");
     expect(clearSessionCookie("jane-doe", true)).toContain("Max-Age=0");
   });
