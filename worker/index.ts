@@ -164,6 +164,14 @@ const buildHomeBody = () => `
     <h2>What visitors see</h2>
     <p>Each page is built for pre-meeting context rather than just social links. Visitors can scan a short bio, understand what you work on, open relevant links, and export a calendar note.</p>
   </section>
+  <section>
+    <h2>What is a pre-meeting intro page?</h2>
+    <p>A pre-meeting intro page is a short briefing shared before a conversation. It tells the other person who you are, what you work on, why the meeting matters, which topics are useful, and where to find any supporting links. The goal is to spend less meeting time on basic orientation and more time on the actual discussion.</p>
+  </section>
+  <section>
+    <h2>When B4WeMeet is useful</h2>
+    <p>Use a page for a client call, interview, warm introduction, advisory conversation, sales meeting, or networking follow-up. Create audience-specific variants when different people need different context. Public pages can include a photo, role, company, focus area, discussion topics, meeting note, and selected links without exposing the private management URL.</p>
+  </section>
 </main>`;
 
 const buildProfileBody = (
@@ -216,11 +224,10 @@ const buildStructuredData = (request: Request, profile?: StoredProfile, variant?
   if (!profile || !variant || !canonicalPath || profile.passwordHash) {
     return JSON.stringify({
       '@context': 'https://schema.org',
-      '@type': 'SoftwareApplication',
-      name: 'B4WeMeet',
-      applicationCategory: 'BusinessApplication',
-      description: buildHomeDescription(),
-      url: absoluteUrl(request, '/'),
+      '@graph': [
+        { '@type': 'SoftwareApplication', name: 'B4WeMeet', applicationCategory: 'BusinessApplication', description: buildHomeDescription(), url: absoluteUrl(request, '/'), creator: { '@id': `${absoluteUrl(request, '/')}#creator` } },
+        { '@type': 'Person', '@id': `${absoluteUrl(request, '/')}#creator`, name: 'Steve Thoms', url: 'https://www.linkedin.com/in/steve-thoms-81381990', sameAs: ['https://www.linkedin.com/in/steve-thoms-81381990', 'https://x.com/thomstech12'] },
+      ],
     });
   }
 
