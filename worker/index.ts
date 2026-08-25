@@ -216,11 +216,10 @@ const buildStructuredData = (request: Request, profile?: StoredProfile, variant?
   if (!profile || !variant || !canonicalPath || profile.passwordHash) {
     return JSON.stringify({
       '@context': 'https://schema.org',
-      '@type': 'SoftwareApplication',
-      name: 'B4WeMeet',
-      applicationCategory: 'BusinessApplication',
-      description: buildHomeDescription(),
-      url: absoluteUrl(request, '/'),
+      '@graph': [
+        { '@type': 'SoftwareApplication', name: 'B4WeMeet', applicationCategory: 'BusinessApplication', description: buildHomeDescription(), url: absoluteUrl(request, '/'), creator: { '@id': `${absoluteUrl(request, '/')}#creator` } },
+        { '@type': 'Person', '@id': `${absoluteUrl(request, '/')}#creator`, name: 'Steve Thoms', url: 'https://www.linkedin.com/in/steve-thoms-81381990', sameAs: ['https://www.linkedin.com/in/steve-thoms-81381990', 'https://x.com/thomstech12'] },
+      ],
     });
   }
 

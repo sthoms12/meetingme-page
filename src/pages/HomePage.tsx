@@ -608,6 +608,9 @@ export function HomePage() {
         <section id="security" className="pt-20 pb-12 border-t border-slate-200 dark:border-slate-800">
           <SecurityFAQ />
         </section>
+        <footer className="border-t border-slate-200 py-8 text-center text-sm text-muted-foreground dark:border-slate-800">
+          Created by <a className="underline hover:text-foreground" href="https://www.linkedin.com/in/steve-thoms-81381990" rel="me">Steve Thoms</a>.
+        </footer>
       </div>
     </div>
   );
