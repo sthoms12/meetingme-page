@@ -17,11 +17,17 @@ interface QRCodeDialogProps {
   trigger?: React.ReactNode;
 }
 export function QRCodeDialog({ url, label = "Introduction", trigger }: QRCodeDialogProps) {
+  const [open, setOpen] = useState(false);
   const [qrUrl, setQrUrl] = useState<string>('');
   const [copied, setCopied] = useState(false);
   useEffect(() => {
-    generateQrCodeDataUrl(url).then(setQrUrl).catch(console.error);
-  }, [url]);
+    if (!open) return;
+    let cancelled = false;
+    generateQrCodeDataUrl(url).then((value) => {
+      if (!cancelled) setQrUrl(value);
+    }).catch(console.error);
+    return () => { cancelled = true; };
+  }, [open, url]);
   const handleDownload = () => {
     const link = document.createElement('a');
     link.href = qrUrl;
@@ -38,7 +44,7 @@ export function QRCodeDialog({ url, label = "Introduction", trigger }: QRCodeDia
     setTimeout(() => setCopied(false), 2000);
   };
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {trigger || (
           <Button variant="outline" className="gap-2 rounded-2xl h-14 font-bold border-2">
@@ -57,11 +63,17 @@ export function QRCodeDialog({ url, label = "Introduction", trigger }: QRCodeDia
         <div className="flex flex-col items-center justify-center space-y-8 py-4">
           <div className="relative group">
             <div className="absolute -inset-4 bg-primary/5 rounded-[3rem] -z-10 group-hover:bg-primary/10 transition-colors" />
-            <img 
-              src={qrUrl} 
-              alt="QR Code" 
-              className="size-56 object-contain rounded-2xl border-4 border-white shadow-soft" 
-            />
+            <div className="size-56 rounded-2xl border-4 border-white bg-white shadow-soft">
+              {qrUrl ? (
+                <img
+                  src={qrUrl}
+                  alt="QR Code"
+                  width={224}
+                  height={224}
+                  className="size-56 object-contain"
+                />
+              ) : null}
+            </div>
           </div>
           <div className="w-full flex flex-col gap-3">
             <Button onClick={handleDownload} className="w-full h-14 rounded-2xl gap-3 font-bold text-lg shadow-lg shadow-primary/20">
