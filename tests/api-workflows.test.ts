@@ -196,4 +196,15 @@ describe("critical API workflows", () => {
     );
     expect(replay.status).toBe(401);
   });
+
+  test("rejects the reserved create handle", async () => {
+    const { request } = createHarness();
+    const availability = await request("/api/profiles/availability/create");
+    expect(availability.status).toBe(200);
+    const availabilityBody = await availability.json() as { data: { available: boolean } };
+    expect(availabilityBody.data.available).toBe(false);
+
+    const created = await request("/api/profiles", jsonRequest("POST", { ...profileInput, customSlug: "create" }));
+    expect(created.status).toBe(409);
+  });
 });
