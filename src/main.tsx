@@ -5,12 +5,12 @@ import {
   createBrowserRouter,
   RouterProvider,
 } from "react-router-dom";
+import { Toaster } from 'sonner';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { RouteErrorBoundary } from '@/components/RouteErrorBoundary';
 import { Skeleton } from '@/components/ui/skeleton';
 import '@/index.css'
-import { HomePage } from '@/pages/HomePage';
-
+const HomePage = lazy(() => import('@/pages/HomePage').then((module) => ({ default: module.HomePage })));
 const ProfilePage = lazy(() => import('@/pages/ProfileRoute'));
 const EditPage = lazy(() => import('@/pages/EditRoute'));
 
@@ -31,7 +31,16 @@ const withSuspense = (Component: ComponentType) => (
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <HomePage />,
+    element: (
+      <main className="flex min-h-screen items-center justify-center bg-background">
+        <a className="tap-link font-bold text-primary" href="/">B4WeMeet</a>
+      </main>
+    ),
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/create",
+    element: withSuspense(HomePage),
     errorElement: <RouteErrorBoundary />,
   },
   {
@@ -53,5 +62,6 @@ const router = createBrowserRouter([
 createRoot(document.getElementById('root')!).render(
   <ErrorBoundary>
     <RouterProvider router={router} />
+    <Toaster position="top-center" />
   </ErrorBoundary>
 )

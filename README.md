@@ -64,7 +64,8 @@ The Worker serves both the React app and the API. Cloudflare's SPA asset handlin
 
 | Route | Purpose |
 | --- | --- |
-| `/` | Create a new B4WeMeet page |
+| `/` | Static landing page. The app bundle is not loaded here |
+| `/create` | Create a new B4WeMeet page |
 | `/:slug` | Public profile page |
 | `/:slug/:variant` | Public page for a specific audience variant |
 | `/:slug/edit` | Owner dashboard, unlocked by session or management token |

@@ -11,7 +11,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { CopyBlurbGroup } from '@/components/CopyBlurbGroup';
-import { SecurityFAQ } from '@/components/SecurityFAQ';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { setPageSeo } from '@/lib/seo';
@@ -45,6 +44,7 @@ const formSchema = z.object({
 });
 type FormValues = z.infer<typeof formSchema>;
 const ProfileCard = lazy(() => import('@/components/ProfileCard').then((module) => ({ default: module.ProfileCard })));
+const SecurityFAQ = lazy(() => import('@/components/SecurityFAQ').then((module) => ({ default: module.SecurityFAQ })));
 
 const previewFallback = <div className="mx-auto h-[34rem] w-full max-w-md animate-pulse rounded-3xl border bg-muted/60" aria-label="Loading preview" />;
 
@@ -94,9 +94,10 @@ export function HomePage() {
   const validationSummary = Object.keys(form.formState.errors).map((key) => errorLabels[key] || key);
   useEffect(() => {
     setPageSeo({
-      title: 'B4WeMeet | Pre-meeting intro pages for better meetings',
+      title: 'Create your page | B4WeMeet',
       description: 'Create a concise pre-meeting intro page with your bio, role, links, focus areas, and talking points so people arrive prepared.',
       canonicalPath: '/',
+      robots: 'noindex, nofollow',
     });
   }, []);
   useEffect(() => {
@@ -119,6 +120,10 @@ export function HomePage() {
       window.removeEventListener('resize', update);
     };
   }, [publishedData]);
+  useEffect(() => {
+    if (window.location.hash !== '#create-page') return;
+    document.getElementById('create-page')?.scrollIntoView();
+  }, []);
   useEffect(() => {
     if (!customSlug || customSlug.length < 3) { setSlugStatus(null); return; }
     setIsCheckingSlug(true);
@@ -224,9 +229,9 @@ export function HomePage() {
         <ThemeToggle className="fixed top-5 right-5 rounded-full border bg-card/80 backdrop-blur" />
         <header className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-end">
           <div className="max-w-4xl space-y-7">
-            <div className="inline-flex items-center gap-2 rounded-full border bg-card/80 px-4 py-2 text-[11px] font-black uppercase tracking-[0.18em] text-primary shadow-soft backdrop-blur">
+            <a href="/" className="tap-link inline-flex w-fit items-center gap-2 rounded-full border bg-card/80 px-4 text-[11px] font-black uppercase tracking-[0.18em] text-primary shadow-soft backdrop-blur">
               <Sparkles size={14} /> <span>B4WeMeet</span>
-            </div>
+            </a>
             <h1 className="font-display text-6xl md:text-7xl lg:text-8xl tracking-normal text-foreground leading-[0.92]">
               Send the context before the calendar invite.
             </h1>
@@ -325,7 +330,7 @@ export function HomePage() {
                 )}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Button asChild size="lg" className="h-14 text-lg font-bold rounded-2xl"><Link to={`/${publishedData.slug}`}>View Public Page</Link></Button>
-                  <Button variant="outline" asChild size="lg" className="h-14 text-lg font-bold rounded-2xl"><Link to="/">Create Another</Link></Button>
+                  <Button variant="outline" asChild size="lg" className="h-14 text-lg font-bold rounded-2xl"><a href="/">Create Another</a></Button>
                 </div>
                 <CopyBlurbGroup
                   fullName={watchAll.fullName}
@@ -605,8 +610,10 @@ export function HomePage() {
             </div>
           </div>
         )}
-        <section id="security" className="pt-20 pb-12 border-t border-slate-200 dark:border-slate-800">
-          <SecurityFAQ />
+        <section id="security" className="min-h-[28rem] pt-20 pb-12 border-t border-slate-200 dark:border-slate-800">
+          <Suspense fallback={<div className="min-h-[24rem]" aria-hidden="true" />}>
+            <SecurityFAQ />
+          </Suspense>
         </section>
       </div>
     </div>
