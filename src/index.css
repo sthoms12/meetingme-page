@@ -73,6 +73,14 @@
   .hairline-panel {
     @apply border bg-card/90 shadow-soft backdrop-blur;
   }
+  .tap-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    min-width: 44px;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
 }
 @media print {
   .no-print { display: none !important; }

@@ -32,6 +32,7 @@ import type {
   ProfileVariant,
 } from "@shared/types";
 import { Env } from "./core-utils";
+import { isReservedProfileSlug } from "@shared/reserved-slugs";
 import {
   clearSessionCookie,
   createPasswordHash,
@@ -243,6 +244,10 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
       return c.json({ success: true, data: { available: false, error: "Invalid format" } });
     }
 
+    if (isReservedProfileSlug(parsedSlug.data)) {
+      return c.json({ success: true, data: { available: false } });
+    }
+
     const reserved = await getIndexStub(c.env).isSlugReserved(parsedSlug.data);
     return c.json({ success: true, data: { available: !reserved } });
   });
@@ -278,6 +283,10 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     const body = parsedBody.data;
     let slug = body.customSlug || "";
     let reserved = false;
+
+    if (slug && isReservedProfileSlug(slug)) {
+      return c.json({ success: false, error: "Taken" } satisfies ApiResponse, 409);
+    }
 
     if (slug) {
       reserved = await indexStub.reserveSlug(slug);

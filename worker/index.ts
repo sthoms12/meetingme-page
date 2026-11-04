@@ -16,6 +16,8 @@ import {
   securityHeaders,
   withSecurityHeaders,
 } from './security';
+import { HOME_DESCRIPTION, buildLandingDocument } from './landing';
+import { isReservedProfileSlug } from '@shared/reserved-slugs';
 
 export * from './core-utils';
 
@@ -123,8 +125,7 @@ const getPrimaryVariant = (profile: StoredProfile, variantSlug?: string) =>
     ? profile.variants.find((variant) => variant.variantSlug === variantSlug)
     : profile.variants.find((variant) => variant.id === profile.primaryVariantId);
 
-const buildHomeDescription = () =>
-  'B4WeMeet helps you create a concise pre-meeting intro page with your bio, role, links, focus areas, and talking points so people arrive prepared.';
+const buildHomeDescription = () => HOME_DESCRIPTION;
 
 const buildProfileDescription = (profile: StoredProfile, variant: ProfileVariant) => {
   const pieces = [
@@ -140,30 +141,11 @@ const buildProfileDescription = (profile: StoredProfile, variant: ProfileVariant
 const linkItem = (href: string, label: string) =>
   `<li><a href="${escapeHtml(href)}">${escapeHtml(label)}</a></li>`;
 
-const buildHomeBody = () => `
-<main>
-  <header>
-    <p>B4WeMeet</p>
-    <h1>Send the context before the meeting starts.</h1>
-    <p>${escapeHtml(buildHomeDescription())}</p>
-    <nav aria-label="Primary">
-      <a href="#create-page">Create your page</a>
-      <a href="#preview">See the preview</a>
-      <a href="#security">Review security</a>
-    </nav>
-  </header>
-  <section>
-    <h2>How B4WeMeet works</h2>
-    <ol>
-      <li>Create a public handle and short profile.</li>
-      <li>Add the links, focus areas, and meeting notes people need.</li>
-      <li>Share one clean URL before a client call, interview, intro, or advisory conversation.</li>
-    </ol>
-  </section>
-  <section>
-    <h2>What visitors see</h2>
-    <p>Each page is built for pre-meeting context rather than just social links. Visitors can scan a short bio, understand what you work on, open relevant links, and export a calendar note.</p>
-  </section>
+const buildCreateBody = () => `
+<main style="min-height:100vh">
+  <h1>Create your B4WeMeet page</h1>
+  <p>The creator needs JavaScript to publish your intro.</p>
+  <p><a href="/" style="display:inline-flex;align-items:center;min-height:44px;min-width:44px;padding:0 12px">Back to B4WeMeet</a></p>
 </main>`;
 
 const buildProfileBody = (
@@ -301,6 +283,7 @@ const getShellResponse = (_request: Request, env: AssetEnv) =>
 const buildRobots = (request: Request) => `User-agent: *
 Allow: /
 Disallow: /api/
+Disallow: /create
 Disallow: /*/edit
 
 Sitemap: ${absoluteUrl(request, '/sitemap.xml')}
@@ -368,13 +351,22 @@ const handleRequest = async (request: Request, env: AssetEnv, ctx: ExecutionCont
     const parts = url.pathname.split('/').filter(Boolean);
 
     if (parts.length === 0) {
+      return new Response(buildLandingDocument(request), {
+        headers: {
+          'content-type': 'text/html; charset=UTF-8',
+          'cache-control': 'public, max-age=300',
+        },
+      });
+    }
+
+    if (parts.length === 1 && isReservedProfileSlug(parts[0])) {
       const shell = await getShellResponse(request, env);
       return rewriteHtml(shell, request, {
-        title: 'B4WeMeet | Pre-meeting intro pages for better meetings',
+        title: 'Create your page | B4WeMeet',
         description: buildHomeDescription(),
         canonicalPath: '/',
-        bodyHtml: buildHomeBody(),
-        structuredData: buildStructuredData(request),
+        bodyHtml: buildCreateBody(),
+        robots: 'noindex, nofollow',
       });
     }
 

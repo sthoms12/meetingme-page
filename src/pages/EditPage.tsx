@@ -294,7 +294,7 @@ export function EditPage() {
             {isRedeemingCode ? <Loader2 className="size-5 animate-spin" /> : <ShieldCheck size={20} />}
           </Button>
         </div>
-        <Button asChild size="lg" className="rounded-2xl h-14 w-full font-bold shadow-soft"><Link to="/">Back to Home</Link></Button>
+        <Button asChild size="lg" className="rounded-2xl h-14 w-full font-bold shadow-soft"><a href="/">Back to Home</a></Button>
       </div>
     </div>
   );
@@ -304,7 +304,7 @@ export function EditPage() {
       <div className="size-20 rounded-3xl bg-slate-100 flex items-center justify-center mx-auto mb-8"><Lock size={40} className="text-slate-400" /></div>
       <h2 className="text-3xl font-bold mb-4">Management Unavailable</h2>
       <p className="text-muted-foreground mb-8 text-lg">Refresh the magic link or sign in again to continue.</p>
-      <Button asChild size="lg" className="rounded-2xl h-14 w-full font-bold shadow-soft"><Link to="/">Back to Home</Link></Button>
+      <Button asChild size="lg" className="rounded-2xl h-14 w-full font-bold shadow-soft"><a href="/">Back to Home</a></Button>
     </div>
   );
   const watchAll = form.watch();
@@ -316,7 +316,7 @@ export function EditPage() {
         <ThemeToggle />
         <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-12 gap-8">
           <div className="space-y-4">
-            <Link to={`/${slug}`} className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 hover:text-primary transition-colors">
+            <Link to={`/${slug}`} className="tap-link -mx-3 text-xs font-black uppercase tracking-widest text-muted-foreground gap-2 hover:text-primary transition-colors">
               <ArrowLeft size={14} /> Back to Public Page
             </Link>
             <h1 className="text-4xl font-bold tracking-tight">Professional Dashboard</h1>
@@ -430,7 +430,7 @@ export function EditPage() {
                   <span className="text-[11px] font-black text-muted-foreground uppercase tracking-[0.3em]">Live Preview: {currentVariant?.name}</span>
                   <div className="flex items-center gap-4">
                     <QRCodeDialog url={`${window.location.origin}/${slug}`} trigger={<Button variant="ghost" className="text-xs font-bold text-primary gap-2"><QrCode size={14} /> QR</Button>} />
-                    <a href={`/${slug}`} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-primary flex items-center gap-2 hover:underline"><ExternalLink size={14} /> Open Live</a>
+                    <a href={`/${slug}`} target="_blank" rel="noopener noreferrer" className="tap-link text-xs font-bold text-primary gap-2 hover:underline"><ExternalLink size={14} /> Open Live</a>
                   </div>
                 </div>
                 <ProfileCard data={{ ...watchAll, bio: currentVariant?.bio, focus: currentVariant?.focus, topics: currentVariant?.topics, meetingNote: currentVariant?.meetingNote }} slug={slug} />

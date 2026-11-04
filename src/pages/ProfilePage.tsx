@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { motion, AnimatePresence } from 'framer-motion';
 import { ProfileCard } from '@/components/ProfileCard';
 import { QRCodeDialog } from '@/components/QRCodeDialog';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -112,10 +111,11 @@ export function ProfilePage() {
     toast.success('Calendar invite downloaded');
   };
   if (isLoading) return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-6">
-      <div className="w-full max-w-md space-y-6">
-        <Skeleton className="h-[500px] w-full rounded-[2.5rem]" />
-      </div>
+    <div className="min-h-screen bg-background">
+      <main className="max-w-2xl mx-auto py-16 md:py-24 lg:py-32 px-6 flex flex-col items-center">
+        <div className="mb-12 h-11 w-full max-w-md" />
+        <Skeleton className="h-[32rem] w-full max-w-md rounded-[2.5rem]" />
+      </main>
     </div>
   );
   if (error || !initialData) return (
@@ -129,15 +129,15 @@ export function ProfilePage() {
           <p className="text-muted-foreground text-lg leading-relaxed">This page or version is no longer active. It may have been moved or the handle was changed.</p>
         </div>
         <div className="grid gap-3">
-          <Button asChild size="lg" className="rounded-2xl h-14 px-8 font-bold text-lg"><Link to="/">Start Your Own Intro Page</Link></Button>
-          <Button variant="ghost" asChild className="text-muted-foreground font-bold"><Link to="/">Learn More</Link></Button>
+          <Button asChild size="lg" className="rounded-2xl h-14 px-8 font-bold text-lg"><a href="/">Start Your Own Intro Page</a></Button>
+          <Button variant="ghost" asChild className="tap-link text-muted-foreground font-bold"><a href="/">Learn More</a></Button>
         </div>
       </div>
     </div>
   );
   if (isEmbed) return (
     <div className="bg-transparent overflow-hidden flex flex-col items-center justify-center p-2">
-      <AnimatePresence mode="wait">
+      <div>
         {isLocked ? (
           <Card className="border-border shadow-soft rounded-[2.5rem] w-full max-w-md bg-card/90">
             <CardContent className="p-8 text-center space-y-6">
@@ -156,16 +156,16 @@ export function ProfilePage() {
           <div className="w-full flex flex-col items-center">
              <ProfileCard data={{ ...displayData, bio: displayData.activeVariant?.bio }} slug={slug} className="shadow-none border-none" />
              <div className="flex gap-4 mt-6">
-               <Button variant="ghost" size="sm" onClick={handleCalendarExport} className="text-[10px] uppercase font-black tracking-widest text-muted-foreground">
+               <Button variant="ghost" size="sm" onClick={handleCalendarExport} className="tap-link text-[10px] uppercase font-black tracking-widest text-muted-foreground">
                  <Calendar size={12} className="mr-2" /> Calendar
                </Button>
-               <Button variant="ghost" size="sm" onClick={handleShare} className="text-[10px] uppercase font-black tracking-widest text-muted-foreground">
+               <Button variant="ghost" size="sm" onClick={handleShare} className="tap-link text-[10px] uppercase font-black tracking-widest text-muted-foreground">
                  <Share2 size={12} className="mr-2" /> Share
                </Button>
              </div>
           </div>
         )}
-      </AnimatePresence>
+      </div>
     </div>
   );
   return (
@@ -173,18 +173,18 @@ export function ProfilePage() {
       <ThemeToggle className="fixed top-6 right-6" />
       <main className="max-w-2xl mx-auto py-16 md:py-24 lg:py-32 px-6 flex flex-col items-center">
         <div className="w-full max-w-md mb-12 flex items-center justify-between no-print">
-          <Link to="/" className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5 group">
+          <a href="/" className="tap-link -mx-3 text-xs font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-primary transition-colors gap-1.5 group">
             <ChevronLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> Back
-          </Link>
+          </a>
           <div className="flex items-center gap-3">
             <div className="text-[10px] font-black uppercase tracking-[0.2em] text-primary bg-primary/5 px-3 py-1.5 rounded-full border border-primary/10">
               {displayData?.activeVariant?.name || 'Standard'}
             </div>
           </div>
         </div>
-        <AnimatePresence mode="wait">
+        <div>
           {isLocked ? (
-            <motion.div key="locked" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-sm">
+            <div className="w-full max-w-sm">
               <Card className="border-border shadow-soft rounded-[2.5rem] overflow-hidden bg-card/50 backdrop-blur-sm">
                 <CardContent className="p-10 text-center space-y-8">
                   <div className="size-20 rounded-3xl bg-primary/10 text-primary flex items-center justify-center mx-auto border-2 border-background shadow-sm"><Lock size={36} /></div>
@@ -203,9 +203,9 @@ export function ProfilePage() {
                   </form>
                 </CardContent>
               </Card>
-            </motion.div>
+            </div>
           ) : (
-            <motion.div key="unlocked" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
+            <div className="w-full max-w-md">
               <h1 className="sr-only">{displayData.fullName} on B4WeMeet</h1>
               <div className="relative group/card">
                  <ProfileCard data={{ ...displayData, bio: displayData.activeVariant?.bio }} slug={slug} />
@@ -245,18 +245,13 @@ export function ProfilePage() {
                  />
               </div>
               {canManage && (
-                <motion.div 
-                  initial={{ opacity: 0 }} 
-                  animate={{ opacity: 1 }} 
-                  transition={{ delay: 0.8 }}
-                  className="mt-20 w-full pt-12 border-t border-dashed no-print"
-                >
+                <div className="mt-20 w-full pt-12 border-t border-dashed no-print">
                   <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-3 text-primary">
                       <Sparkles size={20} />
                       <span className="text-xs font-black uppercase tracking-[0.3em]">Owner Dashboard</span>
                     </div>
-                    <Button variant="ghost" asChild className="text-[10px] uppercase font-black tracking-widest text-muted-foreground hover:text-primary rounded-xl">
+                    <Button variant="ghost" asChild className="tap-link text-[10px] uppercase font-black tracking-widest text-muted-foreground hover:text-primary rounded-xl">
                       <Link to={`/${slug}/edit`}>Manage Introduction</Link>
                     </Button>
                   </div>
@@ -267,11 +262,11 @@ export function ProfilePage() {
                     url={window.location.href}
                     className="bg-card/30 p-8 rounded-[2rem] border-2 border-dashed border-primary/10"
                   />
-                </motion.div>
+                </div>
               )}
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
+        </div>
       </main>
     </div>
   );
