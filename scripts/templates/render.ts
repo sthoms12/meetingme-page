@@ -57,6 +57,12 @@ type PageShell = {
   includeCopyScript?: boolean;
 };
 
+/** "Meeting agenda template" -> "Meeting Agenda Template" ("One-on-One" keeps a lowercase "on"). */
+export const templatePageName = (id: string) =>
+  (TEMPLATE_CATALOG.find((entry) => entry.id === id)?.title ?? id)
+    .replace(/(^|[\s-])([a-z])/g, (_m: string, sep: string, ch: string) => sep + ch.toUpperCase())
+    .replace(/-On-/g, "-on-");
+
 const renderShell = ({ path, title, description, main, includeCopyScript }: PageShell) => {
   const canonical = `${SITE_ORIGIN}${path}`;
   return `<!doctype html>
@@ -120,7 +126,7 @@ export const renderTemplatePage = (id: string) => {
 <section class="box cta" aria-labelledby="cta-h">
 <h2 id="cta-h">Turn this into your B4WeMeet page</h2>
 <p>${esc(c.ctaText)} We'll fill in the focus, topics and pre-meeting note from this template; you add your name and details.</p>
-<a class="btn" href="/?template=${esc(id)}#create-page">Turn this into your B4WeMeet page</a>
+<a class="btn" href="/create?template=${esc(id)}#create-page">Turn this into your B4WeMeet page</a>
 </section>
 <section aria-labelledby="more-h">
 <h2 id="more-h">More meeting templates</h2>
@@ -128,7 +134,7 @@ export const renderTemplatePage = (id: string) => {
 </section>`;
   return renderShell({
     path: templatePath(id),
-    title: `${c.title} | B4WeMeet`,
+    title: `${templatePageName(id)} | Free Template`,
     description: c.metaDescription,
     main,
     includeCopyScript: true,

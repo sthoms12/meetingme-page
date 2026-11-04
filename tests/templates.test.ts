@@ -52,7 +52,10 @@ describe("template library build", () => {
         expect(html).not.toContain('<div id="root">');
         expect(html).toContain('data-copy="tpl"');
         expect(html).toContain(`href="/templates/${id}/${id}.txt" download`);
-        expect(html).toContain(`href="/?template=${id}#create-page"`);
+        expect(html).toContain(`href="/create?template=${id}#create-page"`);
+        const pageTitle = html.match(/<title>(.*?)<\/title>/)?.[1] ?? "";
+        expect(pageTitle).toMatch(/^[A-Z][A-Za-z-]*( [A-Z][A-Za-z-]*)* \| Free Template$/);
+        expect(html).toContain(`<meta property="og:title" content="${pageTitle}">`);
         expect(html).toContain("Turn this into your B4WeMeet page");
         const ld = [...html.matchAll(/<script type="application\/ld\+json">(.*?)<\/script>/g)].map((m) => JSON.parse(m[1]));
         expect(ld).toEqual([expect.objectContaining({ "@type": "Organization", name: "B4WeMeet" })]);
