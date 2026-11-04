@@ -5,7 +5,7 @@ import { join, relative } from "node:path";
 // Fails if the retired analytics host or its owner label reappears in sources or build output.
 const ROOT = join(import.meta.dir, "..");
 const SELF = relative(ROOT, import.meta.path);
-const PATTERN = new RegExp(["thoms" + "tech", "zo" + "computer"].join("|"), "i");
+const PATTERN = new RegExp(["thoms" + "tech", "zo" + "computer", "zo" + "wa"].join("|"), "i");
 const SKIP = new Set(["node_modules", ".git", ".wrangler", ".eslintcache"]);
 const DIRS = ["src", "worker", "public", "shared", "scripts", "tests", "index.html", "dist"];
 
