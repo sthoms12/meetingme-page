@@ -22,7 +22,7 @@ const EXPECTED_IDS = [
   "interview-preparation-template",
 ];
 
-const FORBIDDEN = [/steve\s*thoms/i, /thomstech/i];
+const FORBIDDEN = [/steve\s*thoms/i, /thomstech/i, /zocomputer/i, /zowa/i];
 
 const buildToTemp = () => {
   const root = mkdtempSync(join(tmpdir(), "b4wm-templates-"));

@@ -77,7 +77,6 @@ const renderShell = ({ path, title, description, main, includeCopyScript }: Page
 <link rel="icon" type="image/svg+xml" href="/b4wemeet-icon.svg">
 <script type="application/ld+json">${ORGANIZATION_JSON_LD}</script>
 <style>${CSS}</style>
-<script defer src="/zowa.js"></script>
 </head>
 <body>
 <div class="wrap">
