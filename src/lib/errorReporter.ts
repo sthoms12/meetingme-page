@@ -97,7 +97,6 @@ const isDeprecatedReactWarningMessage = (message: string): boolean => {
 
 const isThirdPartyNoise = (message: string, stack?: string): boolean => {
   if (/Ignoring Event:/i.test(message)) return true;
-  if (/zoanalytics-thomstech\.zocomputer\.io/i.test(stack || "")) return true;
   return false;
 };
 

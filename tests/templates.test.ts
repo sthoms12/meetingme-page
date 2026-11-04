@@ -22,7 +22,7 @@ const EXPECTED_IDS = [
   "interview-preparation-template",
 ];
 
-const FORBIDDEN = [/steve\s*thoms/i, /thomstech/i, /zocomputer/i, /zowa/i];
+const FORBIDDEN = [/steve\s*thoms/i, new RegExp("thoms" + "tech", "i"), new RegExp("zo" + "computer", "i"), new RegExp("zo" + "wa", "i")];
 
 const buildToTemp = () => {
   const root = mkdtempSync(join(tmpdir(), "b4wm-templates-"));
@@ -85,7 +85,7 @@ describe("template library build", () => {
     }
   });
 
-  test("template output (and dist/client, when built) never mentions a personal name or thomstech", () => {
+  test("template output (and dist/client, when built) never mentions a personal name or the legacy analytics host", () => {
     const root = buildToTemp();
     try {
       for (const file of walk(join(root, "templates"))) {

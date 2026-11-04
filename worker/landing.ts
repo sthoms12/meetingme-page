@@ -181,7 +181,6 @@ export const buildLandingDocument = (request: Request) => {
   <link rel="icon" type="image/svg+xml" href="/b4wemeet-icon.svg" />
   <script type="application/ld+json">${structuredData}</script>
   <style>${landingCss}</style>
-  <script defer src="/zowa.js"></script>
 </head>
 <body>
   <a class="skip" href="#how-it-works">Skip to how it works</a>

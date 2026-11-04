@@ -19,7 +19,6 @@ describe("static landing page", () => {
     expect(html).toContain("min-height: 44px");
     expect(html).not.toContain("/src/main.tsx");
     expect(html).not.toContain('type="module"');
-    expect(html).toContain('defer src="/zowa.js"');
     expect(gzipSync(Buffer.from(html)).length).toBeLessThan(20_000);
     expect(Buffer.byteLength(html)).toBeLessThan(50_000);
   });

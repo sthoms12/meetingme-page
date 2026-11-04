@@ -14,7 +14,8 @@ describe("response security", () => {
   test("sets the expected browser protections", () => {
     const headers = securityHeaders(new Request("https://b4wemeet.example/profile"));
     expect(headers["Content-Security-Policy"]).toContain("frame-ancestors 'self'");
-    expect(headers["Content-Security-Policy"]).toContain("zoanalytics-thomstech.zocomputer.io");
+    expect(headers["Content-Security-Policy"]).toContain("https://static.cloudflareinsights.com");
+    expect(headers["Content-Security-Policy"]).toContain("connect-src 'self' https://cloudflareinsights.com");
     expect(headers["Strict-Transport-Security"]).toContain("max-age=31536000");
     expect(headers["X-Content-Type-Options"]).toBe("nosniff");
   });
