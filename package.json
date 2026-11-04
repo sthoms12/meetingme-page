@@ -9,7 +9,7 @@
     "build:templates": "bun scripts/build-templates.ts",
     "typecheck": "tsc -b --pretty false",
     "test": "bun test",
-    "check": "bun run lint && bun run typecheck && bun run test && bun run build",
+    "check": "bun run lint && bun run typecheck && bun run test && bun run build && bun test tests/no-legacy-analytics.test.ts",
     "lint": "eslint --cache -f json --quiet .",
     "preview": "bun run build && vite preview --host 0.0.0.0 --port ${PORT:-4173}",
     "deploy": "bun run build && wrangler deploy",
