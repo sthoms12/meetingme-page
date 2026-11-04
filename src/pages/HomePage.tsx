@@ -11,10 +11,11 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { CopyBlurbGroup } from '@/components/CopyBlurbGroup';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { setPageSeo } from '@/lib/seo';
 import { buildManagementUrl } from '@/lib/management-link';
+import { getTemplatePrefill } from '@shared/template-catalog';
 
 const xHandleOrUrlSchema = z.string().trim().refine((value) => {
   if (!value) return true;
@@ -61,12 +62,15 @@ export function HomePage() {
   const [showMobilePreview, setShowMobilePreview] = useState(false);
   const [showDesktopPreview, setShowDesktopPreview] = useState(false);
   const [showMobileActions, setShowMobileActions] = useState(false);
+  const [searchParams] = useSearchParams();
+  const [templatePrefill] = useState(() => getTemplatePrefill(searchParams.get('template')));
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       fullName: '', jobTitle: '', company: '', bio: '', focus: '', topics: '', meetingNote: '', profilePhoto: '',
       linkedinUrl: '', websiteUrl: '', videoUrl: '', twitterUrl: '', githubUrl: '', phone: '',
-      customSlug: '', password: '', variantName: 'Default', variantSlug: 'intro'
+      customSlug: '', password: '', variantName: 'Default', variantSlug: 'intro',
+      ...templatePrefill,
     },
   });
   const watchAll = form.watch();
@@ -100,6 +104,9 @@ export function HomePage() {
       robots: 'noindex, nofollow',
     });
   }, []);
+  useEffect(() => {
+    if (templatePrefill) toast.info('We filled in your focus, topics and pre-meeting note from the template. Edit anything you like.');
+  }, [templatePrefill]);
   useEffect(() => {
     const media = window.matchMedia('(min-width: 1024px)');
     const update = () => setShowDesktopPreview(media.matches);
@@ -241,6 +248,7 @@ export function HomePage() {
             <Button asChild size="lg" className="h-12 rounded-xl px-6 font-bold sm:w-fit">
               <a href="#create-page">Create your page <ArrowDown size={17} className="ml-2" /></a>
             </Button>
+            <a href="/templates/" className="block text-sm font-bold text-primary underline-offset-4 hover:underline sm:inline-block sm:ml-5">Free meeting templates</a>
           </div>
           <div className="hairline-panel rounded-2xl p-5">
             <div className="grid grid-cols-3 gap-3 text-center">

@@ -3,6 +3,7 @@ import { bodyLimit } from 'hono/body-limit';
 import { logger } from 'hono/logger';
 import { Env as CoreEnv } from './core-utils';
 import type { ProfileVariant } from '@shared/types';
+import { TEMPLATES_BASE_PATH, TEMPLATE_IDS, isTemplateLibraryPath, resolveTemplateLibraryPath, templatePath } from '@shared/template-catalog';
 import type { StoredProfile } from './types';
 import { userRoutes } from './userRoutes';
 import {
@@ -292,6 +293,8 @@ Sitemap: ${absoluteUrl(request, '/sitemap.xml')}
 const buildSitemap = async (request: Request, env: AssetEnv) => {
   const entries: string[] = [
     `<url><loc>${escapeHtml(absoluteUrl(request, '/'))}</loc></url>`,
+    `<url><loc>${escapeHtml(absoluteUrl(request, TEMPLATES_BASE_PATH))}</loc></url>`,
+    ...TEMPLATE_IDS.map((id) => `<url><loc>${escapeHtml(absoluteUrl(request, templatePath(id)))}</loc></url>`),
   ];
 
   const slugs = await getIndexStub(env).listReservedSlugs();
@@ -315,6 +318,21 @@ const buildSitemap = async (request: Request, env: AssetEnv) => {
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${entries.join('\n')}
 </urlset>`;
+};
+
+const templateNotFound = () =>
+  new Response(
+    '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="robots" content="noindex"><title>Template not found | B4WeMeet</title></head><body><h1>Template not found</h1><p><a href="/templates/">See all meeting templates</a></p></body></html>',
+    { status: 404, headers: { 'content-type': 'text/html; charset=UTF-8', 'x-robots-tag': 'noindex' } },
+  );
+
+const serveTemplateLibrary = (request: Request, env: AssetEnv, url: URL) => {
+  const resolved = resolveTemplateLibraryPath(url.pathname);
+  if (resolved.kind === 'asset') return env.ASSETS.fetch(request);
+  if (resolved.kind === 'redirect') {
+    return Response.redirect(new URL(`${resolved.location}${url.search}`, url).toString(), 301);
+  }
+  return templateNotFound();
 };
 
 console.log('Server is running');
@@ -342,6 +360,12 @@ const handleRequest = async (request: Request, env: AssetEnv, ctx: ExecutionCont
           'cache-control': 'public, max-age=3600',
         },
       });
+    }
+
+    // The template library is prebuilt static HTML; serve it before the
+    // /:slug profile handling so it never touches a Durable Object.
+    if (isTemplateLibraryPath(url.pathname)) {
+      return serveTemplateLibrary(request, env, url);
     }
 
     if (isAssetRequest(url.pathname)) {

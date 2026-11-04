@@ -195,6 +195,7 @@ export const buildLandingDocument = (request: Request) => {
           <a class="cta" href="/create#create-page">Create your page</a>
           <a href="#how-it-works">How it works</a>
           <a href="#security">Review security</a>
+          <a href="/templates/">Free meeting templates</a>
         </nav>
       </div>
       <aside class="steps">
@@ -251,6 +252,7 @@ export const buildLandingDocument = (request: Request) => {
         <a href="#visitors">What visitors see</a>
         <a href="#security">Security</a>
         <a href="/create#create-page">Create your page</a>
+        <a href="/templates/">Free meeting templates</a>
       </nav>
       <p>B4WeMeet. Pre-meeting intro pages.</p>
     </footer>
