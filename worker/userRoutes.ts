@@ -20,6 +20,7 @@ import {
   restoreSnapshotInputSchema,
   sessionExchangeInputSchema,
   slugSchema,
+  isReservedSlug,
   updateProfileInputSchema,
   verifyPasswordInputSchema,
 } from "@shared/schemas";
@@ -242,6 +243,9 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     const parsedSlug = slugSchema.safeParse(c.req.param("slug"));
     if (!parsedSlug.success) {
       return c.json({ success: true, data: { available: false, error: "Invalid format" } });
+    }
+    if (isReservedSlug(parsedSlug.data)) {
+      return c.json({ success: true, data: { available: false, error: "Reserved" } });
     }
 
     if (isReservedProfileSlug(parsedSlug.data)) {

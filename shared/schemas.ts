@@ -5,6 +5,11 @@ const variantSlugPattern = /^[a-z0-9-]{2,30}$/;
 const dataImagePattern = /^data:image\/(?:png|jpeg|jpg|webp|gif);base64,[a-z0-9+/=]+$/i;
 const xHandlePattern = /^@?[A-Za-z0-9_]{1,15}$/;
 
+/** Top-level paths the site itself uses; nobody can claim them as a public handle. */
+export const RESERVED_SLUGS: ReadonlySet<string> = new Set(["templates", "api", "assets"]);
+
+export const isReservedSlug = (slug: string) => RESERVED_SLUGS.has(slug.trim().toLowerCase());
+
 const isHttpUrl = (value: string) => {
   try {
     const url = new URL(value);
@@ -133,6 +138,14 @@ export const createProfileInputSchema = z.object({
       code: z.ZodIssueCode.custom,
       path: ["customSlug"],
       message: "Slug must be 3-30 characters using lowercase letters, numbers, or hyphens",
+    });
+  }
+
+  if (value.customSlug && isReservedSlug(value.customSlug)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["customSlug"],
+      message: "That handle is reserved",
     });
   }
 
