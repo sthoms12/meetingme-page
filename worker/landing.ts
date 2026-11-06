@@ -260,3 +260,69 @@ export const buildLandingDocument = (request: Request) => {
 </body>
 </html>`;
 };
+
+// Markdown mirror of the landing page, derived verbatim from the same copy
+// buildLandingDocument renders above. The Worker serves this on
+// Accept: text/markdown and at /index.md for agent discovery.
+export const buildLandingMarkdown = (request: Request) => {
+  const canonical = absoluteUrl(request, "/");
+  return `# Send the context before the calendar invite.
+
+> ${HOME_DESCRIPTION}
+
+Send the context before the meeting starts. ${HOME_DESCRIPTION}
+
+- [Create your page](${absoluteUrl(request, "/create#create-page")})
+- [How it works](${canonical}#how-it-works)
+- [Review security](${canonical}#security)
+- [Free meeting templates](${absoluteUrl(request, "/templates/")})
+
+1. Create
+2. Share
+3. Meet
+
+Designed for warm intros, client calls, interviews, advisory chats, and any meeting where a short briefing beats a long bio.
+
+## How B4WeMeet works
+
+1. Create a public handle and short profile.
+2. Add the links, focus areas, and meeting notes people need.
+3. Share one clean URL before a client call, interview, intro, or advisory conversation.
+
+## What visitors see
+
+Each page is built for pre-meeting context rather than just social links. Visitors can scan a short bio, understand what you work on, open relevant links, and export a calendar note.
+
+## Security and privacy
+
+B4WeMeet uses a privacy-first architecture. Open a topic to read how a page is stored and who can edit it.
+
+### Where is my data stored?
+
+Profile data is persisted with Cloudflare Durable Objects, close to visitors and encrypted at rest.
+
+### How are passwords handled?
+
+Plain-text passwords are not stored. A password is hashed at the edge with PBKDF2-SHA256, a unique salt, and a high iteration count.
+
+### Who can edit my page?
+
+Editing requires the private management link created with the page. Public visitors only get the read-only intro.
+
+### What about visitor privacy?
+
+Pages log anonymous view counts. They do not collect visitor email addresses or use cross-site tracking cookies.
+
+### How secure is the infrastructure?
+
+The app runs on Cloudflare's network, with the platform's DDoS protection in front of every request.
+
+Keep the private management link. It is the way back in after you leave this browser.
+
+---
+
+B4WeMeet. Pre-meeting intro pages.
+
+[View the live page](${canonical})
+`;
+};

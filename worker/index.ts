@@ -17,7 +17,7 @@ import {
   securityHeaders,
   withSecurityHeaders,
 } from './security';
-import { HOME_DESCRIPTION, buildLandingDocument } from './landing';
+import { HOME_DESCRIPTION, buildLandingDocument, buildLandingMarkdown } from './landing';
 import { isReservedProfileSlug } from '@shared/reserved-slugs';
 
 export * from './core-utils';
@@ -281,7 +281,51 @@ const rewriteHtml = async (
 const getShellResponse = (_request: Request, env: AssetEnv) =>
   env.ASSETS.fetch('https://assets.local/index.html');
 
+// Agent discovery: the landing page has a Markdown mirror generated from
+// the same copy (buildLandingMarkdown in ./landing). It is served on
+// Accept: text/markdown and at /index.md, and advertised on HTML responses
+// with a Link: rel="alternate"; type="text/markdown" header plus Vary: Accept.
+const appendVary = (headers: Headers, value: string) => {
+  const values = new Set(
+    (headers.get('Vary') || '')
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean),
+  );
+  values.add(value);
+  headers.set('Vary', [...values].join(', '));
+};
+
+const withDiscoveryHeaders = (response: Response, canonicalUrl: string) => {
+  const headers = new Headers(response.headers);
+  appendVary(headers, 'Accept');
+  headers.set('Link', `<${canonicalUrl}>; rel="alternate"; type="text/markdown"`);
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+};
+
+const buildLandingMarkdownResponse = (request: Request) => {
+  const canonicalUrl = absoluteUrl(request, '/');
+  const headers = new Headers({
+    'content-type': 'text/markdown; charset=utf-8',
+    'cache-control': 'public, max-age=300',
+  });
+  appendVary(headers, 'Accept');
+  headers.set(
+    'Link',
+    `<${canonicalUrl}>; rel="canonical", <${canonicalUrl}>; rel="alternate"; type="text/markdown"`,
+  );
+  return new Response(buildLandingMarkdown(request), { headers });
+};
+
+const wantsMarkdown = (request: Request) =>
+  (request.headers.get('Accept') || '').toLowerCase().includes('text/markdown');
+
 const buildRobots = (request: Request) => `User-agent: *
+Content-Signal: ai-train=no, search=yes, ai-input=yes
 Allow: /
 Disallow: /api/
 Disallow: /create
@@ -362,6 +406,10 @@ const handleRequest = async (request: Request, env: AssetEnv, ctx: ExecutionCont
       });
     }
 
+    if (url.pathname === '/index.md') {
+      return buildLandingMarkdownResponse(request);
+    }
+
     // The template library is prebuilt static HTML; serve it before the
     // /:slug profile handling so it never touches a Durable Object.
     if (isTemplateLibraryPath(url.pathname)) {
@@ -375,12 +423,16 @@ const handleRequest = async (request: Request, env: AssetEnv, ctx: ExecutionCont
     const parts = url.pathname.split('/').filter(Boolean);
 
     if (parts.length === 0) {
-      return new Response(buildLandingDocument(request), {
+      if (wantsMarkdown(request)) {
+        return buildLandingMarkdownResponse(request);
+      }
+      const htmlResponse = new Response(buildLandingDocument(request), {
         headers: {
           'content-type': 'text/html; charset=UTF-8',
           'cache-control': 'public, max-age=300',
         },
       });
+      return withDiscoveryHeaders(htmlResponse, absoluteUrl(request, '/'));
     }
 
     if (parts.length === 1 && isReservedProfileSlug(parts[0])) {
