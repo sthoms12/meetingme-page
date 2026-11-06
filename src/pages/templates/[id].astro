@@ -1,0 +1,51 @@
+---
+import Base from '../../layouts/Base.astro';
+import ToolCta from '../../components/ToolCta.astro';
+import { TEMPLATE_CONTENT, type TemplateContent } from '../../lib/template-content';
+import { articleJsonLd } from '../../lib/jsonld';
+
+export function getStaticPaths() {
+  return TEMPLATE_CONTENT.map((t) => ({ params: { id: t.id }, props: { template: t } }));
+}
+
+interface Props { template: TemplateContent }
+const { template } = Astro.props;
+const path = `/templates/${template.id}/`;
+---
+<Base title={template.title} description={template.metaDescription} path={path} jsonLd={[articleJsonLd({ path, title: template.title, description: template.metaDescription })]}>
+  <h1>{template.h1}</h1>
+  <p class="lede">{template.summary}</p>
+  <p class="noprint">
+    <button class="cta" id="copy-template" type="button">Copy the template</button>
+    <button class="cta secondary" id="download-template" type="button">Download as .txt</button>
+  </p>
+  <script define:vars={{ body: template.body, id: template.id }}>
+    document.getElementById('copy-template')?.addEventListener('click', async (e) => {
+      try {
+        await navigator.clipboard.writeText(body);
+        e.currentTarget.textContent = 'Copied';
+      } catch {
+        e.currentTarget.textContent = 'Select the text below and copy it';
+      }
+    });
+    document.getElementById('download-template')?.addEventListener('click', () => {
+      const blob = new Blob([body], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${id}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+  </script>
+  <pre class="template-body">{template.body}</pre>
+  <h2>How to use it</h2>
+  <ol>
+    {template.howTo.map((step) => <li>{step}</li>)}
+  </ol>
+  <p>{template.ctaText}</p>
+  <p><a href="/templates/">See all meeting templates</a></p>
+  {template.id === 'interview-preparation-template' && (
+    <ToolCta heading="Preparing for a real interview? Use the Prep Pack builder" />
+  )}
+</Base>

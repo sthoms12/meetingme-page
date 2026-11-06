@@ -1,0 +1,39 @@
+---
+import Base from '../layouts/Base.astro';
+import ToolCta from '../components/ToolCta.astro';
+import Disclaimer from '../components/Disclaimer.astro';
+import { pageByPath } from '../lib/pages';
+import { articleJsonLd } from '../lib/jsonld';
+import { INTERVIEW_PREP_TEMPLATE_BODY } from '../lib/copy';
+
+const page = pageByPath('/interview-prep-template/')!;
+const templateBody = INTERVIEW_PREP_TEMPLATE_BODY;
+---
+<Base title={page.title} description={page.description} path={page.path} jsonLd={[articleJsonLd(page)]}>
+  <h1>Interview prep template</h1>
+  <p class="lede">
+    A fill-in template that covers everything worth preparing for one interview: your pitch, the likely
+    questions with your answers, your STAR stories, the questions you will ask, and your research — on one
+    page. Copy it into any notes app, or use the free builder below, which fills this structure in from your
+    role's question set and keeps it on your device.
+  </p>
+  <p class="noprint"><button class="cta" id="copy-template" type="button">Copy the template</button></p>
+  <script>
+    const text = document.getElementById('template-source')?.textContent ?? '';
+    document.getElementById('copy-template')?.addEventListener('click', async (e) => {
+      try {
+        await navigator.clipboard.writeText(text.trim());
+        (e.currentTarget as HTMLButtonElement).textContent = 'Copied';
+      } catch {
+        (e.currentTarget as HTMLButtonElement).textContent = 'Select the text below and copy it';
+      }
+    });
+  </script>
+  <pre class="template-body" id="template-source">{templateBody}</pre>
+  <p>
+    Prefer a guided version? The <a href="/templates/interview-preparation-template/">original B4WeMeet
+    interview preparation template</a> is still available in the templates library.
+  </p>
+  <ToolCta heading="Fill this in with the Prep Pack builder" />
+  <Disclaimer />
+</Base>

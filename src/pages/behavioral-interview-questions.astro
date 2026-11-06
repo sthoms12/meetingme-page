@@ -1,0 +1,26 @@
+---
+import Base from '../layouts/Base.astro';
+import Faq from '../components/Faq.astro';
+import QuestionList from '../components/QuestionList.astro';
+import ToolCta from '../components/ToolCta.astro';
+import Disclaimer from '../components/Disclaimer.astro';
+import { pageByPath } from '../lib/pages';
+import { articleJsonLd, faqJsonLd } from '../lib/jsonld';
+import { behavioralQuestions, generalFaqs } from '../data/general';
+
+const page = pageByPath('/behavioral-interview-questions/')!;
+---
+<Base title={page.title} description={page.description} path={page.path} jsonLd={[articleJsonLd(page), faqJsonLd(generalFaqs.behavioral)]}>
+  <h1>Behavioral interview questions and how to answer them</h1>
+  <p>
+    Behavioral questions — the ones that start "Tell me about a time…" — rest on a simple idea: how you handled
+    something before is the best evidence of how you will handle it again. The reliable way to answer them is the
+    <a href="/star-method-interview/">STAR structure</a>: the Situation, your Task, the Action you took, and the
+    Result. Prepare five or six strong stories in advance and most of these questions become an exercise in
+    picking the right one.
+  </p>
+  <QuestionList questions={behavioralQuestions} />
+  <ToolCta heading="Build your STAR story bank" />
+  <Faq faqs={generalFaqs.behavioral} />
+  <Disclaimer />
+</Base>

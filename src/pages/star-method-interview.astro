@@ -1,0 +1,47 @@
+---
+import Base from '../layouts/Base.astro';
+import Faq from '../components/Faq.astro';
+import ToolCta from '../components/ToolCta.astro';
+import Disclaimer from '../components/Disclaimer.astro';
+import { pageByPath } from '../lib/pages';
+import { articleJsonLd, faqJsonLd } from '../lib/jsonld';
+import { starMethod } from '../data/general';
+
+const page = pageByPath('/star-method-interview/')!;
+const ex = starMethod.workedExample;
+---
+<Base title={page.title} description={page.description} path={page.path} jsonLd={[articleJsonLd(page), faqJsonLd(starMethod.faqs)]}>
+  <h1>The STAR method for interviews</h1>
+  <p class="lede">
+    STAR is the standard structure for answering behavioral interview questions — the "tell me about a time…"
+    kind. It keeps an answer concrete, in order, and focused on what <em>you</em> did: Situation, Task, Action,
+    Result.
+  </p>
+  {starMethod.steps.map((s) => (
+    <section>
+      <h2>{s.letter} — {s.name}</h2>
+      <p>{s.detail}</p>
+    </section>
+  ))}
+  <h2>A fully worked example</h2>
+  <p><strong>{ex.title}</strong></p>
+  <div class="card">
+    <p><strong>Situation:</strong> {ex.situation}</p>
+    <p><strong>Task:</strong> {ex.task}</p>
+    <p><strong>Action:</strong> {ex.action}</p>
+    <p><strong>Result:</strong> {ex.result}</p>
+  </div>
+  <p>
+    Notice what the example does not do: it does not credit the team for the result, run long on background, or
+    end without an outcome. Most answers should take one to two minutes spoken aloud — if yours runs longer, the
+    Situation is usually the part to cut.
+  </p>
+  <p>
+    See STAR applied across the full list of <a href="/behavioral-interview-questions/">behavioral interview
+    questions</a>, and keep your own stories in the story bank so they are ready for every interview, not
+    rebuilt each time.
+  </p>
+  <ToolCta heading="Start your story bank" />
+  <Faq faqs={starMethod.faqs} />
+  <Disclaimer />
+</Base>

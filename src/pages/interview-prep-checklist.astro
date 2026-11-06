@@ -1,0 +1,33 @@
+---
+import Base from '../layouts/Base.astro';
+import ToolCta from '../components/ToolCta.astro';
+import Faq from '../components/Faq.astro';
+import Disclaimer from '../components/Disclaimer.astro';
+import { pageByPath } from '../lib/pages';
+import { articleJsonLd, faqJsonLd } from '../lib/jsonld';
+import { checklist, prepareGuide } from '../data/general';
+
+const page = pageByPath('/interview-prep-checklist/')!;
+const printFaqs = prepareGuide.faqs.slice(0, 3);
+---
+<Base title={page.title} description={page.description} path={page.path} jsonLd={[articleJsonLd(page), faqJsonLd(printFaqs)]}>
+  <h1>Interview prep checklist</h1>
+  <p class="lede">
+    Everything that needs doing, in the order it needs doing — from a week before the interview to the hour
+    after it. Print this page, or open it inside your prep pack where it prints with your interview's details
+    at the top.
+  </p>
+  <p class="noprint"><button class="cta" id="print-checklist" type="button">Print this checklist</button></p>
+  <script>
+    document.getElementById('print-checklist')?.addEventListener('click', () => window.print());
+  </script>
+  {checklist.map((phase) => (
+    <section class="checklist-phase">
+      <h2>{phase.phase}</h2>
+      <ul>{phase.items.map((item) => <li>{item}</li>)}</ul>
+    </section>
+  ))}
+  <ToolCta />
+  <Faq faqs={printFaqs} />
+  <Disclaimer />
+</Base>

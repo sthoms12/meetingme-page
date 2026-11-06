@@ -1,0 +1,16 @@
+---
+import type { QuestionEntry } from '../data/types';
+interface Props { questions: QuestionEntry[] }
+const { questions } = Astro.props;
+---
+<div>
+  {questions.map((q, i) => (
+    <article class="q">
+      <h3>{i + 1}. {q.question}</h3>
+      <p class="why"><span class="label">Why they ask: </span>{q.whyAsked}</p>
+      <p><span class="label">How to answer: </span>{q.guidance}</p>
+      {q.example && <div class="example"><strong>Example approach:</strong> {q.example}</div>}
+      {q.pitfalls && <p class="pitfalls"><strong>Watch out:</strong> {q.pitfalls}</p>}
+    </article>
+  ))}
+</div>

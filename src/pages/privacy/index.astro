@@ -1,0 +1,64 @@
+---
+import Base from '../../layouts/Base.astro';
+import Faq from '../../components/Faq.astro';
+import { pageByPath } from '../../lib/pages';
+import { articleJsonLd, faqJsonLd } from '../../lib/jsonld';
+import { PRIVACY_FAQS } from '../../lib/copy';
+
+const page = pageByPath('/privacy/')!;
+
+const faqs = PRIVACY_FAQS;
+---
+<Base title={page.title} description={page.description} path={page.path} jsonLd={[articleJsonLd(page), faqJsonLd(faqs)]}>
+  <h1>Security and privacy</h1>
+  <p class="lede">
+    B4WeMeet is built so that we cannot see your job search — not "we choose not to look", but architecturally
+    cannot. This page explains exactly how that works.
+  </p>
+
+  <h2>Your prep stays on your device</h2>
+  <p>
+    Everything you create in the Prep Pack builder — packs, stories, your pitch, research notes, debriefs — is
+    stored in your browser's local storage (IndexedDB) on the device you are using. There is no B4WeMeet server
+    database for user content, no account system, and no sync. Our servers deliver the pages and the tool; what
+    you type into the tool never travels back.
+  </p>
+  <p>
+    Two consequences worth understanding. First, your prep is tied to this browser: a different browser or
+    device starts empty unless you import a backup. Second, clearing this site's browser data erases your prep
+    — so export a backup from the tool's Backup &amp; storage tab and keep it somewhere private. The file
+    contains your job search in plain text.
+  </p>
+
+  <h2>AI is bring-your-own</h2>
+  <p>
+    The mock-prep and polish features work by copying a pack to <em>your</em> clipboard and opening ChatGPT or
+    Claude in a new tab with a short coaching prompt. You paste the pack yourself, into your own AI account.
+    B4WeMeet holds no AI keys and sends nothing to any AI service.
+  </p>
+
+  <h2>Downloads are files, not links</h2>
+  <p>
+    Briefs, checklists, calendar files and backups are generated in your browser and downloaded as files. We
+    never publish your content at a b4wemeet.app address, and there is no share link for your prep.
+  </p>
+
+  <h2>Site analytics</h2>
+  <p>
+    This site uses Dataflare, an analytics tool we self-host in our own Cloudflare account. It is cookieless —
+    it sets no cookies and stores nothing on your device. It records pageviews, the referring site, and basic
+    device and browser information so we can understand which content is useful. Analytics data is kept for 90
+    days and is never sold or shared. It measures pages, not people, and it has no access to anything you
+    prepare in the tool.
+  </p>
+
+  <h2>What changed in November 2026</h2>
+  <p>
+    Hosted intro pages were retired in November 2026 when B4WeMeet became a private, on-device tool. The
+    previous version of B4WeMeet hosted public intro pages on our servers; that system — accounts-by-link,
+    stored profiles, photos and all — has been shut down and its data deleted, because a tool people trust with
+    something as sensitive as a job search should not be holding it on a server at all.
+  </p>
+
+  <Faq faqs={faqs} />
+</Base>

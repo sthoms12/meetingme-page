@@ -1,0 +1,33 @@
+---
+import Base from '../layouts/Base.astro';
+import Faq from '../components/Faq.astro';
+import AskList from '../components/AskList.astro';
+import ToolCta from '../components/ToolCta.astro';
+import Disclaimer from '../components/Disclaimer.astro';
+import { pageByPath } from '../lib/pages';
+import { articleJsonLd, faqJsonLd } from '../lib/jsonld';
+import { questionsToAsk, generalFaqs } from '../data/general';
+
+const page = pageByPath('/questions-to-ask-in-an-interview/')!;
+---
+<Base title={page.title} description={page.description} path={page.path} jsonLd={[articleJsonLd(page), faqJsonLd(generalFaqs.questionsToAsk)]}>
+  <h1>Questions to ask in an interview</h1>
+  <p class="lede">
+    The questions you ask are part of the interview. They show how you think, and they are how you find out
+    whether this job is actually the one you want. Pick a few from each group below — and listen to the answers
+    as carefully as they listen to yours.
+  </p>
+  {questionsToAsk.map((cat) => (
+    <section>
+      <h2>{cat.category}</h2>
+      <AskList items={cat.items} />
+    </section>
+  ))}
+  <p>
+    Short on time in the room? The companion page covers the highest-value
+    <a href="/questions-to-ask-at-the-end-of-an-interview/">questions to ask at the end of an interview</a>.
+  </p>
+  <ToolCta heading="Save your questions in a prep pack" />
+  <Faq faqs={generalFaqs.questionsToAsk} />
+  <Disclaimer />
+</Base>

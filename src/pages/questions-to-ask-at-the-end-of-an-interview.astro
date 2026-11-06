@@ -1,0 +1,33 @@
+---
+import Base from '../layouts/Base.astro';
+import Faq from '../components/Faq.astro';
+import AskList from '../components/AskList.astro';
+import ToolCta from '../components/ToolCta.astro';
+import Disclaimer from '../components/Disclaimer.astro';
+import { pageByPath } from '../lib/pages';
+import { articleJsonLd, faqJsonLd } from '../lib/jsonld';
+import { questionsToAskEnd, generalFaqs } from '../data/general';
+
+const page = pageByPath('/questions-to-ask-at-the-end-of-an-interview/')!;
+---
+<Base title={page.title} description={page.description} path={page.path} jsonLd={[articleJsonLd(page), faqJsonLd(generalFaqs.questionsToAsk)]}>
+  <h1>Questions to ask at the end of an interview</h1>
+  <p class="lede">
+    "Do you have any questions for us?" is not a formality — it is the last impression you make, and often the
+    moment you learn the most about the job. "No, I think you covered everything" is the one answer that always
+    lands badly. Have three or four of these ready.
+  </p>
+  <AskList items={questionsToAskEnd} />
+  <p>
+    One of these deserves special attention: asking whether anything in your background gives the interviewer
+    pause. It feels risky, but it is the only move that lets you answer a concern while you are still in the
+    room — concerns left unspoken simply become reasons.
+  </p>
+  <p>
+    For the full set, grouped by topic, see <a href="/questions-to-ask-in-an-interview/">questions to ask in an
+    interview</a>.
+  </p>
+  <ToolCta heading="Save your closing questions in a prep pack" />
+  <Faq faqs={generalFaqs.questionsToAsk} />
+  <Disclaimer />
+</Base>
