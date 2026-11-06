@@ -1,4 +1,19 @@
-export function downloadMeetingICS(profile: {
+/**
+ * Escape a value for an ICS TEXT property per RFC 5545: backslashes,
+ * semicolons and commas are backslash-escaped, and any CR/LF sequence is
+ * converted to the literal "\n" escape. Raw line breaks must never reach
+ * the document — they would let a stored field inject new properties or
+ * whole components (e.g. a VALARM) into the downloaded calendar file.
+ */
+export function escapeICSText(value: string) {
+  return value
+    .replace(/\\/g, '\\\\')
+    .replace(/;/g, '\\;')
+    .replace(/,/g, '\\,')
+    .replace(/\r\n|\r|\n/g, '\\n');
+}
+
+export function buildMeetingICS(profile: {
   fullName: string;
   jobTitle: string;
   company: string;
@@ -10,13 +25,10 @@ export function downloadMeetingICS(profile: {
   const now = new Date();
   const start = new Date(now.getTime() + 1000 * 60 * 60); // 1 hour from now
   const end = new Date(start.getTime() + 1000 * 60 * 30); // 30 mins duration
-  const formatICSDate = (date: Date) => 
+  const formatICSDate = (date: Date) =>
     date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-  const escapedBio = bio
-    .replace(/\\/g, '\\\\')
-    .replace(/,/g, '\\,')
-    .replace(/;/g, '\\;')
-    .replace(/\n/g, '\\n');
+  const escapedFullName = escapeICSText(fullName);
+  const escapedUrl = escapeICSText(url);
   // Format ICS content
   const icsLines = [
     'BEGIN:VCALENDAR',
@@ -25,11 +37,11 @@ export function downloadMeetingICS(profile: {
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
     'BEGIN:VEVENT',
-    `SUMMARY:Introduction: ${fullName} (${jobTitle} @ ${company})`,
+    `SUMMARY:Introduction: ${escapedFullName} (${escapeICSText(jobTitle)} @ ${escapeICSText(company)})`,
     `DTSTART:${formatICSDate(start)}`,
     `DTEND:${formatICSDate(end)}`,
-    `DESCRIPTION:Meeting preparation for ${fullName}.\\n\\nProfessional Bio: ${escapedBio}\\n\\nView Profile: ${url}`,
-    `LOCATION:${url}`,
+    `DESCRIPTION:Meeting preparation for ${escapedFullName}.\\n\\nProfessional Bio: ${escapeICSText(bio)}\\n\\nView Profile: ${escapedUrl}`,
+    `LOCATION:${escapedUrl}`,
     'TRANSP:TRANSPARENT', // Don't block time as busy
     'STATUS:CONFIRMED',
     'SEQUENCE:0',
@@ -41,7 +53,18 @@ export function downloadMeetingICS(profile: {
     'END:VEVENT',
     'END:VCALENDAR'
   ];
-  const icsString = icsLines.join('\r\n');
+  return icsLines.join('\r\n');
+}
+
+export function downloadMeetingICS(profile: {
+  fullName: string;
+  jobTitle: string;
+  company: string;
+  bio: string;
+  url: string;
+}) {
+  const { fullName } = profile;
+  const icsString = buildMeetingICS(profile);
   const blob = new Blob([icsString], { type: 'text/calendar;charset=utf-8' });
   const downloadUrl = URL.createObjectURL(blob);
   const link = document.createElement('a');

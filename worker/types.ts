@@ -37,7 +37,16 @@ export interface StoredProfile extends Omit<Profile, "canManage"> {
   managementSessions: StoredSession[];
   passkeys?: PasskeyCredential[];
   recoveryCode?: RecoveryCodeState;
+  /**
+   * Legacy single-slot challenge. Registration and authentication ceremonies
+   * used to share this slot, so an unauthenticated auth/start could overwrite
+   * an in-progress manager registration. New ceremonies write the per-type
+   * slots below; this field is only read as a fallback for records written
+   * before the split and is cleared whenever a new ceremony starts.
+   */
   pendingChallenge?: PendingChallenge;
+  pendingRegistrationChallenge?: PendingChallenge;
+  pendingAuthChallenge?: PendingChallenge;
   lastManagementAccessMethod?: "initial" | "edit-token" | "passkey" | "recovery-code";
 }
 

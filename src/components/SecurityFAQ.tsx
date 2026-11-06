@@ -28,7 +28,7 @@ export function SecurityFAQ({ className }: SecurityFAQProps) {
       id: 'access',
       icon: <ShieldCheck className="size-4 text-primary" />,
       question: "Who can edit my page?",
-      answer: "Access is controlled via a unique 32-character 'Edit Token' generated when you create your page. This token is stored only in your browser's LocalStorage and is required for all updates. Public visitors only see a read-only view and have no path to your management dashboard."
+      answer: "Access is controlled via a unique 'Edit Token' generated when you create your page and delivered only in your private management link. When you open that link, the token is read once, removed from the address bar, and exchanged for a secure HttpOnly session cookie — it is never stored in your browser's LocalStorage. Public visitors only see a read-only view and have no path to your management dashboard."
     },
     {
       id: 'privacy',
@@ -79,7 +79,7 @@ export function SecurityFAQ({ className }: SecurityFAQProps) {
       <div className="p-6 rounded-2xl bg-muted/30 border border-dashed border-slate-300 dark:border-slate-700 flex items-start gap-4">
         <Info className="size-5 text-muted-foreground shrink-0 mt-0.5" />
         <p className="text-xs text-muted-foreground leading-relaxed">
-          <strong>Note:</strong> Because we use LocalStorage for your edit token, clearing your browser cache or switching devices will require you to use your private edit URL to regain management access. We recommend bookmarking your private dashboard.
+          <strong>Note:</strong> Your edit token lives only in your private management link — not in LocalStorage. Switching devices or losing your session means using that link again (or a passkey or recovery code, if you've set one up) to regain management access. We recommend bookmarking your private management link and keeping it somewhere safe.
         </p>
       </div>
     </div>

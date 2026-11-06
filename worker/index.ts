@@ -18,6 +18,14 @@ import {
   withSecurityHeaders,
 } from './security';
 import { HOME_DESCRIPTION, buildLandingDocument, buildLandingMarkdown } from './landing';
+import {
+  absoluteUrl,
+  buildProfileBody,
+  buildProfileDescription,
+  buildStructuredData,
+  escapeHtml,
+  shorten,
+} from './profile-render';
 import { isReservedProfileSlug } from '@shared/reserved-slugs';
 
 export * from './core-utils';
@@ -94,24 +102,6 @@ const getIndexStub = (env: CoreEnv) =>
 const getProfileStub = (env: CoreEnv, slug: string) =>
   env.GlobalDurableObject.get(env.GlobalDurableObject.idFromName(`profile:${slug}`));
 
-const escapeHtml = (value: string) =>
-  value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-
-const normalizeText = (value: string) => value.replace(/\s+/g, ' ').trim();
-
-const shorten = (value: string, maxLength = 160) => {
-  const normalized = normalizeText(value);
-  if (normalized.length <= maxLength) return normalized;
-  return `${normalized.slice(0, maxLength - 1).trimEnd()}…`;
-};
-
-const absoluteUrl = (request: Request, path: string) => new URL(path, request.url).toString();
-
 const isAssetRequest = (pathname: string) =>
   pathname.startsWith('/assets/') ||
   pathname.startsWith('/src/') ||
@@ -128,58 +118,12 @@ const getPrimaryVariant = (profile: StoredProfile, variantSlug?: string) =>
 
 const buildHomeDescription = () => HOME_DESCRIPTION;
 
-const buildProfileDescription = (profile: StoredProfile, variant: ProfileVariant) => {
-  const pieces = [
-    `${profile.fullName}`,
-    profile.jobTitle ? `${profile.jobTitle} at ${profile.company}` : profile.company,
-    variant.focus || '',
-    variant.bio || '',
-  ].filter(Boolean);
-
-  return shorten(pieces.join('. '));
-};
-
-const linkItem = (href: string, label: string) =>
-  `<li><a href="${escapeHtml(href)}">${escapeHtml(label)}</a></li>`;
-
 const buildCreateBody = () => `
 <main style="min-height:100vh">
   <h1>Create your B4WeMeet page</h1>
   <p>The creator needs JavaScript to publish your intro.</p>
   <p><a href="/" style="display:inline-flex;align-items:center;min-height:44px;min-width:44px;padding:0 12px">Back to B4WeMeet</a></p>
 </main>`;
-
-const buildProfileBody = (
-  request: Request,
-  profile: StoredProfile,
-  variant: ProfileVariant,
-  locked: boolean,
-  canonicalPath: string,
-) => {
-  const links = [
-    profile.linkedinUrl && linkItem(profile.linkedinUrl, 'LinkedIn'),
-    profile.websiteUrl && linkItem(profile.websiteUrl, 'Website'),
-    profile.videoUrl && linkItem(profile.videoUrl, 'Video intro'),
-    profile.twitterUrl && linkItem(profile.twitterUrl, 'X / Twitter'),
-    profile.githubUrl && linkItem(profile.githubUrl, 'GitHub'),
-    profile.phone && linkItem(`tel:${profile.phone}`, 'Phone'),
-  ].filter(Boolean).join('');
-
-  return `
-<main>
-  <p><a href="${escapeHtml(absoluteUrl(request, '/'))}">B4WeMeet</a></p>
-  <article>
-    <h1>${escapeHtml(profile.fullName)}</h1>
-    <p>${escapeHtml(`${profile.jobTitle} at ${profile.company}`)}</p>
-    ${locked ? '<p>This introduction is password protected.</p>' : `<p>${escapeHtml(variant.bio)}</p>`}
-    ${!locked && variant.focus ? `<p><strong>Primary focus:</strong> ${escapeHtml(variant.focus)}</p>` : ''}
-    ${!locked && variant.topics.length ? `<p><strong>Topics:</strong> ${escapeHtml(variant.topics.join(', '))}</p>` : ''}
-    ${!locked && variant.meetingNote ? `<p><strong>Pre-meeting note:</strong> ${escapeHtml(variant.meetingNote)}</p>` : ''}
-    ${links ? `<section><h2>Links</h2><ul>${links}</ul></section>` : ''}
-    <p><a href="${escapeHtml(absoluteUrl(request, canonicalPath))}">Open this introduction</a></p>
-  </article>
-</main>`;
-};
 
 const buildNotFoundBody = () => `
 <main>
@@ -194,30 +138,6 @@ const buildEditBody = (slug: string) => `
   <p>This dashboard is private and should not be indexed.</p>
   <p><a href="/${escapeHtml(slug)}">View public page</a></p>
 </main>`;
-
-const buildStructuredData = (request: Request, profile?: StoredProfile, variant?: ProfileVariant, canonicalPath?: string) => {
-  if (!profile || !variant || !canonicalPath || profile.passwordHash) {
-    return JSON.stringify({
-      '@context': 'https://schema.org',
-      '@type': 'SoftwareApplication',
-      name: 'B4WeMeet',
-      applicationCategory: 'BusinessApplication',
-      description: buildHomeDescription(),
-      url: absoluteUrl(request, '/'),
-    });
-  }
-
-  return JSON.stringify({
-    '@context': 'https://schema.org',
-    '@type': 'Person',
-    name: profile.fullName,
-    jobTitle: profile.jobTitle,
-    worksFor: { '@type': 'Organization', name: profile.company },
-    description: buildProfileDescription(profile, variant),
-    url: absoluteUrl(request, canonicalPath),
-    sameAs: [profile.linkedinUrl, profile.websiteUrl, profile.videoUrl, profile.twitterUrl, profile.githubUrl].filter(Boolean),
-  });
-};
 
 const rewriteHtml = async (
   response: Response,
@@ -503,7 +423,7 @@ const handleRequest = async (request: Request, env: AssetEnv, ctx: ExecutionCont
         canonicalPath,
         bodyHtml: buildProfileBody(request, profile, variant, locked, canonicalPath),
         robots: locked ? 'noindex, nofollow' : 'index,follow',
-        imageUrl: profile.profilePhoto ? absoluteUrl(request, profile.profilePhoto) : undefined,
+        imageUrl: !locked && profile.profilePhoto ? absoluteUrl(request, profile.profilePhoto) : undefined,
         structuredData: buildStructuredData(request, profile, variant, canonicalPath),
       });
     }

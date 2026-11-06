@@ -1,5 +1,5 @@
 import { DurableObject } from "cloudflare:workers";
-import type { DemoItem, Profile, ViewLog, VersionSnapshot } from "@shared/types";
+import type { DemoItem, ViewLog, VersionSnapshot } from "@shared/types";
 import { MOCK_ITEMS } from "@shared/mock-data";
 import type {
   ProfileAnalytics,
@@ -158,11 +158,6 @@ export class GlobalDurableObject extends DurableObject {
 
     await this.ctx.storage.put(storageKey, { ...state, count: state.count + 1 });
     return { allowed: true, retryAfterMs: 0 };
-  }
-
-  toPublicProfile(profile: StoredProfile): Profile {
-    const { editTokenHash: _editTokenHash, passwordHash: _passwordHash, managementSessions: _sessions, ...publicProfile } = profile;
-    return publicProfile;
   }
 
   // Template Methods
