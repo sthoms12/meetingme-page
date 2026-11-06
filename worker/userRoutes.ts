@@ -52,7 +52,7 @@ import {
   toBase64Url,
   verifyPassword,
 } from "./auth";
-import type { PasskeyCredential, StoredPhotoAsset, StoredProfile, StoredSession } from "./types";
+import type { PasskeyCredential, PendingChallenge, StoredPhotoAsset, StoredProfile, StoredSession } from "./types";
 
 const INDEX_DO_NAME = "__meetingme_slug_index__";
 const PASSWORD_ATTEMPT_LIMIT = 5;
@@ -105,6 +105,8 @@ const toPublicProfile = (profile: StoredProfile): Profile => {
     passkeys: _passkeys,
     recoveryCode: _recoveryCode,
     pendingChallenge: _pendingChallenge,
+    pendingRegistrationChallenge: _pendingRegistrationChallenge,
+    pendingAuthChallenge: _pendingAuthChallenge,
     lastManagementAccessMethod: _lastManagementAccessMethod,
     ...publicProfile
   } = profile;
@@ -165,6 +167,10 @@ const resolvePhotoInput = async (
     return buildPhotoUrl(slug, version);
   }
 
+  // External URL: the profile no longer references an uploaded asset, so
+  // retire any stored one — otherwise the photo route keeps serving it
+  // indefinitely even though nothing links to it.
+  await profileStub.clearPhoto();
   return trimmed;
 };
 
@@ -237,6 +243,33 @@ const toAccessInfo = (profile: StoredProfile): AccessInfo => ({
 
 const isChallengeExpired = (createdAt: string) =>
   Date.now() - new Date(createdAt).getTime() > CHALLENGE_TTL_MS;
+
+/**
+ * Read the pending challenge for one ceremony type. Registration and
+ * authentication challenges live in separate slots so an unauthenticated
+ * auth ceremony cannot overwrite an in-progress manager registration;
+ * the legacy shared slot is honoured as a fallback for records written
+ * before the split.
+ */
+const getPendingChallenge = (
+  profile: StoredProfile,
+  type: PendingChallenge["type"],
+): PendingChallenge | undefined => {
+  const dedicated =
+    type === "register" ? profile.pendingRegistrationChallenge : profile.pendingAuthChallenge;
+  if (dedicated) return dedicated;
+  return profile.pendingChallenge?.type === type ? profile.pendingChallenge : undefined;
+};
+
+/**
+ * View-source values stored in owner analytics must be short tokens
+ * (e.g. "qr", "linkedin-share"). Anything else is dropped so arbitrary
+ * query text cannot pollute or bloat the analytics feed; the DO records
+ * the default "direct" source when no value is supplied.
+ */
+const VIEW_SOURCE_PATTERN = /^[a-z0-9][a-z0-9_-]{0,31}$/;
+const sanitizeViewSource = (raw: string | undefined): string | undefined =>
+  raw && VIEW_SOURCE_PATTERN.test(raw) ? raw : undefined;
 
 export function userRoutes(app: Hono<{ Bindings: Env }>) {
   app.get("/api/profiles/availability/:slug", async (c) => {
@@ -433,6 +466,23 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
       return c.json({ success: false, error: "Invalid slug" } satisfies ApiResponse, 400);
     }
 
+    // Revoke the presented session server-side, not just the cookie, so a
+    // copied cookie value stops working after sign-out.
+    const profileStub = getProfileStub(c.env, parsedSlug.data);
+    const profile = await profileStub.getProfile();
+    if (profile) {
+      const cookieValue = parseCookies(c.req.header("Cookie")).get(sessionCookieName(parsedSlug.data));
+      if (cookieValue) {
+        const tokenHash = await sha256Hex(cookieValue);
+        const sessions = (profile.managementSessions || []).filter(
+          (session) => session.tokenHash !== tokenHash,
+        );
+        if (sessions.length !== (profile.managementSessions || []).length) {
+          await profileStub.replaceSessions(sessions);
+        }
+      }
+    }
+
     c.header("Set-Cookie", clearSessionCookie(parsedSlug.data, secureCookies), { append: true });
     return c.json({ success: true });
   });
@@ -444,6 +494,20 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     }
 
     const profileStub = getProfileStub(c.env, parsedSlug.data);
+    const profile = await profileStub.getProfile();
+
+    // A password-locked profile's photo is part of the locked profile:
+    // only the manager may fetch it, and it must never sit in a public
+    // shared cache. This mirrors the API's locked-profile behaviour.
+    let cacheControl = "public, max-age=31536000, immutable";
+    if (profile?.passwordHash) {
+      const managerState = await resolveManager(c.req.header("Cookie"), profile, profileStub);
+      if (!managerState.isManager) {
+        return c.json({ success: false, error: "Photo not found" } satisfies ApiResponse, 404);
+      }
+      cacheControl = "private, no-store";
+    }
+
     const asset = await profileStub.getPhoto();
     if (!asset) {
       return c.json({ success: false, error: "Photo not found" } satisfies ApiResponse, 404);
@@ -452,7 +516,7 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     return new Response(Uint8Array.from(asset.bytes), {
       headers: {
         "content-type": asset.contentType,
-        "cache-control": "public, max-age=31536000, immutable",
+        "cache-control": cacheControl,
       },
     });
   });
@@ -565,7 +629,22 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
 
     const managerState = await resolveManager(c.req.header("Cookie"), profile, profileStub);
     const variantSlug = c.req.query("variant");
-    const source = c.req.query("src");
+    const source = sanitizeViewSource(c.req.query("src"));
+
+    // Locked gate runs before variant resolution (the same order POST
+    // /verify uses): a non-manager always gets the uniform locked stub,
+    // so the response cannot reveal whether a variant exists.
+    if (!managerState.isManager && managerState.profile.passwordHash) {
+      return c.json({
+        success: true,
+        data: {
+          fullName: managerState.profile.fullName,
+          isLocked: true,
+          canManage: false,
+        } satisfies ProfilePublicResponse,
+      });
+    }
+
     const variant = getVariant(managerState.profile, variantSlug);
 
     if (!variant) {
@@ -576,17 +655,6 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
       return c.json({
         success: true,
         data: toProfileResponse(managerState.profile, variant, true),
-      });
-    }
-
-    if (managerState.profile.passwordHash) {
-      return c.json({
-        success: true,
-        data: {
-          fullName: managerState.profile.fullName,
-          isLocked: true,
-          canManage: false,
-        } satisfies ProfilePublicResponse,
       });
     }
 
@@ -753,6 +821,7 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
   });
 
   app.post("/api/profiles/:slug/manage/regenerate", async (c) => {
+    const secureCookies = new URL(c.req.url).protocol === "https:";
     const parsedSlug = slugSchema.safeParse(c.req.param("slug"));
     if (!parsedSlug.success) {
       return c.json({ success: false, error: "Invalid slug" } satisfies ApiResponse, 400);
@@ -783,10 +852,18 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     }
 
     const editToken = randomToken(32);
+    // Regeneration is the remedy for a shared/exposed link, so every
+    // session minted from the old link dies with it. The caller is issued
+    // a fresh session in the same write so the legitimate owner stays
+    // signed in on this device.
+    const sessionToken = randomToken(32);
+    const sessions = [await createSessionRecord(sessionToken)];
     await profileStub.updateProfile({
       editTokenHash: await sha256Hex(editToken),
       editTokenRotatedAt: new Date().toISOString(),
+      managementSessions: sessions,
     });
+    c.header("Set-Cookie", sessionCookie(parsedSlug.data, sessionToken, secureCookies), { append: true });
 
     return c.json({ success: true, data: { slug: parsedSlug.data, editToken } satisfies ProfileCreateResponse });
   });
@@ -915,7 +992,8 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     });
 
     await profileStub.updateProfile({
-      pendingChallenge: { challenge: options.challenge, type: "register", createdAt: new Date().toISOString() },
+      pendingRegistrationChallenge: { challenge: options.challenge, type: "register", createdAt: new Date().toISOString() },
+      pendingChallenge: undefined,
     });
 
     return c.json({ success: true, data: options });
@@ -938,8 +1016,8 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
       return c.json({ success: false, error: "Unauthorized" } satisfies ApiResponse, 401);
     }
 
-    const pendingChallenge = managerState.profile.pendingChallenge;
-    if (!pendingChallenge || pendingChallenge.type !== "register" || isChallengeExpired(pendingChallenge.createdAt)) {
+    const pendingChallenge = getPendingChallenge(managerState.profile, "register");
+    if (!pendingChallenge || isChallengeExpired(pendingChallenge.createdAt)) {
       return c.json({ success: false, error: "Registration expired. Try again." } satisfies ApiResponse, 400);
     }
 
@@ -971,7 +1049,11 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
       };
 
       const passkeys = [...(managerState.profile.passkeys || []), newPasskey].slice(-MAX_PASSKEYS);
-      const updated = await profileStub.updateProfile({ passkeys, pendingChallenge: undefined });
+      const updated = await profileStub.updateProfile({
+        passkeys,
+        pendingRegistrationChallenge: undefined,
+        pendingChallenge: undefined,
+      });
 
       return c.json({ success: true, data: updated ? toAccessInfo(updated) : null });
     } catch (error) {
@@ -1018,7 +1100,8 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     });
 
     await profileStub.updateProfile({
-      pendingChallenge: { challenge: options.challenge, type: "auth", createdAt: new Date().toISOString() },
+      pendingAuthChallenge: { challenge: options.challenge, type: "auth", createdAt: new Date().toISOString() },
+      pendingChallenge: undefined,
     });
 
     c.header("Set-Cookie", clearSessionCookie(parsedSlug.data, secureCookies), { append: true });
@@ -1038,8 +1121,8 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
       return c.json({ success: false, error: "Profile not found" } satisfies ApiResponse, 404);
     }
 
-    const pendingChallenge = profile.pendingChallenge;
-    if (!pendingChallenge || pendingChallenge.type !== "auth" || isChallengeExpired(pendingChallenge.createdAt)) {
+    const pendingChallenge = getPendingChallenge(profile, "auth");
+    if (!pendingChallenge || isChallengeExpired(pendingChallenge.createdAt)) {
       return c.json({ success: false, error: "Authentication expired. Try again." } satisfies ApiResponse, 400);
     }
 
@@ -1085,6 +1168,7 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
       await profileStub.updateProfile({
         passkeys,
         managementSessions: sessions,
+        pendingAuthChallenge: undefined,
         pendingChallenge: undefined,
         lastManagementAccessMethod: "passkey",
       });

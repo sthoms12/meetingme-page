@@ -1,3 +1,5 @@
+import { escapeJsonForScript } from "./security";
+
 export const HOME_TITLE = "B4WeMeet | Pre-meeting intro pages for better meetings";
 
 export const HOME_DESCRIPTION =
@@ -152,14 +154,14 @@ a:focus-visible, summary:focus-visible { outline: 3px solid var(--primary); outl
 
 export const buildLandingDocument = (request: Request) => {
   const canonical = absoluteUrl(request, "/");
-  const structuredData = JSON.stringify({
+  const structuredData = escapeJsonForScript(JSON.stringify({
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     name: "B4WeMeet",
     applicationCategory: "BusinessApplication",
     description: HOME_DESCRIPTION,
     url: canonical,
-  });
+  }));
 
   return `<!doctype html>
 <html lang="en">

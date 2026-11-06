@@ -22,6 +22,22 @@ export const getClientKey = (request: Request) => {
 export const retryAfterSeconds = (retryAfterMs: number) =>
   Math.max(1, Math.ceil(retryAfterMs / 1000)).toString();
 
+/**
+ * Escape a JSON string for safe embedding inside an HTML <script> element.
+ * Script content is raw text to the HTML parser, so a "</script>" sequence
+ * inside a JSON string value would terminate the element and let stored
+ * data break out into markup. Unicode-escaping <, >, & and the JS line
+ * separators keeps the JSON semantically identical (JSON.parse restores
+ * the original characters) while making breakout impossible.
+ */
+export const escapeJsonForScript = (json: string) =>
+  json
+    .replace(/</g, "\\u003c")
+    .replace(/>/g, "\\u003e")
+    .replace(/&/g, "\\u0026")
+    .replace(/\u2028/g, "\\u2028")
+    .replace(/\u2029/g, "\\u2029");
+
 export const securityHeaders = (request: Request) => {
   const isEmbed = new URL(request.url).searchParams.get("embed") === "1";
   const frameAncestors = isEmbed ? "*" : "'self'";
