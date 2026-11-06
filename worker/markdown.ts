@@ -1,7 +1,7 @@
 // The Worker's copy of the markdown-mirror route list.
 //
 // The canonical page registry lives in src/lib/pages.ts (used by Astro and
-// by scripts/build-markdown.ts). This file is the Worker's independent copy;
+// by the [...mirror] endpoint). This file is the Worker's independent copy;
 // tests/markdown-sync.test.ts pins the two lists — and the built dist/
 // mirrors — in sync. If you add a page, add it in both places and the test
 // will prove all three agree.

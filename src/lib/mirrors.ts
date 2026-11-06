@@ -1,7 +1,7 @@
 // Markdown mirrors of every public page, generated from the same datasets
 // and copy modules as the HTML pages (agent-readiness: mirrors must not
-// drift from the pages). scripts/build-markdown.ts writes these into dist/
-// after the Astro build; worker/index.ts serves them on Accept:
+// drift from the pages). the [...mirror] static endpoint writes
+// them into dist/ during the Astro build; worker/index.ts serves them on Accept:
 // text/markdown and at the mirror paths.
 
 import {

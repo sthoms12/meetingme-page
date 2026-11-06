@@ -1,6 +1,6 @@
 {
   "extends": "astro/tsconfigs/strict",
-  "include": ["src", "worker", "tests", "scripts", "astro.config.mjs"],
+  "include": ["src", "worker", "tests", "astro.config.mjs"],
   "exclude": ["dist", "node_modules"],
   "compilerOptions": {
     "types": ["@cloudflare/workers-types", "bun-types", "node"],

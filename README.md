@@ -28,7 +28,7 @@ device. There are no accounts, no uploads and no hosted user pages.
   (`Accept: text/markdown` / `.md` paths), and returns 410 for retired
   profile/API routes. No Durable Objects are bound.
 - **Markdown mirrors + llms.txt** — generated at build time
-  (`scripts/build-markdown.ts`) from the canonical page registry
+  (the `[...mirror]` static endpoint) from the canonical page registry
   (`src/lib/pages.ts`). The Worker's route list (`worker/markdown.ts`),
   the registry, the generator output and `llms.txt` are pinned in sync by
   `tests/markdown-sync.test.ts`.

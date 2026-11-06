@@ -2,7 +2,7 @@
 //
 // This list is the single source of truth consumed by:
 //   - src/pages/sitemap.xml.ts (sitemap generation)
-//   - scripts/build-markdown.ts (.md mirrors + llms.txt)
+//   - src/pages/[...mirror].ts + llms.txt.ts (build-time .md mirrors + llms.txt)
 //   - worker/markdown.ts carries its own copy of the path list; tests pin
 //     the two lists in sync (tests/markdown-sync.test.ts), and also pin
 //     that every path here has a built page and a built mirror in dist/.
