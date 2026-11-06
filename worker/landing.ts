@@ -181,6 +181,7 @@ export const buildLandingDocument = (request: Request) => {
   <link rel="icon" type="image/svg+xml" href="/b4wemeet-icon.svg" />
   <script type="application/ld+json">${structuredData}</script>
   <style>${landingCss}</style>
+  <script defer src="https://glass-portfolio.sthoms105.workers.dev/s.js" data-project="b4wemeet" data-persistence="cookieless"></script>
 </head>
 <body>
   <a class="skip" href="#how-it-works">Skip to how it works</a>
