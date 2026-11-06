@@ -1,0 +1,25 @@
+---
+import Base from '../../layouts/Base.astro';
+import { pageByPath } from '../../lib/pages';
+import { articleJsonLd } from '../../lib/jsonld';
+import { TEMPLATE_CONTENT } from '../../lib/template-content';
+
+const page = pageByPath('/templates/')!;
+---
+<Base title={page.title} description={page.description} path={page.path} jsonLd={[articleJsonLd(page)]}>
+  <h1>Meeting templates</h1>
+  <p class="lede">
+    Free, practical templates for the meetings around your work — copy any of them, or download as a text
+    file. For interview preparation specifically, start with the
+    <a href="/interview-prep-template/">interview prep template</a> and the
+    <a href="/interview-prep/">Prep Pack builder</a>.
+  </p>
+  <div class="grid">
+    {TEMPLATE_CONTENT.map((t) => (
+      <div class="card">
+        <h3><a href={`/templates/${t.id}/`}>{t.h1}</a></h3>
+        <p>{t.hubBlurb}</p>
+      </div>
+    ))}
+  </div>
+</Base>

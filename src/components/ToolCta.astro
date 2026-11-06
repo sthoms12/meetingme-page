@@ -1,0 +1,18 @@
+---
+interface Props {
+  /** Role dataset slug to pre-load in the builder, e.g. "nursing". */
+  role?: string;
+  heading?: string;
+}
+const { role, heading = 'Turn this into a prep pack for your interview' } = Astro.props;
+const href = role ? `/interview-prep/?role=${role}` : '/interview-prep/';
+---
+<div class="toolcta">
+  <h2>{heading}</h2>
+  <p>
+    The free Prep Pack builder takes these questions, your STAR stories and your questions to ask, and turns
+    them into one brief you can read the morning of the interview. It runs entirely in your browser —
+    nothing is uploaded, there is no account, and your job search never leaves your device.
+  </p>
+  <a class="cta" href={href}>Build your prep pack — free, on your device</a>
+</div>

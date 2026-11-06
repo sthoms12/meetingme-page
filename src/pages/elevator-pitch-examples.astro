@@ -1,0 +1,37 @@
+---
+import Base from '../layouts/Base.astro';
+import Faq from '../components/Faq.astro';
+import ToolCta from '../components/ToolCta.astro';
+import Disclaimer from '../components/Disclaimer.astro';
+import { pageByPath } from '../lib/pages';
+import { articleJsonLd, faqJsonLd } from '../lib/jsonld';
+import { elevatorPitch } from '../data/general';
+
+const page = pageByPath('/elevator-pitch-examples/')!;
+---
+<Base title={page.title} description={page.description} path={page.path} jsonLd={[articleJsonLd(page), faqJsonLd(elevatorPitch.faqs)]}>
+  <h1>Elevator pitch examples</h1>
+  <p class="lede">
+    An elevator pitch is a 20-to-30-second introduction: who you are, what you do, what you are good at, and
+    what you are looking for. It earns its name in interviews, networking conversations and career fairs — and
+    the raw material is the same as a good
+    <a href="/tell-me-about-yourself/">“tell me about yourself”</a> answer, compressed.
+  </p>
+  <h2>The formula</h2>
+  {elevatorPitch.formula.map((s) => (
+    <section>
+      <h3>{s.step}</h3>
+      <p>{s.detail}</p>
+    </section>
+  ))}
+  <h2>Examples</h2>
+  {elevatorPitch.examples.map((e) => (
+    <div class="card">
+      <h3>{e.context}</h3>
+      <p>{e.text}</p>
+    </div>
+  ))}
+  <ToolCta heading="Turn your pitch into a full prep pack" />
+  <Faq faqs={elevatorPitch.faqs} />
+  <Disclaimer />
+</Base>

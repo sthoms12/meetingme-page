@@ -1,0 +1,25 @@
+---
+import Base from '../layouts/Base.astro';
+import Faq from '../components/Faq.astro';
+import QuestionList from '../components/QuestionList.astro';
+import ToolCta from '../components/ToolCta.astro';
+import Disclaimer from '../components/Disclaimer.astro';
+import { pageByPath } from '../lib/pages';
+import { articleJsonLd, faqJsonLd } from '../lib/jsonld';
+import { commonQuestions, generalFaqs } from '../data/general';
+
+const page = pageByPath('/common-interview-questions/')!;
+---
+<Base title={page.title} description={page.description} path={page.path} jsonLd={[articleJsonLd(page), faqJsonLd(generalFaqs.common)]}>
+  <h1>Common interview questions and how to answer them</h1>
+  <p>
+    A handful of questions show up in almost every interview, whatever the job. Interviewers are not trying to
+    surprise you with them — they are checking preparation, self-awareness and whether you understand the role.
+    For each question below: why they ask it, how to structure a strong answer, an example approach, and the
+    mistakes that weaken one.
+  </p>
+  <QuestionList questions={commonQuestions} />
+  <ToolCta />
+  <Faq faqs={generalFaqs.common} />
+  <Disclaimer />
+</Base>

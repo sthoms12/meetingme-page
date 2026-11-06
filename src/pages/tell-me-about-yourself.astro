@@ -1,0 +1,36 @@
+---
+import Base from '../layouts/Base.astro';
+import Faq from '../components/Faq.astro';
+import ToolCta from '../components/ToolCta.astro';
+import Disclaimer from '../components/Disclaimer.astro';
+import { pageByPath } from '../lib/pages';
+import { articleJsonLd, faqJsonLd } from '../lib/jsonld';
+import { tellMeAboutYourself } from '../data/general';
+
+const page = pageByPath('/tell-me-about-yourself/')!;
+---
+<Base title={page.title} description={page.description} path={page.path} jsonLd={[articleJsonLd(page), faqJsonLd(tellMeAboutYourself.faqs)]}>
+  <h1>How to answer “Tell me about yourself”</h1>
+  <p class="lede">
+    This is usually the first question, and it sets the tone for everything after it. The interviewer is not
+    asking for your life story — they want a short, relevant account of why you are a credible candidate for
+    this role. The structure that works: present, past, future.
+  </p>
+  {tellMeAboutYourself.structure.map((s) => (
+    <section>
+      <h2>{s.step}</h2>
+      <p>{s.detail}</p>
+    </section>
+  ))}
+  <h2>Examples</h2>
+  <p>Each of these runs about a minute spoken aloud. Adapt the shape, not the sentences.</p>
+  {tellMeAboutYourself.examples.map((e) => (
+    <div class="card">
+      <h3>{e.context}</h3>
+      <p>{e.text}</p>
+    </div>
+  ))}
+  <ToolCta heading="Draft your pitch in the builder" />
+  <Faq faqs={tellMeAboutYourself.faqs} />
+  <Disclaimer />
+</Base>

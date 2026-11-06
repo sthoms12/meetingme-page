@@ -1,210 +1,90 @@
-import { Hono } from 'hono';
-import { bodyLimit } from 'hono/body-limit';
-import { logger } from 'hono/logger';
-import { Env as CoreEnv } from './core-utils';
-import type { ProfileVariant } from '@shared/types';
-import { TEMPLATES_BASE_PATH, TEMPLATE_IDS, isTemplateLibraryPath, resolveTemplateLibraryPath, templatePath } from '@shared/template-catalog';
-import type { StoredProfile } from './types';
-import { userRoutes } from './userRoutes';
-import {
-  CLIENT_ERROR_LIMIT,
-  CLIENT_ERROR_WINDOW_MS,
-  MAX_API_BODY_BYTES,
-  MAX_CLIENT_ERROR_BODY_BYTES,
-  clientErrorReportSchema,
-  getClientKey,
-  retryAfterSeconds,
-  securityHeaders,
-  withSecurityHeaders,
-} from './security';
-import { HOME_DESCRIPTION, buildLandingDocument, buildLandingMarkdown } from './landing';
-import {
-  absoluteUrl,
-  buildProfileBody,
-  buildProfileDescription,
-  buildStructuredData,
-  escapeHtml,
-  shorten,
-} from './profile-render';
-import { isReservedProfileSlug } from '@shared/reserved-slugs';
+// B4WeMeet thin worker (spec §6, post-pivot).
+//
+// Responsibilities, in order:
+//  1. Retired routes from the hosted-profile era (/api/*, /create, /manage,
+//     and any single- or two-segment path that is not a real page or asset)
+//     return 410 Gone — the Durable Object system is detached and gone.
+//  2. Markdown negotiation: pages in MARKDOWN_PAGE_PATHS serve their
+//     build-time .md mirror on Accept: text/markdown, and at the mirror
+//     path directly, with agent-discovery Link headers on HTML responses.
+//  3. Everything else is served from the static Astro build (ASSETS).
+//  4. Security headers on every response.
 
-export * from './core-utils';
+import { MARKDOWN_PAGE_PATHS, mirrorPathFor } from './markdown';
 
-type AssetEnv = CoreEnv & { ASSETS: Fetcher };
+interface Env {
+  ASSETS: Fetcher;
+}
 
-export type ClientErrorReport = { message: string; url: string; timestamp: string } & Record<string, unknown>;
+const securityHeaders = (request: Request) => {
+  const isEmbed = new URL(request.url).searchParams.get('embed') === '1';
+  const frameAncestors = isEmbed ? '*' : "'self'";
+  return {
+    'Content-Security-Policy': [
+      "default-src 'self'",
+      "base-uri 'self'",
+      "object-src 'none'",
+      `frame-ancestors ${frameAncestors}`,
+      "script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com https://glass-portfolio.sthoms105.workers.dev",
+      "connect-src 'self' https://cloudflareinsights.com https://glass-portfolio.sthoms105.workers.dev",
+      "img-src 'self' data: https:",
+      "style-src 'self' 'unsafe-inline'",
+      "font-src 'self' data:",
+      "form-action 'self'",
+      'upgrade-insecure-requests',
+    ].join('; '),
+    'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+    'X-Content-Type-Options': 'nosniff',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+    'Permissions-Policy': 'camera=(), geolocation=(), microphone=()',
+  } as Record<string, string>;
+};
 
-const app = new Hono<{ Bindings: CoreEnv }>();
-const INDEX_DO_NAME = '__meetingme_slug_index__';
-const ASSET_EXTENSIONS = /\.(?:css|js|mjs|map|svg|png|jpg|jpeg|gif|webp|ico|txt|xml|json|woff2?|ttf|otf)$/i;
-
-app.use('*', logger());
-
-app.use('*', async (c, next) => {
-  await next();
-  for (const [name, value] of Object.entries(securityHeaders(c.req.raw))) {
-    c.header(name, value);
-  }
-});
-
-app.use('/api/*', bodyLimit({
-  maxSize: MAX_API_BODY_BYTES,
-  onError: (c) => c.json({ success: false, error: 'Request body too large' }, 413),
-}));
-
-app.use('/api/client-errors', bodyLimit({
-  maxSize: MAX_CLIENT_ERROR_BODY_BYTES,
-  onError: (c) => c.json({ success: false, error: 'Error report too large' }, 413),
-}));
-
-app.get('/api/health', (c) => c.json({ success: true, data: { status: 'healthy', timestamp: new Date().toISOString() } }));
-
-app.post('/api/client-errors', async (c) => {
-  try {
-    const limiter = await getIndexStub(c.env).checkRateLimit(
-      `client-error:${getClientKey(c.req.raw)}`,
-      CLIENT_ERROR_LIMIT,
-      CLIENT_ERROR_WINDOW_MS,
-    );
-    if (!limiter.allowed) {
-      c.header('Retry-After', retryAfterSeconds(limiter.retryAfterMs));
-      return c.json({ success: false, error: 'Too many error reports' }, 429);
-    }
-
-    const parsed = clientErrorReportSchema.safeParse(await c.req.json());
-    if (!parsed.success) {
-      return c.json({ success: false, error: 'Invalid error report' }, 400);
-    }
-
-    const e = parsed.data;
-    console.error('[CLIENT ERROR]', JSON.stringify({ timestamp: e.timestamp || new Date().toISOString(), message: e.message, url: e.url, stack: e.stack, componentStack: e.componentStack, errorBoundary: e.errorBoundary }, null, 2));
-    return c.json({ success: true });
-  } catch (error) {
-    console.error('[CLIENT ERROR HANDLER] Failed:', error);
-    return c.json({ success: false, error: 'Invalid error report' }, 400);
-  }
-});
-
-userRoutes(app);
-
-app.notFound((c) => c.json({ success: false, error: 'Not Found' }, 404));
-app.onError((err, c) => {
-  if (err instanceof SyntaxError) {
-    return c.json({ success: false, error: 'Invalid JSON' }, 400);
-  }
-  console.error(`[ERROR] ${err}`);
-  return c.json({ success: false, error: 'Internal Server Error' }, 500);
-});
-
-const getIndexStub = (env: CoreEnv) =>
-  env.GlobalDurableObject.get(env.GlobalDurableObject.idFromName(INDEX_DO_NAME));
-
-const getProfileStub = (env: CoreEnv, slug: string) =>
-  env.GlobalDurableObject.get(env.GlobalDurableObject.idFromName(`profile:${slug}`));
-
-const isAssetRequest = (pathname: string) =>
-  pathname.startsWith('/assets/') ||
-  pathname.startsWith('/src/') ||
-  pathname.startsWith('/@vite/') ||
-  pathname === '/@react-refresh' ||
-  pathname === '/favicon.ico' ||
-  pathname === '/b4wemeet-icon.svg' ||
-  ASSET_EXTENSIONS.test(pathname);
-
-const getPrimaryVariant = (profile: StoredProfile, variantSlug?: string) =>
-  variantSlug
-    ? profile.variants.find((variant) => variant.variantSlug === variantSlug)
-    : profile.variants.find((variant) => variant.id === profile.primaryVariantId);
-
-const buildHomeDescription = () => HOME_DESCRIPTION;
-
-const buildCreateBody = () => `
-<main style="min-height:100vh">
-  <h1>Create your B4WeMeet page</h1>
-  <p>The creator needs JavaScript to publish your intro.</p>
-  <p><a href="/" style="display:inline-flex;align-items:center;min-height:44px;min-width:44px;padding:0 12px">Back to B4WeMeet</a></p>
-</main>`;
-
-const buildNotFoundBody = () => `
-<main>
-  <h1>Introduction not found</h1>
-  <p>This B4WeMeet page is unavailable or the handle has changed.</p>
-  <p><a href="/">Create your own intro page</a></p>
-</main>`;
-
-const buildEditBody = (slug: string) => `
-<main>
-  <h1>Manage your B4WeMeet page</h1>
-  <p>This dashboard is private and should not be indexed.</p>
-  <p><a href="/${escapeHtml(slug)}">View public page</a></p>
-</main>`;
-
-const rewriteHtml = async (
-  response: Response,
-  request: Request,
-  options: {
-    title: string;
-    description: string;
-    canonicalPath: string;
-    bodyHtml: string;
-    robots?: string;
-    status?: number;
-    imageUrl?: string;
-    structuredData?: string;
-  },
-) => {
-  const metaTags = [
-    `<meta name="description" content="${escapeHtml(options.description)}">`,
-    `<link rel="canonical" href="${escapeHtml(absoluteUrl(request, options.canonicalPath))}">`,
-    `<meta name="robots" content="${escapeHtml(options.robots || 'index,follow')}">`,
-    `<meta property="og:title" content="${escapeHtml(options.title)}">`,
-    `<meta property="og:description" content="${escapeHtml(options.description)}">`,
-    `<meta property="og:url" content="${escapeHtml(absoluteUrl(request, options.canonicalPath))}">`,
-    `<meta property="og:type" content="website">`,
-    `<meta property="og:site_name" content="B4WeMeet">`,
-    `<meta name="twitter:card" content="summary_large_image">`,
-    `<meta name="twitter:title" content="${escapeHtml(options.title)}">`,
-    `<meta name="twitter:description" content="${escapeHtml(options.description)}">`,
-    options.imageUrl ? `<meta property="og:image" content="${escapeHtml(options.imageUrl)}">` : '',
-    options.imageUrl ? `<meta name="twitter:image" content="${escapeHtml(options.imageUrl)}">` : '',
-    options.structuredData ? `<script type="application/ld+json">${options.structuredData}</script>` : '',
-  ].filter(Boolean).join('');
-
-  const transformed = new HTMLRewriter()
-    .on('title', {
-      element(element) {
-        element.setInnerContent(options.title);
-      },
-    })
-    .on('head', {
-      element(element) {
-        element.append(metaTags, { html: true });
-      },
-    })
-    .on('#root', {
-      element(element) {
-        element.setInnerContent(options.bodyHtml, { html: true });
-      },
-    })
-    .transform(response);
-
-  const rewritten = new Response(transformed.body, transformed);
-  if (options.robots) rewritten.headers.set('x-robots-tag', options.robots);
-  rewritten.headers.set('content-type', 'text/html; charset=UTF-8');
-  return new Response(rewritten.body, {
-    status: options.status || rewritten.status,
-    statusText: rewritten.statusText,
-    headers: rewritten.headers,
+const withHeaders = (response: Response, request: Request, extra: Record<string, string> = {}) => {
+  const headers = new Headers(response.headers);
+  for (const [name, value] of Object.entries(securityHeaders(request))) headers.set(name, value);
+  for (const [name, value] of Object.entries(extra)) headers.set(name, value);
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
   });
 };
 
-const getShellResponse = (_request: Request, env: AssetEnv) =>
-  env.ASSETS.fetch('https://assets.local/index.html');
+const GONE_BODY = `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="robots" content="noindex">
+<title>Page retired | B4WeMeet</title></head>
+<body><main>
+<h1>This page has been retired</h1>
+<p>B4WeMeet used to host intro pages at addresses like this one. Hosted intro pages were retired in November 2026, when B4WeMeet became a private, on-device interview prep tool — nothing is hosted here
+any more, and the old profile data has been deleted.</p>
+<p><a href="/">Go to B4WeMeet — interview prep that never leaves your device</a></p>
+</main></body></html>`;
 
-// Agent discovery: the landing page has a Markdown mirror generated from
-// the same copy (buildLandingMarkdown in ./landing). It is served on
-// Accept: text/markdown and at /index.md, and advertised on HTML responses
-// with a Link: rel="alternate"; type="text/markdown" header plus Vary: Accept.
+const gone = (request: Request) =>
+  withHeaders(
+    new Response(GONE_BODY, {
+      status: 410,
+      headers: { 'content-type': 'text/html; charset=UTF-8', 'x-robots-tag': 'noindex' },
+    }),
+    request,
+  );
+
+const notFound = (request: Request) =>
+  withHeaders(
+    new Response(
+      '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Not found | B4WeMeet</title></head><body><main><h1>Not found</h1><p><a href="/">Go to B4WeMeet</a></p></main></body></html>',
+      {
+        status: 404,
+        headers: { 'content-type': 'text/html; charset=UTF-8', 'x-robots-tag': 'noindex' },
+      },
+    ),
+    request,
+  );
+
+const wantsMarkdown = (request: Request) =>
+  (request.headers.get('Accept') || '').toLowerCase().includes('text/markdown');
+
 const appendVary = (headers: Headers, value: string) => {
   const values = new Set(
     (headers.get('Vary') || '')
@@ -216,223 +96,78 @@ const appendVary = (headers: Headers, value: string) => {
   headers.set('Vary', [...values].join(', '));
 };
 
-const withDiscoveryHeaders = (response: Response, canonicalUrl: string) => {
-  const headers = new Headers(response.headers);
-  appendVary(headers, 'Accept');
-  headers.set('Link', `<${canonicalUrl}>; rel="alternate"; type="text/markdown"`);
-  return new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers,
-  });
-};
-
-const buildLandingMarkdownResponse = (request: Request) => {
-  const canonicalUrl = absoluteUrl(request, '/');
-  const headers = new Headers({
-    'content-type': 'text/markdown; charset=utf-8',
-    'cache-control': 'public, max-age=300',
-  });
-  appendVary(headers, 'Accept');
-  headers.set(
-    'Link',
-    `<${canonicalUrl}>; rel="canonical", <${canonicalUrl}>; rel="alternate"; type="text/markdown"`,
-  );
-  return new Response(buildLandingMarkdown(request), { headers });
-};
-
-const wantsMarkdown = (request: Request) =>
-  (request.headers.get('Accept') || '').toLowerCase().includes('text/markdown');
-
-const buildRobots = (request: Request) => `User-agent: *
-Content-Signal: ai-train=no, search=yes, ai-input=yes
-Allow: /
-Disallow: /api/
-Disallow: /create
-Disallow: /*/edit
-
-Sitemap: ${absoluteUrl(request, '/sitemap.xml')}
-`;
-
-const buildSitemap = async (request: Request, env: AssetEnv) => {
-  const entries: string[] = [
-    `<url><loc>${escapeHtml(absoluteUrl(request, '/'))}</loc></url>`,
-    `<url><loc>${escapeHtml(absoluteUrl(request, TEMPLATES_BASE_PATH))}</loc></url>`,
-    ...TEMPLATE_IDS.map((id) => `<url><loc>${escapeHtml(absoluteUrl(request, templatePath(id)))}</loc></url>`),
-  ];
-
-  const slugs = await getIndexStub(env).listReservedSlugs();
-  for (const slug of slugs) {
-    const profile = await getProfileStub(env, slug).getProfile();
-    if (!profile || profile.passwordHash) continue;
-
-    entries.push(
-      `<url><loc>${escapeHtml(absoluteUrl(request, `/${slug}`))}</loc><lastmod>${escapeHtml(profile.createdAt)}</lastmod></url>`,
-    );
-
-    for (const variant of profile.variants) {
-      if (variant.id === profile.primaryVariantId) continue;
-      entries.push(
-        `<url><loc>${escapeHtml(absoluteUrl(request, `/${slug}/${variant.variantSlug}`))}</loc><lastmod>${escapeHtml(profile.createdAt)}</lastmod></url>`,
-      );
-    }
-  }
-
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${entries.join('\n')}
-</urlset>`;
-};
-
-const templateNotFound = () =>
-  new Response(
-    '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="robots" content="noindex"><title>Template not found | B4WeMeet</title></head><body><h1>Template not found</h1><p><a href="/templates/">See all meeting templates</a></p></body></html>',
-    { status: 404, headers: { 'content-type': 'text/html; charset=UTF-8', 'x-robots-tag': 'noindex' } },
-  );
-
-const serveTemplateLibrary = (request: Request, env: AssetEnv, url: URL) => {
-  const resolved = resolveTemplateLibraryPath(url.pathname);
-  if (resolved.kind === 'asset') return env.ASSETS.fetch(request);
-  if (resolved.kind === 'redirect') {
-    return Response.redirect(new URL(`${resolved.location}${url.search}`, url).toString(), 301);
-  }
-  return templateNotFound();
-};
-
-console.log('Server is running');
-
-const handleRequest = async (request: Request, env: AssetEnv, ctx: ExecutionContext) => {
-    const url = new URL(request.url);
-
-    if (url.pathname.startsWith('/api/')) {
-      return app.fetch(request, env, ctx);
-    }
-
-    if (url.pathname === '/robots.txt') {
-      return new Response(buildRobots(request), {
-        headers: {
-          'content-type': 'text/plain; charset=UTF-8',
-          'cache-control': 'public, max-age=3600',
-        },
-      });
-    }
-
-    if (url.pathname === '/sitemap.xml') {
-      return new Response(await buildSitemap(request, env), {
-        headers: {
-          'content-type': 'application/xml; charset=UTF-8',
-          'cache-control': 'public, max-age=3600',
-        },
-      });
-    }
-
-    if (url.pathname === '/index.md') {
-      return buildLandingMarkdownResponse(request);
-    }
-
-    // The template library is prebuilt static HTML; serve it before the
-    // /:slug profile handling so it never touches a Durable Object.
-    if (isTemplateLibraryPath(url.pathname)) {
-      return serveTemplateLibrary(request, env, url);
-    }
-
-    if (isAssetRequest(url.pathname)) {
-      return env.ASSETS.fetch(request);
-    }
-
-    const parts = url.pathname.split('/').filter(Boolean);
-
-    if (parts.length === 0) {
-      if (wantsMarkdown(request)) {
-        return buildLandingMarkdownResponse(request);
-      }
-      const htmlResponse = new Response(buildLandingDocument(request), {
-        headers: {
-          'content-type': 'text/html; charset=UTF-8',
-          'cache-control': 'public, max-age=300',
-        },
-      });
-      return withDiscoveryHeaders(htmlResponse, absoluteUrl(request, '/'));
-    }
-
-    if (parts.length === 1 && isReservedProfileSlug(parts[0])) {
-      const shell = await getShellResponse(request, env);
-      return rewriteHtml(shell, request, {
-        title: 'Create your page | B4WeMeet',
-        description: buildHomeDescription(),
-        canonicalPath: '/',
-        bodyHtml: buildCreateBody(),
-        robots: 'noindex, nofollow',
-      });
-    }
-
-    if (parts.length === 2 && parts[1] === 'edit') {
-      const shell = await getShellResponse(request, env);
-      return rewriteHtml(shell, request, {
-        title: `Manage ${parts[0]} | B4WeMeet`,
-        description: 'Private B4WeMeet dashboard for managing your meeting intro page.',
-        canonicalPath: `/${parts[0]}/edit`,
-        bodyHtml: buildEditBody(parts[0]),
-        robots: 'noindex, nofollow',
-        structuredData: buildStructuredData(request),
-      });
-    }
-
-    if (parts.length === 1 || parts.length === 2) {
-      const [slug, variantSlug] = parts;
-      const profile = await getProfileStub(env, slug).getProfile();
-      const shell = await getShellResponse(request, env);
-
-      if (!profile) {
-        return rewriteHtml(shell, request, {
-          title: 'Introduction Not Found | B4WeMeet',
-          description: 'This B4WeMeet page is unavailable or no longer exists.',
-          canonicalPath: url.pathname,
-          bodyHtml: buildNotFoundBody(),
-          robots: 'noindex, nofollow',
-          status: 404,
-          structuredData: buildStructuredData(request),
-        });
-      }
-
-      const variant = getPrimaryVariant(profile, variantSlug);
-      if (!variant) {
-        return rewriteHtml(shell, request, {
-          title: 'Introduction Not Found | B4WeMeet',
-          description: 'This B4WeMeet page variant is unavailable or no longer exists.',
-          canonicalPath: url.pathname,
-          bodyHtml: buildNotFoundBody(),
-          robots: 'noindex, nofollow',
-          status: 404,
-          structuredData: buildStructuredData(request),
-        });
-      }
-
-      const canonicalPath = variant.id === profile.primaryVariantId ? `/${slug}` : `/${slug}/${variant.variantSlug}`;
-      const locked = Boolean(profile.passwordHash);
-      const title = locked
-        ? `${profile.fullName} | Protected intro | B4WeMeet`
-        : `${profile.fullName} | ${profile.jobTitle} at ${profile.company} | B4WeMeet`;
-      const description = locked
-        ? `${profile.fullName} has shared a password-protected B4WeMeet intro page.`
-        : buildProfileDescription(profile, variant);
-
-      return rewriteHtml(shell, request, {
-        title: shorten(title, 65),
-        description,
-        canonicalPath,
-        bodyHtml: buildProfileBody(request, profile, variant, locked, canonicalPath),
-        robots: locked ? 'noindex, nofollow' : 'index,follow',
-        imageUrl: !locked && profile.profilePhoto ? absoluteUrl(request, profile.profilePhoto) : undefined,
-        structuredData: buildStructuredData(request, profile, variant, canonicalPath),
-      });
-    }
-
-    return env.ASSETS.fetch(request);
-};
+/** Paths that look like static asset files shipped in dist (not pages). */
+const isAssetPath = (pathname: string) =>
+  pathname.startsWith('/assets/') ||
+  pathname.startsWith('/_astro/') ||
+  /\.(?:css|js|mjs|map|svg|png|jpg|jpeg|gif|webp|ico|txt|xml|json|webmanifest|woff2?|ttf|otf|md)$/i.test(pathname);
 
 export default {
-  async fetch(request: Request, env: AssetEnv, ctx: ExecutionContext) {
-    return withSecurityHeaders(await handleRequest(request, env, ctx), request);
+  async fetch(request: Request, env: Env): Promise<Response> {
+    const url = new URL(request.url);
+    const { pathname } = url;
+
+    // 1. Retired API surface and app routes from the profile era.
+    if (pathname === '/api' || pathname.startsWith('/api/')) {
+      return gone(request);
+    }
+    if (pathname === '/create' || pathname === '/create/' || pathname === '/manage' || pathname === '/manage/') {
+      return gone(request);
+    }
+
+    const isMarkdownPage = MARKDOWN_PAGE_PATHS.includes(pathname);
+    const canonicalUrl = new URL(pathname, url.origin).toString();
+
+    // 2a. Direct mirror request: /index.md or /<page>.md for a known page.
+    if (pathname.endsWith('.md')) {
+      const pagePath = pathname === '/index.md' ? '/' : `${pathname.slice(0, -3)}/`;
+      if (MARKDOWN_PAGE_PATHS.includes(pagePath)) {
+        const asset = await env.ASSETS.fetch(new Request(new URL(pathname, url.origin), request));
+        if (asset.status !== 404) {
+          return withHeaders(asset, request, {
+            'content-type': 'text/markdown; charset=UTF-8',
+            'cache-control': 'public, max-age=300',
+            Link: `<${new URL(pagePath, url.origin).toString()}>; rel="canonical"`,
+          });
+        }
+      }
+      return notFound(request);
+    }
+
+    // 2b. Content negotiation for known pages.
+    if (isMarkdownPage && wantsMarkdown(request)) {
+      const mirrorUrl = new URL(mirrorPathFor(pathname), url.origin);
+      const asset = await env.ASSETS.fetch(new Request(mirrorUrl, request));
+      if (asset.status !== 404) {
+        const headers = new Headers(asset.headers);
+        headers.set('content-type', 'text/markdown; charset=UTF-8');
+        headers.set('cache-control', 'public, max-age=300');
+        appendVary(headers, 'Accept');
+        headers.set(
+          'Link',
+          `<${canonicalUrl}>; rel="canonical", <${mirrorUrl.toString()}>; rel="alternate"; type="text/markdown"`,
+        );
+        const mdResponse = new Response(asset.body, { status: 200, headers });
+        return withHeaders(mdResponse, request);
+      }
+    }
+
+    // 3. Static assets.
+    const asset = await env.ASSETS.fetch(request);
+    if (asset.status !== 404) {
+      const extra: Record<string, string> = {};
+      if (isMarkdownPage) {
+        extra.Link = `<${new URL(mirrorPathFor(pathname), url.origin).toString()}>; rel="alternate"; type="text/markdown"`;
+        extra.Vary = 'Accept';
+      }
+      return withHeaders(asset, request, extra);
+    }
+
+    // 4. Unknown paths: retired profile-style routes are 410, the rest 404.
+    const parts = pathname.split('/').filter(Boolean);
+    if (!isAssetPath(pathname) && parts.length >= 1 && parts.length <= 2 && !pathname.startsWith('/templates/')) {
+      return gone(request);
+    }
+    return notFound(request);
   },
-} satisfies ExportedHandler<AssetEnv>;
+};

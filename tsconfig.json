@@ -1,33 +1,10 @@
 {
-	"files": [],
-	"references": [
-		{
-			"path": "./tsconfig.app.json"
-		},
-		{
-			"path": "./tsconfig.node.json"
-		},
-		{
-			"path": "./tsconfig.worker.json"
-		},
-		{
-			"path": "./tsconfig.scripts.json"
-		}
-	],
-	"compilerOptions": {
-		"incremental": true,
-		"types": [
-			"@cloudflare/workers-types"
-		],
-		"baseUrl": ".",
-		"paths": {
-			"@/*": [
-				"./src/*"
-			],
-            "@shared/*": [
-                "./shared/*"
-            ]
-		},
-        "skipLibCheck": true
-	}
+  "extends": "astro/tsconfigs/strict",
+  "include": ["src", "worker", "tests", "scripts", "astro.config.mjs"],
+  "exclude": ["dist", "node_modules"],
+  "compilerOptions": {
+    "types": ["@cloudflare/workers-types", "bun-types", "node"],
+    "moduleResolution": "bundler",
+    "noEmit": true
+  }
 }

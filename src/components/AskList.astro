@@ -1,0 +1,13 @@
+---
+import type { AskEntry } from '../data/types';
+interface Props { items: AskEntry[] }
+const { items } = Astro.props;
+---
+<div>
+  {items.map((item) => (
+    <article class="q">
+      <h3>{item.question}</h3>
+      <p class="why">{item.why}</p>
+    </article>
+  ))}
+</div>

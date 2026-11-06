@@ -1,0 +1,42 @@
+---
+import Base from '../../layouts/Base.astro';
+import Disclaimer from '../../components/Disclaimer.astro';
+import { pageByPath } from '../../lib/pages';
+import { articleJsonLd } from '../../lib/jsonld';
+
+const page = pageByPath('/interview-prep/')!;
+---
+<Base title={page.title} description={page.description} path={page.path} jsonLd={[articleJsonLd(page)]}>
+  <h1>Interview Prep Pack Builder</h1>
+  <p class="lede">
+    Build one prep pack per interview: the likely questions, your STAR stories, your pitch, your questions to
+    ask and your research — then export a brief to read the morning of. Everything is stored only in this
+    browser, on this device. No account. Nothing uploaded.
+  </p>
+  <div id="prep-tool" class="tool">
+    <p class="hint">Loading your prep workspace… (If this stays here, your browser may have blocked local storage — the tool needs it to keep your prep on your device.)</p>
+  </div>
+  <script>
+    import '../../tool/main.ts';
+  </script>
+
+  <h2>How a prep pack works</h2>
+  <p>
+    Start a pack from your role's question set and it pre-fills with the questions that role's candidates are
+    actually asked, plus strong questions to ask back. Write your STAR stories once in the story bank and attach
+    them wherever they fit. Draft your answers in your own words — the examples in our guides are illustrations,
+    not scripts.
+  </p>
+  <p>
+    When you're ready to practice, use the AI handoff inside a pack: it copies your pack to your clipboard and
+    opens ChatGPT or Claude with a short coaching prompt, so your own AI can run a mock interview or polish your
+    stories. Then export the brief (Markdown or print), print the checklist, and add the interview to your
+    calendar with the date you entered.
+  </p>
+  <p>
+    New to this? Read <a href="/how-to-prepare-for-an-interview/">how to prepare for an interview</a> first,
+    or go straight to <a href="/common-interview-questions/">common interview questions</a> and
+    <a href="/behavioral-interview-questions/">behavioral questions</a>.
+  </p>
+  <Disclaimer />
+</Base>

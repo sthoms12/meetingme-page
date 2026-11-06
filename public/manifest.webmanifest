@@ -1,0 +1,15 @@
+{
+  "name": "B4WeMeet — Interview Prep",
+  "short_name": "B4WeMeet",
+  "description": "Interview prep that never leaves your device. Free guides and a private prep-pack builder.",
+  "start_url": "/interview-prep/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f8f4ea",
+  "theme_color": "#1d6f5c",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

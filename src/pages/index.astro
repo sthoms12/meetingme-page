@@ -1,0 +1,87 @@
+---
+import Base from '../layouts/Base.astro';
+import Faq from '../components/Faq.astro';
+import { pageByPath } from '../lib/pages';
+import { faqJsonLd, webSiteJsonLd } from '../lib/jsonld';
+import { LANDING_FAQS } from '../lib/copy';
+
+const page = pageByPath('/')!;
+
+const faqs = LANDING_FAQS;
+
+const guides = [
+  { href: '/how-to-prepare-for-an-interview/', title: 'How to prepare for an interview', blurb: 'The full practical guide: research, practice, logistics, the day itself and the follow-up.' },
+  { href: '/common-interview-questions/', title: 'Common interview questions', blurb: 'The questions almost everyone gets — why they are asked and how to answer them well.' },
+  { href: '/behavioral-interview-questions/', title: 'Behavioral interview questions', blurb: '“Tell me about a time…” questions, answered with the STAR structure.' },
+  { href: '/star-method-interview/', title: 'The STAR method', blurb: 'Situation, Task, Action, Result — with a fully worked example.' },
+  { href: '/questions-to-ask-in-an-interview/', title: 'Questions to ask in an interview', blurb: 'Questions that help you judge the job while you impress the interviewer.' },
+  { href: '/tell-me-about-yourself/', title: '“Tell me about yourself”', blurb: 'A present, past, future structure with examples for different situations.' },
+  { href: '/interview-prep-checklist/', title: 'Interview prep checklist', blurb: 'A printable checklist from a week before to after the interview.' },
+  { href: '/elevator-pitch-examples/', title: 'Elevator pitch examples', blurb: 'A four-part formula and examples that each take under 30 seconds to say.' },
+];
+
+const roles = [
+  { href: '/questions-to-ask-in-a-nursing-interview/', title: 'Nursing interviews', blurb: 'Patient safety, prioritization and the questions to ask about the unit.' },
+  { href: '/questions-to-ask-in-a-teacher-interview/', title: 'Teacher interviews', blurb: 'Classroom management, differentiation and what to ask about the school.' },
+  { href: '/software-engineer-interview-questions-to-ask/', title: 'Software engineer interviews', blurb: 'What to ask about the team, stack, reviews and on-call — and what you will be asked.' },
+  { href: '/customer-service-interview-questions-to-ask/', title: 'Customer service interviews', blurb: 'De-escalation, difficult customers and what to ask about support and training.' },
+  { href: '/manager-interview-questions-to-ask/', title: 'Manager interviews', blurb: 'Leadership style, hard conversations and what to ask about the team you inherit.' },
+];
+---
+<Base title={page.title} description={page.description} path="/" jsonLd={[webSiteJsonLd(), faqJsonLd(faqs)]}>
+  <h1>Interview prep that never leaves your device.</h1>
+  <p class="lede">
+    Prepare for your next interview with free guides and question libraries — then build a prep pack with your
+    stories, your answers and your questions to ask. It all happens in your browser: no account, nothing
+    uploaded, no trace of your job search on anyone's server.
+  </p>
+  <p>
+    <a class="cta" href="/interview-prep/">Open the free Prep Pack builder</a>
+    <a class="cta secondary" href="/how-to-prepare-for-an-interview/">Read the guide</a>
+  </p>
+
+  <h2>How it works</h2>
+  <div class="grid">
+    <div class="card">
+      <h3>1. Learn the questions</h3>
+      <p>Each guide explains why interviewers ask what they ask, how to structure a strong answer, and the mistakes that weaken one — with examples to adapt, not scripts to memorize.</p>
+    </div>
+    <div class="card">
+      <h3>2. Build your prep pack</h3>
+      <p>Pick your role and the builder pre-fills the likely questions. Add your STAR stories once, attach them to questions, draft your pitch, and paste in your research.</p>
+    </div>
+    <div class="card">
+      <h3>3. Walk in ready</h3>
+      <p>Export a one-page brief to read the morning of, print the checklist, add the interview to your calendar — and optionally hand the pack to your own AI for a mock interview.</p>
+    </div>
+  </div>
+
+  <h2>Start with the guides</h2>
+  <div class="grid">
+    {guides.map((g) => (
+      <div class="card">
+        <h3><a href={g.href}>{g.title}</a></h3>
+        <p>{g.blurb}</p>
+      </div>
+    ))}
+  </div>
+
+  <h2>Prep by role</h2>
+  <div class="grid">
+    {roles.map((r) => (
+      <div class="card">
+        <h3><a href={r.href}>{r.title}</a></h3>
+        <p>{r.blurb}</p>
+      </div>
+    ))}
+  </div>
+
+  <h2>Private by design</h2>
+  <p>
+    Most interview tools want an account, your resume and your email. B4WeMeet wants none of it. Your prep is
+    stored in your browser's local storage and nowhere else — which makes it a safe place to prepare even when
+    your current employer has no idea you're looking. See <a href="/privacy/">how privacy works here</a>.
+  </p>
+
+  <Faq faqs={faqs} />
+</Base>
