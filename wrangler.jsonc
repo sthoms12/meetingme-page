@@ -18,6 +18,12 @@
 			"new_sqlite_classes": [
 				"GlobalDurableObject"
 			]
+		},
+		{
+			"tag": "v2",
+			"deleted_classes": [
+				"GlobalDurableObject"
+			]
 		}
 	]
 }
