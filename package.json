@@ -13,7 +13,7 @@
     "deploy": "bun run build && wrangler deploy"
   },
   "dependencies": {
-    "astro": "^5.13.0"
+    "astro": "^6.4.6"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260702.1",
@@ -22,5 +22,8 @@
     "bun-types": "^1.4.4",
     "typescript": "~5.8.3",
     "wrangler": "^4.0.0"
+  },
+  "overrides": {
+    "sharp": "^0.35.0"
   }
 }
