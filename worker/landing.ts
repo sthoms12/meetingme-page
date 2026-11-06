@@ -240,6 +240,10 @@ export const buildLandingDocument = (request: Request) => {
           <p>Pages log anonymous view counts. They do not collect visitor email addresses or use cross-site tracking cookies.</p>
         </details>
         <details>
+          <summary>What analytics does this site use?</summary>
+          <p>This site uses Dataflare, an analytics tool we self-host in our own Cloudflare account. It is cookieless — it sets no cookies and stores nothing on your device. It records pageviews, the referring site, and basic device and browser information so we can understand which content is useful. Analytics data is kept for 90 days and is never sold or shared.</p>
+        </details>
+        <details>
           <summary>How secure is the infrastructure?</summary>
           <p>The app runs on Cloudflare's network, with the platform's DDoS protection in front of every request.</p>
         </details>
@@ -312,6 +316,10 @@ Editing requires the private management link created with the page. Public visit
 ### What about visitor privacy?
 
 Pages log anonymous view counts. They do not collect visitor email addresses or use cross-site tracking cookies.
+
+### What analytics does this site use?
+
+This site uses Dataflare, an analytics tool we self-host in our own Cloudflare account. It is cookieless — it sets no cookies and stores nothing on your device. It records pageviews, the referring site, and basic device and browser information so we can understand which content is useful. Analytics data is kept for 90 days and is never sold or shared.
 
 ### How secure is the infrastructure?
 
