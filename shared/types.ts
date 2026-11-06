@@ -8,6 +8,23 @@ export interface ViewLog {
 export interface VersionSnapshot {
   timestamp: string;
   label: string;
+  /**
+   * Full public profile as of the snapshot. The identity/link fields are
+   * optional only because snapshots written before the full-profile change
+   * captured variants alone; restoring one of those legacy snapshots leaves
+   * the current identity fields untouched. Credentials are never snapshotted.
+   */
+  fullName?: string;
+  jobTitle?: string;
+  company?: string;
+  profilePhoto?: string;
+  linkedinUrl?: string;
+  websiteUrl?: string;
+  videoUrl?: string;
+  twitterUrl?: string;
+  githubUrl?: string;
+  phone?: string;
+  primaryVariantId?: string;
   variants: ProfileVariant[];
 }
 
@@ -40,6 +57,8 @@ export interface Profile {
   analytics?: ViewLog[];
   history?: VersionSnapshot[];
   canManage?: boolean;
+  /** Manager-only responses: whether a visitor password is currently set. The hash itself is never exposed. */
+  hasVisitorPassword?: boolean;
 }
 
 export type ProfileFormData = {

@@ -1,6 +1,7 @@
 import { DurableObject } from "cloudflare:workers";
-import type { DemoItem, ViewLog, VersionSnapshot } from "@shared/types";
+import type { DemoItem, ViewLog } from "@shared/types";
 import { MOCK_ITEMS } from "@shared/mock-data";
+import { applySnapshot, buildSnapshot } from "./snapshots";
 import type {
   ProfileAnalytics,
   ProfileHistory,
@@ -91,14 +92,8 @@ export class GlobalDurableObject extends DurableObject {
     const profile = await this.getProfile();
     if (!profile) return;
 
-    const snapshot: VersionSnapshot = {
-      timestamp: new Date().toISOString(),
-      label,
-      variants: JSON.parse(JSON.stringify(profile.variants)),
-    };
-
     const history = profile.history || [];
-    const updatedHistory: ProfileHistory = [snapshot, ...history].slice(0, 10);
+    const updatedHistory: ProfileHistory = [buildSnapshot(profile, label), ...history].slice(0, 10);
 
     await this.ctx.storage.put(PROFILE_KEY, { ...profile, history: updatedHistory });
   }
@@ -110,10 +105,16 @@ export class GlobalDurableObject extends DurableObject {
     const snapshot = profile.history.find((value) => value.timestamp === timestamp);
     if (!snapshot) return null;
 
+    // Save the current state first, so a restore is itself undoable.
+    const preRestore = buildSnapshot(
+      profile,
+      `Before restore ${new Date().toLocaleDateString("en-US", { dateStyle: "medium" })}`,
+    );
+    const history: ProfileHistory = [preRestore, ...profile.history].slice(0, 10);
+
     const updatedProfile: StoredProfile = {
-      ...profile,
-      variants: snapshot.variants,
-      primaryVariantId: snapshot.variants[0]?.id || profile.primaryVariantId,
+      ...applySnapshot(profile, snapshot),
+      history,
     };
 
     await this.ctx.storage.put(PROFILE_KEY, updatedProfile);

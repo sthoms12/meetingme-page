@@ -16,6 +16,8 @@ import { cn } from '@/lib/utils';
 import { setPageSeo } from '@/lib/seo';
 import { buildManagementUrl } from '@/lib/management-link';
 import { getTemplatePrefill } from '@shared/template-catalog';
+import { processPhotoUpload } from '@/lib/photo-upload';
+import { CREATE_DRAFT_KEY, parseCreateDraft, serializeCreateDraft } from '@/lib/draft';
 
 const xHandleOrUrlSchema = z.string().trim().refine((value) => {
   if (!value) return true;
@@ -64,14 +66,16 @@ export function HomePage() {
   const [showMobileActions, setShowMobileActions] = useState(false);
   const [searchParams] = useSearchParams();
   const [templatePrefill] = useState(() => getTemplatePrefill(searchParams.get('template')));
+  const [draftRestored, setDraftRestored] = useState(false);
+  const initialFormValues: FormValues = {
+    fullName: '', jobTitle: '', company: '', bio: '', focus: '', topics: '', meetingNote: '', profilePhoto: '',
+    linkedinUrl: '', websiteUrl: '', videoUrl: '', twitterUrl: '', githubUrl: '', phone: '',
+    customSlug: '', password: '', variantName: 'Default', variantSlug: 'intro',
+    ...templatePrefill,
+  };
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      fullName: '', jobTitle: '', company: '', bio: '', focus: '', topics: '', meetingNote: '', profilePhoto: '',
-      linkedinUrl: '', websiteUrl: '', videoUrl: '', twitterUrl: '', githubUrl: '', phone: '',
-      customSlug: '', password: '', variantName: 'Default', variantSlug: 'intro',
-      ...templatePrefill,
-    },
+    defaultValues: initialFormValues,
   });
   const watchAll = form.watch();
   const customSlug = watchAll.customSlug;
@@ -107,6 +111,52 @@ export function HomePage() {
   useEffect(() => {
     if (templatePrefill) toast.info('We filled in your focus, topics and pre-meeting note from the template. Edit anything you like.');
   }, [templatePrefill]);
+  // Draft persistence: restore a saved draft on mount (a template link the
+  // user explicitly clicked wins over an older draft), then debounce-save
+  // non-sensitive fields as they type. The password and photo are never
+  // written to storage — see src/lib/draft.ts.
+  useEffect(() => {
+    if (searchParams.get('template')) return;
+    try {
+      const draft = parseCreateDraft(window.localStorage.getItem(CREATE_DRAFT_KEY));
+      if (draft) {
+        form.reset({ ...initialFormValues, ...draft });
+        setDraftRestored(true);
+      }
+    } catch { /* storage unavailable — drafting is best-effort */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => {
+    if (publishedData) return;
+    let timer = 0;
+    const subscription = form.watch((values) => {
+      if (!form.formState.isDirty) return;
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        try {
+          window.localStorage.setItem(CREATE_DRAFT_KEY, serializeCreateDraft(values as Record<string, unknown>));
+        } catch { /* storage unavailable — drafting is best-effort */ }
+      }, 500);
+    });
+    return () => {
+      window.clearTimeout(timer);
+      subscription.unsubscribe();
+    };
+  }, [form, publishedData]);
+  // Warn before leaving with unsaved work.
+  useEffect(() => {
+    const handler = (event: BeforeUnloadEvent) => {
+      if (form.formState.isDirty && !publishedData) event.preventDefault();
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [form, publishedData]);
+  const discardDraft = () => {
+    try { window.localStorage.removeItem(CREATE_DRAFT_KEY); } catch { /* ignore */ }
+    form.reset(initialFormValues);
+    setDraftRestored(false);
+    toast.info('Draft discarded');
+  };
   useEffect(() => {
     const media = window.matchMedia('(min-width: 1024px)');
     const update = () => setShowDesktopPreview(media.matches);
@@ -148,19 +198,16 @@ export function HomePage() {
   }, [customSlug]);
 
   const normalizeSlugInput = (value: string) => value.toLowerCase().replace(/\s+/g, '-');
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 1024 * 1024) {
-        toast.error("Image too large (max 1MB)");
-        return;
-      }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        form.setValue('profilePhoto', reader.result as string);
-        toast.success("Photo uploaded");
-      };
-      reader.readAsDataURL(file);
+    e.target.value = '';
+    if (!file) return;
+    try {
+      const dataUrl = await processPhotoUpload(file);
+      form.setValue('profilePhoto', dataUrl, { shouldDirty: true });
+      toast.success("Photo uploaded");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Could not read that image');
     }
   };
   const onSubmit = async (values: FormValues) => {
@@ -179,6 +226,8 @@ export function HomePage() {
       if (result.success) {
         const slug = result.data.slug;
         const editToken = result.data.editToken;
+        try { window.localStorage.removeItem(CREATE_DRAFT_KEY); } catch { /* ignore */ }
+        setDraftRestored(false);
         setPublishedData({ slug, editToken });
         try { (window as unknown as { glass?: { capture: (event: string) => void } }).glass?.capture('page_created'); } catch { /* analytics is best-effort */ }
         const url = `${window.location.origin}/${slug}`;
@@ -361,6 +410,12 @@ export function HomePage() {
                       <Send size={20} />
                     </div>
                   </div>
+                  {draftRestored && (
+                    <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/25 bg-primary/5 px-4 py-3 text-sm">
+                      <span><span className="font-bold">Draft restored</span> from your last visit. Your password and photo were not saved — re-add them if you set them.</span>
+                      <Button type="button" variant="outline" size="sm" className="rounded-lg font-bold" onClick={discardDraft}>Discard draft</Button>
+                    </div>
+                  )}
                   {validationSummary.length > 0 && (
                     <div className="rounded-2xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
                       <div className="font-bold">Finish these fields before creating your page:</div>

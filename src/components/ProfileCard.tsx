@@ -5,7 +5,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { downloadMeetingICS } from '@/lib/calendar-utils';
+import { downloadIntroCardICS } from '@/lib/calendar-utils';
 import { toast } from 'sonner';
 
 function toTwitterHref(value?: string) {
@@ -63,14 +63,14 @@ export function ProfileCard({ data, className, slug }: ProfileCardProps) {
     : (typeof topics === 'string' ? topics.split(',').map(t => t.trim()).filter(Boolean) : []);
   const handleCalendarExport = (e: React.MouseEvent) => {
     e.preventDefault();
-    downloadMeetingICS({
+    downloadIntroCardICS({
       fullName: displayFullName,
       jobTitle: displayJobTitle,
       company: displayCompany,
       bio: displayBio,
       url: slug ? `${window.location.origin}/${slug}` : window.location.href
     });
-    toast.success('Meeting invite downloaded');
+    toast.success('Intro card downloaded — it adds a note to your calendar/tasks, not a meeting');
   };
   const twitterHref = toTwitterHref(twitterUrl);
   const actions = [
@@ -158,7 +158,7 @@ export function ProfileCard({ data, className, slug }: ProfileCardProps) {
               className="w-full justify-start gap-4 h-[52px] rounded-xl transition-all active:scale-[0.99] bg-primary hover:bg-primary/90 text-primary-foreground font-bold"
             >
               <div className="p-2 rounded-md bg-white/15"><Calendar className="size-5 text-primary-foreground" /></div>
-              <span className="text-[15px]">Add to Calendar</span>
+              <span className="text-[15px]">Download Intro Card (.ics)</span>
             </Button>
             {actions.map(({ href, icon: Icon, label, tone }) => (
               <Button key={`${label}-${href}`} asChild variant="outline" className="w-full justify-start gap-4 h-[52px] rounded-xl transition-all active:scale-[0.99] group bg-card">

@@ -11,7 +11,7 @@ import { ChevronLeft, Info, Lock, KeyRound, ArrowRight, Share2, Calendar, Sparkl
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { CopyBlurbGroup } from '@/components/CopyBlurbGroup';
 import { toast } from 'sonner';
-import { downloadMeetingICS } from '@/lib/calendar-utils';
+import { downloadIntroCardICS } from '@/lib/calendar-utils';
 import { setPageSeo } from '@/lib/seo';
 export function ProfilePage() {
   const { slug, variant: variantSlug } = useParams<{ slug: string; variant?: string }>();
@@ -101,14 +101,14 @@ export function ProfilePage() {
   };
   const handleCalendarExport = () => {
     if (!displayData) return;
-    downloadMeetingICS({
+    downloadIntroCardICS({
       fullName: displayData.fullName,
       jobTitle: displayData.jobTitle,
       company: displayData.company,
       bio: displayData.activeVariant?.bio || '',
       url: window.location.href
     });
-    toast.success('Calendar invite downloaded');
+    toast.success('Intro card downloaded — a note for your calendar/tasks, not a meeting');
   };
   if (isLoading) return (
     <div className="min-h-screen bg-background">
@@ -157,7 +157,7 @@ export function ProfilePage() {
              <ProfileCard data={{ ...displayData, bio: displayData.activeVariant?.bio }} slug={slug} className="shadow-none border-none" />
              <div className="flex gap-4 mt-6">
                <Button variant="ghost" size="sm" onClick={handleCalendarExport} className="tap-link text-[10px] uppercase font-black tracking-widest text-muted-foreground">
-                 <Calendar size={12} className="mr-2" /> Calendar
+                 <Calendar size={12} className="mr-2" /> Intro Card
                </Button>
                <Button variant="ghost" size="sm" onClick={handleShare} className="tap-link text-[10px] uppercase font-black tracking-widest text-muted-foreground">
                  <Share2 size={12} className="mr-2" /> Share
@@ -210,7 +210,7 @@ export function ProfilePage() {
               <div className="relative group/card">
                  <ProfileCard data={{ ...displayData, bio: displayData.activeVariant?.bio }} slug={slug} />
                  <div className="absolute -right-20 top-0 hidden lg:flex flex-col gap-3 no-print">
-                   <Button variant="outline" size="icon" onClick={handleCalendarExport} className="rounded-2xl size-14 border-2 shadow-soft bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 transition-all hover:scale-110 active:scale-95" title="Export to Calendar">
+                   <Button variant="outline" size="icon" onClick={handleCalendarExport} className="rounded-2xl size-14 border-2 shadow-soft bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 transition-all hover:scale-110 active:scale-95" title="Download intro card (.ics)">
                       <Calendar className="size-6 text-primary" />
                    </Button>
                    <Button variant="outline" size="icon" onClick={handleShare} className="rounded-2xl size-14 border-2 shadow-soft bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 transition-all hover:scale-110 active:scale-95" title="Share Profile">
@@ -229,7 +229,7 @@ export function ProfilePage() {
               </div>
               <div className="mt-12 flex lg:hidden justify-center gap-3 no-print flex-wrap">
                 <Button onClick={handleCalendarExport} className="rounded-2xl h-14 px-6 gap-3 font-bold shadow-soft">
-                  <Calendar size={20} /> Add to Calendar
+                  <Calendar size={20} /> Intro Card (.ics)
                 </Button>
                 <Button variant="outline" onClick={handleShare} className="rounded-2xl h-14 px-6 gap-3 font-bold">
                   <Share2 size={20} /> Share

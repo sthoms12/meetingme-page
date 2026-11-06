@@ -542,7 +542,13 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
 
     return c.json({
       success: true,
-      data: { ...toPublicProfile(managerState.profile), canManage: true },
+      data: {
+        ...toPublicProfile(managerState.profile),
+        canManage: true,
+        // The dashboard needs to know a visitor password exists so it can
+        // offer change/remove; the hash itself never leaves the server.
+        hasVisitorPassword: Boolean(managerState.profile.passwordHash),
+      },
     });
   });
 
@@ -758,7 +764,9 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     try {
       const body = parsedBody.data;
       const photoValue = await resolvePhotoInput(parsedSlug.data, body.profilePhoto, profileStub);
-      await profileStub.captureSnapshot(`Update ${new Date().toLocaleTimeString()}`);
+      await profileStub.captureSnapshot(
+        `Update ${new Date().toLocaleDateString("en-US", { dateStyle: "medium" })}, ${new Date().toLocaleTimeString("en-US", { timeStyle: "short" })}`,
+      );
 
       const updates: Partial<StoredProfile> = {
         fullName: body.fullName,
