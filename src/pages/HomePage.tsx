@@ -180,6 +180,7 @@ export function HomePage() {
         const slug = result.data.slug;
         const editToken = result.data.editToken;
         setPublishedData({ slug, editToken });
+        try { (window as unknown as { glass?: { capture: (event: string) => void } }).glass?.capture('page_created'); } catch { /* analytics is best-effort */ }
         const url = `${window.location.origin}/${slug}`;
         const { generateQrCodeDataUrl } = await import('@/lib/qrcode');
         const qr = await generateQrCodeDataUrl(url);
