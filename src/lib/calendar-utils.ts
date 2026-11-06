@@ -13,65 +13,70 @@ export function escapeICSText(value: string) {
     .replace(/\r\n|\r|\n/g, '\\n');
 }
 
-export function buildMeetingICS(profile: {
+/** Strip anything that could break out of a single ICS content line. */
+const sanitizeICSLineValue = (value: string) => value.replace(/[\r\n]+/g, '');
+
+export interface IntroCardProfile {
   fullName: string;
   jobTitle: string;
   company: string;
   bio: string;
   url: string;
-}) {
+}
+
+/**
+ * Build an "intro card" ICS for a profile.
+ *
+ * This is deliberately NOT a meeting event: B4WeMeet does not know when the
+ * recipient's actual meeting is, so inventing a start time (the previous
+ * behaviour — now + 1 hour for 30 minutes) put a fake event on the
+ * recipient's calendar. Instead the file carries a single VTODO — the form
+ * calendar/task apps (Apple Reminders, Google Tasks, Outlook To Do,
+ * Thunderbird) accept for a dateless note — holding the intro details and
+ * the profile link, with no DTSTART/DTEND anywhere in the document.
+ */
+export function buildIntroCardICS(profile: IntroCardProfile) {
   const { fullName, jobTitle, company, bio, url } = profile;
-  // Create dynamic dates for the placeholder event
-  const now = new Date();
-  const start = new Date(now.getTime() + 1000 * 60 * 60); // 1 hour from now
-  const end = new Date(start.getTime() + 1000 * 60 * 30); // 30 mins duration
-  const formatICSDate = (date: Date) =>
-    date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
   const escapedFullName = escapeICSText(fullName);
   const escapedUrl = escapeICSText(url);
-  // Format ICS content
+  const dtStamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+  const uid = `b4wemeet-intro-${sanitizeICSLineValue(fullName).replace(/\s+/g, '-').toLowerCase()}@b4wemeet.app`;
   const icsLines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
     'PRODID:-//B4WeMeet//Professional Intro//EN',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
-    'BEGIN:VEVENT',
-    `SUMMARY:Introduction: ${escapedFullName} (${escapeICSText(jobTitle)} @ ${escapeICSText(company)})`,
-    `DTSTART:${formatICSDate(start)}`,
-    `DTEND:${formatICSDate(end)}`,
+    'BEGIN:VTODO',
+    `UID:${uid}`,
+    `DTSTAMP:${dtStamp}`,
+    `SUMMARY:Intro card: ${escapedFullName} (${escapeICSText(jobTitle)} @ ${escapeICSText(company)})`,
     `DESCRIPTION:Meeting preparation for ${escapedFullName}.\\n\\nProfessional Bio: ${escapeICSText(bio)}\\n\\nView Profile: ${escapedUrl}`,
     `LOCATION:${escapedUrl}`,
-    'TRANSP:TRANSPARENT', // Don't block time as busy
-    'STATUS:CONFIRMED',
-    'SEQUENCE:0',
-    'BEGIN:VALARM',
-    'TRIGGER:-PT15M',
-    'ACTION:DISPLAY',
-    'DESCRIPTION:B4WeMeet Intro Reminder',
-    'END:VALARM',
-    'END:VEVENT',
+    `URL:${sanitizeICSLineValue(url)}`,
+    'STATUS:NEEDS-ACTION',
+    'END:VTODO',
     'END:VCALENDAR'
   ];
   return icsLines.join('\r\n');
 }
 
-export function downloadMeetingICS(profile: {
-  fullName: string;
-  jobTitle: string;
-  company: string;
-  bio: string;
-  url: string;
-}) {
+/** @deprecated Use buildIntroCardICS — the export is an intro card, not a meeting event. */
+export const buildMeetingICS = buildIntroCardICS;
+
+export function downloadIntroCardICS(profile: IntroCardProfile) {
   const { fullName } = profile;
-  const icsString = buildMeetingICS(profile);
+  const icsString = buildIntroCardICS(profile);
   const blob = new Blob([icsString], { type: 'text/calendar;charset=utf-8' });
   const downloadUrl = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = downloadUrl;
-  link.setAttribute('download', `${fullName.replace(/\s+/g, '_')}_Introduction.ics`);
+  link.setAttribute('download', `${fullName.replace(/\s+/g, '_')}_Intro_Card.ics`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(downloadUrl);
 }
+
+/** @deprecated Use downloadIntroCardICS. */
+export const downloadMeetingICS = downloadIntroCardICS;

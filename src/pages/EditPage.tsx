@@ -24,6 +24,7 @@ import { cn } from '@/lib/utils';
 import type { Profile, ApiResponse } from '@shared/types';
 import { setPageSeo } from '@/lib/seo';
 import { consumeManagementToken } from '@/lib/management-link';
+import { processPhotoUpload } from '@/lib/photo-upload';
 
 const xHandleOrUrlSchema = z.string().trim().refine((value) => {
   if (!value) return true;
@@ -42,6 +43,8 @@ const formSchema = z.object({
   twitterUrl: xHandleOrUrlSchema.optional().or(z.literal('')),
   githubUrl: z.string().url().optional().or(z.literal('')),
   phone: z.string().optional().or(z.literal('')),
+  password: z.string().min(8, 'Min 8 characters').max(128).optional().or(z.literal('')),
+  removePassword: z.boolean().optional(),
   variants: z.array(z.object({
     id: z.string(),
     name: z.string().min(1),
@@ -63,6 +66,7 @@ export function EditPage() {
   const [activeVariantIndex, setActiveVariantIndex] = useState(0);
   const [sessionResolved, setSessionResolved] = useState(false);
   const [hasSessionAccess, setHasSessionAccess] = useState(true);
+  const [hasVisitorPassword, setHasVisitorPassword] = useState(false);
   useEffect(() => {
     if (!slug) return;
     setPageSeo({
@@ -177,6 +181,7 @@ export function EditPage() {
     defaultValues: {
       fullName: '', jobTitle: '', company: '', profilePhoto: '',
       linkedinUrl: '', websiteUrl: '', videoUrl: '', twitterUrl: '', githubUrl: '', phone: '',
+      password: '', removePassword: false,
       variants: [{ id: 'initial', name: 'Default', variantSlug: 'intro', bio: '', focus: '', topics: '', meetingNote: '', views: 0 }],
       primaryVariantId: 'initial'
     }
@@ -194,6 +199,8 @@ export function EditPage() {
         twitterUrl: profile.twitterUrl || '',
         githubUrl: profile.githubUrl || '',
         phone: profile.phone || '',
+        password: '',
+        removePassword: false,
         variants: profile.variants.map(v => ({
           id: v.id,
           name: v.name,
@@ -208,8 +215,36 @@ export function EditPage() {
       });
     }
   }, [profile, form]);
+  useEffect(() => {
+    if (profile) setHasVisitorPassword(Boolean(profile.hasVisitorPassword));
+  }, [profile]);
+  // Warn before leaving with unsaved changes.
+  useEffect(() => {
+    const handler = (event: BeforeUnloadEvent) => {
+      if (form.formState.isDirty) event.preventDefault();
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [form]);
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    try {
+      const dataUrl = await processPhotoUpload(file);
+      form.setValue('profilePhoto', dataUrl, { shouldDirty: true });
+      toast.success('Photo uploaded — save to apply');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Could not read that image');
+    }
+  };
   const handleRestore = async (timestamp: string) => {
-    if (!confirm('Restore this version history? Current variant details will be moved to history.')) return;
+    const snapshot = profile?.history?.find((entry) => entry.timestamp === timestamp);
+    const when = new Date(timestamp).toLocaleString();
+    const summary = snapshot?.fullName
+      ? `${snapshot.fullName} — ${snapshot.jobTitle} @ ${snapshot.company}, ${snapshot.variants.length} audience version(s)`
+      : `${snapshot?.variants.length ?? 0} audience version(s) (older snapshot: identity and links stay as they are now)`;
+    if (!confirm(`Restore the version from ${when}?\n\nThis restores: ${summary}, including links and photo. Your current state is saved to history first, so this restore can itself be undone.`)) return;
     try {
       const res = await fetch(`/api/profiles/${slug}/history/restore`, {
         method: 'POST',
@@ -226,8 +261,13 @@ export function EditPage() {
     if (!slug) return;
     setIsUpdating(true);
     try {
+      const { password, removePassword, ...rest } = values;
       const payload = {
-        ...values,
+        ...rest,
+        // Only send password fields when the owner actually acted on them:
+        // an empty password field means "keep the current password".
+        ...(password ? { password } : {}),
+        ...(removePassword ? { removePassword: true } : {}),
         variants: values.variants.map(v => ({
           ...v,
           topics: v.topics ? v.topics.split(',').map(t => t.trim()).filter(Boolean) : []
@@ -241,6 +281,9 @@ export function EditPage() {
       const result = await res.json();
       if (result.success) {
         toast.success('Settings updated');
+        if (removePassword) setHasVisitorPassword(false);
+        else if (password) setHasVisitorPassword(true);
+        form.reset({ ...values, password: '', removePassword: false });
         queryClient.invalidateQueries({ queryKey: ['profile-manage', slug] });
       } else { toast.error(result.error || 'Update failed'); }
     } catch { toast.error('Save failed'); }
@@ -410,16 +453,84 @@ export function EditPage() {
                           <FormItem><FormLabel className="text-sm font-bold">Role</FormLabel><FormControl><Input className="bg-secondary/40 h-14 rounded-2xl border-none" {...field} /></FormControl></FormItem>
                         )} />
                       </div>
+                      <FormField control={form.control} name="company" render={({ field }) => (
+                        <FormItem><FormLabel className="text-sm font-bold">Company / Organization</FormLabel><FormControl><Input className="bg-secondary/40 h-14 rounded-2xl border-none" {...field} /></FormControl><FormMessage /></FormItem>
+                      )} />
+                      <div className="space-y-3">
+                        <span className="text-xs font-black uppercase tracking-widest text-muted-foreground/60 flex items-center gap-2"><ImageIcon size={12} /> Profile Photo</span>
+                        <div className="flex items-center gap-4">
+                          {watchAll.profilePhoto ? (
+                            <div className="size-14 rounded-2xl border bg-muted overflow-hidden shadow-sm shrink-0">
+                              <img src={watchAll.profilePhoto} alt="Profile photo preview" className="w-full h-full object-cover" />
+                            </div>
+                          ) : (
+                            <div className="size-14 rounded-2xl border border-dashed bg-muted/40 flex items-center justify-center shrink-0"><ImageIcon size={20} className="text-muted-foreground" /></div>
+                          )}
+                          <label className="relative flex h-12 cursor-pointer items-center overflow-hidden rounded-xl border-2 border-dashed bg-background/80 px-5 transition-colors hover:border-primary/60">
+                            <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={handlePhotoUpload} className="absolute inset-0 cursor-pointer opacity-0" aria-label="Upload profile photo" />
+                            <ImageIcon size={18} className="mr-2 text-primary" />
+                            <span className="font-bold">{watchAll.profilePhoto ? 'Change Photo' : 'Upload Photo'}</span>
+                          </label>
+                          {watchAll.profilePhoto && (
+                            <Button type="button" variant="ghost" size="sm" className="text-destructive hover:bg-destructive/5 uppercase font-black text-[10px] tracking-widest" onClick={() => form.setValue('profilePhoto', '', { shouldDirty: true })}>
+                              <Trash2 size={16} className="mr-2" /> Remove
+                            </Button>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-muted-foreground">PNG, JPEG, WebP or GIF, up to 1MB. Changes apply when you save.</p>
+                      </div>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <FormField control={form.control} name="linkedinUrl" render={({ field }) => (
-                          <FormItem><FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">LinkedIn</FormLabel><div className="relative"><Linkedin className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" /><FormControl><Input className="bg-secondary/40 h-12 pl-10 rounded-xl border-none" {...field} /></FormControl></div></FormItem>
+                          <FormItem><FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">LinkedIn</FormLabel><div className="relative"><Linkedin className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" /><FormControl><Input className="bg-secondary/40 h-12 pl-10 rounded-xl border-none" {...field} /></FormControl></div><FormMessage /></FormItem>
                         )} />
                         <FormField control={form.control} name="websiteUrl" render={({ field }) => (
-                          <FormItem><FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Portfolio</FormLabel><div className="relative"><Globe className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" /><FormControl><Input className="bg-secondary/40 h-12 pl-10 rounded-xl border-none" {...field} /></FormControl></div></FormItem>
+                          <FormItem><FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Portfolio</FormLabel><div className="relative"><Globe className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" /><FormControl><Input className="bg-secondary/40 h-12 pl-10 rounded-xl border-none" {...field} /></FormControl></div><FormMessage /></FormItem>
                         )} />
                         <FormField control={form.control} name="phone" render={({ field }) => (
-                          <FormItem><FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Phone</FormLabel><div className="relative"><Phone className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" /><FormControl><Input className="bg-secondary/40 h-12 pl-10 rounded-xl border-none" {...field} /></FormControl></div></FormItem>
+                          <FormItem><FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Phone</FormLabel><div className="relative"><Phone className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" /><FormControl><Input className="bg-secondary/40 h-12 pl-10 rounded-xl border-none" {...field} /></FormControl></div><FormMessage /></FormItem>
                         )} />
+                        <FormField control={form.control} name="videoUrl" render={({ field }) => (
+                          <FormItem><FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Video Intro</FormLabel><div className="relative"><Video className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" /><FormControl><Input className="bg-secondary/40 h-12 pl-10 rounded-xl border-none" placeholder="Loom / YouTube link" {...field} /></FormControl></div><FormMessage /></FormItem>
+                        )} />
+                        <FormField control={form.control} name="twitterUrl" render={({ field }) => (
+                          <FormItem><FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">X / Twitter</FormLabel><div className="relative"><Twitter className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" /><FormControl><Input className="bg-secondary/40 h-12 pl-10 rounded-xl border-none" placeholder="@handle or https://x.com/handle" {...field} /></FormControl></div><FormMessage /></FormItem>
+                        )} />
+                        <FormField control={form.control} name="githubUrl" render={({ field }) => (
+                          <FormItem><FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">GitHub</FormLabel><div className="relative"><Github className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" /><FormControl><Input className="bg-secondary/40 h-12 pl-10 rounded-xl border-none" placeholder="https://github.com/..." {...field} /></FormControl></div><FormMessage /></FormItem>
+                        )} />
+                      </div>
+                      <div className="space-y-6 pt-10 border-t border-dashed">
+                        <div className="flex items-center gap-3"><Lock className="text-primary size-5" /><span className="text-sm font-black uppercase tracking-[0.2em]">Privacy</span></div>
+                        <p className="text-sm text-muted-foreground leading-relaxed">
+                          {hasVisitorPassword
+                            ? 'A visitor password is currently set — visitors must enter it to view your page.'
+                            : 'No visitor password is set — anyone with your link can view your page.'}
+                        </p>
+                        {!watchAll.removePassword && (
+                          <FormField control={form.control} name="password" render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">{hasVisitorPassword ? 'Change Visitor Password' : 'Set a Visitor Password'}</FormLabel>
+                              <FormControl><Input type="password" autoComplete="new-password" className="bg-secondary/40 h-12 rounded-xl border-none" placeholder={hasVisitorPassword ? 'Leave blank to keep the current password' : 'Min 8 characters'} {...field} /></FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )} />
+                        )}
+                        {hasVisitorPassword && (
+                          <FormField control={form.control} name="removePassword" render={({ field }) => (
+                            <FormItem className="flex items-center gap-3 space-y-0">
+                              <FormControl>
+                                <input
+                                  type="checkbox"
+                                  className="size-4 accent-red-500"
+                                  checked={Boolean(field.value)}
+                                  onChange={(event) => field.onChange(event.target.checked)}
+                                  aria-label="Remove visitor password"
+                                />
+                              </FormControl>
+                              <FormLabel className="text-sm font-bold text-destructive">Remove visitor password (page becomes public on save)</FormLabel>
+                            </FormItem>
+                          )} />
+                        )}
                       </div>
                     </div>
                   </div>
@@ -453,8 +564,8 @@ export function EditPage() {
              </div>
           </TabsContent>
           <TabsContent value="history" className="m-0 animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <Card className="rounded-[2.5rem] border-none shadow-soft overflow-hidden"><CardHeader><CardTitle>Snapshots</CardTitle></CardHeader><CardContent className="p-0"><div className="divide-y border-t">{profile?.history?.length ? profile.history.map((h, i) => (
-              <div key={i} className="p-6 flex items-center justify-between hover:bg-muted/30 transition-colors"><div><div className="font-bold text-lg">{h.label}</div><div className="text-sm text-muted-foreground">{new Date(h.timestamp).toLocaleString()}</div></div><Button variant="outline" className="rounded-xl px-6" onClick={() => handleRestore(h.timestamp)}>Restore</Button></div>
+            <Card className="rounded-[2.5rem] border-none shadow-soft overflow-hidden"><CardHeader><CardTitle>Snapshots</CardTitle><CardDescription>Restoring brings back the full profile — name, role, company, links, photo and audience versions. Your current state is saved here first, so a restore can be undone.</CardDescription></CardHeader><CardContent className="p-0"><div className="divide-y border-t">{profile?.history?.length ? profile.history.map((h, i) => (
+              <div key={i} className="p-6 flex items-center justify-between gap-6 hover:bg-muted/30 transition-colors"><div><div className="font-bold text-lg">{h.label}</div><div className="text-sm text-muted-foreground">{new Date(h.timestamp).toLocaleString()}</div><div className="text-sm text-muted-foreground mt-1">{h.fullName ? <>{h.fullName} — {h.jobTitle} @ {h.company} · {h.variants.length} version{h.variants.length === 1 ? '' : 's'} · Primary: {h.variants.find(v => v.id === h.primaryVariantId)?.name || 'first version'}</> : <>{h.variants.length} version{h.variants.length === 1 ? '' : 's'} · Older snapshot — identity and links stay as they are now</>}</div></div><Button variant="outline" className="rounded-xl px-6 shrink-0" onClick={() => handleRestore(h.timestamp)}>Restore</Button></div>
             )) : <div className="p-20 text-center text-muted-foreground italic">No history.</div>}</div></CardContent></Card>
           </TabsContent>
           <TabsContent value="access" className="m-0 animate-in fade-in slide-in-from-bottom-2 duration-300">

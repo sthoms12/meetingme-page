@@ -456,8 +456,10 @@ describe("ICS generation escaping", () => {
       url: "https://b4wemeet.app/jane-example",
     });
     const lines = ics.split("\r\n");
-    expect(lines.filter((line) => line === "BEGIN:VALARM")).toHaveLength(1);
-    expect(lines.filter((line) => line.startsWith("TRIGGER:"))).toHaveLength(1);
+    // The intro card carries no VALARM of its own (P0 batch: it is a VTODO
+    // note, not a timed event), so any VALARM would be an injection.
+    expect(lines.filter((line) => line === "BEGIN:VALARM")).toHaveLength(0);
+    expect(lines.filter((line) => line.startsWith("TRIGGER:"))).toHaveLength(0);
     const summary = lines.find((line) => line.startsWith("SUMMARY:"));
     expect(summary).toContain("Jane\\, Doe");
     expect(summary).toContain("Acme\\nBEGIN:VALARM");
