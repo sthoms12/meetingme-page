@@ -12,8 +12,6 @@
 
 import { MARKDOWN_PAGE_PATHS, mirrorPathFor } from './markdown';
 
-export { GlobalDurableObject } from './durable-object';
-
 interface Env {
   ASSETS: Fetcher;
 }
