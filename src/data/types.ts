@@ -36,6 +36,9 @@ export interface RoleDataset {
   slug: string;
   /** Display name, e.g. "Nursing". */
   roleName: string;
+  /** Optional cross-link to a companion page (e.g. a role's questions page
+   *  pointing at its questions-to-ask page, and back). Rendered by RolePage. */
+  companion?: { href: string; heading: string; text: string };
   /** Full page path with trailing slash, e.g. "/questions-to-ask-in-a-nursing-interview/". */
   pagePath: string;
   /** <title> for the page. */
@@ -48,5 +51,73 @@ export interface RoleDataset {
   questions: QuestionEntry[];
   /** Questions the candidate should ask: 5–8. */
   questionsToAsk: AskEntry[];
+  faqs: FaqEntry[];
+}
+
+/** A titled prose section: heading + paragraphs. Used by guide datasets. */
+export interface GuideSection {
+  heading: string;
+  body: string[];
+}
+
+/** A copy-ready email template for the post-interview guides. */
+export interface EmailTemplate {
+  /** Template name, e.g. "The standard thank-you (hiring manager)". */
+  name: string;
+  /** When to use this variant. */
+  when: string;
+  /** A ready-to-adapt subject line. */
+  subject: string;
+  /** Body paragraphs, with [bracketed] placeholders the reader replaces. */
+  body: string[];
+}
+
+export interface EmailGuide {
+  intro: string[];
+  /** Timing, structure and judgment guidance, as prose sections. */
+  sections: GuideSection[];
+  templates: EmailTemplate[];
+  /** Mistakes that weaken the email, one line each with the why. */
+  mistakes: string[];
+  faqs: FaqEntry[];
+}
+
+/** A single interview question treated at full-page depth. */
+export interface PerQuestionGuide {
+  /** The question as interviewers phrase it. */
+  question: string;
+  intro: string[];
+  /** The answer framework: ordered steps with detail. */
+  framework: { step: string; detail: string }[];
+  /** Worked example answers, framed as illustrations to adapt. */
+  examples: { context: string; text: string }[];
+  /** Other phrasings of the same question, and how the answer shifts. */
+  variations: { question: string; note: string }[];
+  pitfalls: string[];
+  faqs: FaqEntry[];
+}
+
+export interface BringCategory {
+  name: string;
+  note?: string;
+  items: { item: string; why: string }[];
+}
+
+export interface BringGuide {
+  intro: string[];
+  categories: BringCategory[];
+  /** Things to leave at home, one line each with the why. */
+  notToBring: string[];
+  /** The virtual-interview version of the list. */
+  virtual: string[];
+  faqs: FaqEntry[];
+}
+
+/** An interview-format guide (phone screen, second round, …): how the
+ *  format works, plus the questions it actually uses. */
+export interface InterviewTypeGuide {
+  intro: string[];
+  sections: GuideSection[];
+  questions: QuestionEntry[];
   faqs: FaqEntry[];
 }

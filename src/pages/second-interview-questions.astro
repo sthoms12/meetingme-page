@@ -1,0 +1,15 @@
+---
+import InterviewTypePage from '../components/InterviewTypePage.astro';
+import { secondInterview } from '../data/interview-types';
+---
+<InterviewTypePage
+  path="/second-interview-questions/"
+  h1="Second interview questions"
+  questionsHeading="Questions second interviews ask"
+  dataset={secondInterview}
+  related={[
+    { href: '/phone-interview-questions/', label: 'Phone interview questions' },
+    { href: '/questions-to-ask-in-an-interview/', label: 'Questions to ask in an interview' },
+    { href: '/interview-thank-you-email/', label: 'Interview thank you email' },
+  ]}
+/>

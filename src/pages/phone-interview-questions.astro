@@ -1,0 +1,15 @@
+---
+import InterviewTypePage from '../components/InterviewTypePage.astro';
+import { phoneInterview } from '../data/interview-types';
+---
+<InterviewTypePage
+  path="/phone-interview-questions/"
+  h1="Phone interview questions"
+  questionsHeading="The questions a phone screen actually asks"
+  dataset={phoneInterview}
+  related={[
+    { href: '/second-interview-questions/', label: 'Second interview questions' },
+    { href: '/how-to-prepare-for-an-interview/', label: 'How to prepare for an interview' },
+    { href: '/what-to-bring-to-an-interview/', label: 'What to bring to an interview' },
+  ]}
+/>

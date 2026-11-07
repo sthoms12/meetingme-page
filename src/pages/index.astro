@@ -18,14 +18,28 @@ const guides = [
   { href: '/tell-me-about-yourself/', title: '“Tell me about yourself”', blurb: 'A present, past, future structure with examples for different situations.' },
   { href: '/interview-prep-checklist/', title: 'Interview prep checklist', blurb: 'A printable checklist from a week before to after the interview.' },
   { href: '/elevator-pitch-examples/', title: 'Elevator pitch examples', blurb: 'A four-part formula and examples that each take under 30 seconds to say.' },
+  { href: '/phone-interview-questions/', title: 'Phone interview questions', blurb: 'How phone screens are scored, the questions recruiters ask, and how to get to the real interview.' },
+  { href: '/what-to-bring-to-an-interview/', title: 'What to bring to an interview', blurb: 'Documents, role-specific extras and day-of logistics — plus what to leave at home.' },
+];
+
+const deepDives = [
+  { href: '/why-should-we-hire-you/', title: '“Why should we hire you?”', blurb: 'The closing argument of the interview — a framework for matching the posting and proving it with evidence.' },
+  { href: '/where-do-you-see-yourself-in-5-years/', title: '“Where do you see yourself in 5 years?”', blurb: 'Sound ambitious without sounding like a flight risk: the retention question behind the question.' },
+];
+
+const after = [
+  { href: '/interview-thank-you-email/', title: 'Interview thank-you email', blurb: 'When to send it, subject lines that get opened, and copy-ready templates for panels and hiring managers.' },
+  { href: '/how-to-follow-up-after-an-interview/', title: 'Following up after an interview', blurb: 'A sane follow-up cadence, templates for every stage of silence, and the graceful close-the-loop note.' },
+  { href: '/second-interview-questions/', title: 'Second interview questions', blurb: 'Round two goes deeper: panels, scenarios, first-90-days plans and consistency checks.' },
 ];
 
 const roles = [
-  { href: '/questions-to-ask-in-a-nursing-interview/', title: 'Nursing interviews', blurb: 'Patient safety, prioritization and the questions to ask about the unit.' },
-  { href: '/questions-to-ask-in-a-teacher-interview/', title: 'Teacher interviews', blurb: 'Classroom management, differentiation and what to ask about the school.' },
+  { href: '/questions-to-ask-in-a-nursing-interview/', title: 'Nursing interviews', blurb: 'Patient safety, prioritization and the questions to ask about the unit.', extra: { href: '/nursing-interview-questions/', label: 'Nursing interview questions and answers' } },
+  { href: '/questions-to-ask-in-a-teacher-interview/', title: 'Teacher interviews', blurb: 'Classroom management, differentiation and what to ask about the school.', extra: { href: '/teacher-interview-questions/', label: 'Teacher interview questions and answers' } },
   { href: '/software-engineer-interview-questions-to-ask/', title: 'Software engineer interviews', blurb: 'What to ask about the team, stack, reviews and on-call — and what you will be asked.' },
   { href: '/customer-service-interview-questions-to-ask/', title: 'Customer service interviews', blurb: 'De-escalation, difficult customers and what to ask about support and training.' },
   { href: '/manager-interview-questions-to-ask/', title: 'Manager interviews', blurb: 'Leadership style, hard conversations and what to ask about the team you inherit.' },
+  { href: '/project-manager-interview-questions/', title: 'Project manager interviews', blurb: 'Scope, schedules, risk and difficult stakeholders — the questions you will be asked and what to ask them.' },
 ];
 ---
 <Base title={page.title} description={page.description} path="/" jsonLd={[webSiteJsonLd(), faqJsonLd(faqs)]}>
@@ -66,12 +80,33 @@ const roles = [
     ))}
   </div>
 
+  <h2>Two questions that deserve their own page</h2>
+  <div class="grid">
+    {deepDives.map((g) => (
+      <div class="card">
+        <h3><a href={g.href}>{g.title}</a></h3>
+        <p>{g.blurb}</p>
+      </div>
+    ))}
+  </div>
+
+  <h2>After the interview</h2>
+  <div class="grid">
+    {after.map((g) => (
+      <div class="card">
+        <h3><a href={g.href}>{g.title}</a></h3>
+        <p>{g.blurb}</p>
+      </div>
+    ))}
+  </div>
+
   <h2>Prep by role</h2>
   <div class="grid">
     {roles.map((r) => (
       <div class="card">
         <h3><a href={r.href}>{r.title}</a></h3>
         <p>{r.blurb}</p>
+        {r.extra && <p><a href={r.extra.href}>{r.extra.label}</a></p>}
       </div>
     ))}
   </div>

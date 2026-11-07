@@ -16,12 +16,28 @@ import {
   starMethod,
   tellMeAboutYourself,
 } from '../data/general';
+import { phoneInterview, secondInterview } from '../data/interview-types';
+import { fiveYears, whyHireYou } from '../data/per-question';
+import { followUpEmail, thankYouEmail } from '../data/post-interview';
 import { customerService } from '../data/role-customer-service';
 import { manager } from '../data/role-manager';
 import { nursing } from '../data/role-nursing';
+import { nursingQuestions } from '../data/role-nursing-questions';
+import { projectManager } from '../data/role-project-manager';
 import { softwareEngineer } from '../data/role-software-engineer';
 import { teacher } from '../data/role-teacher';
-import type { AskEntry, FaqEntry, QuestionEntry, RoleDataset } from '../data/types';
+import { teacherQuestions } from '../data/role-teacher-questions';
+import { whatToBring } from '../data/what-to-bring';
+import type {
+  AskEntry,
+  BringGuide,
+  EmailGuide,
+  FaqEntry,
+  InterviewTypeGuide,
+  PerQuestionGuide,
+  QuestionEntry,
+  RoleDataset,
+} from '../data/types';
 import { INTERVIEW_PREP_TEMPLATE_BODY, LANDING_FAQS, PRIVACY_FAQS } from './copy';
 import { PAGES, SITE_ORIGIN, type PageEntry } from './pages';
 import { TEMPLATE_CONTENT } from './template-content';
@@ -68,7 +84,84 @@ const ROLES: Record<string, RoleDataset> = {
   '/software-engineer-interview-questions-to-ask/': softwareEngineer,
   '/customer-service-interview-questions-to-ask/': customerService,
   '/manager-interview-questions-to-ask/': manager,
+  '/teacher-interview-questions/': teacherQuestions,
+  '/nursing-interview-questions/': nursingQuestions,
+  '/project-manager-interview-questions/': projectManager,
 };
+
+function emailGuideMirror(page: PageEntry, g: EmailGuide) {
+  return `${header(page)}
+${g.intro.join('\n\n')}
+
+${g.sections.map((s) => `## ${s.heading}\n\n${s.body.join('\n\n')}`).join('\n\n')}
+
+## Templates you can copy
+
+${g.templates.map((t) => `### ${t.name}\n\n${t.when}\n\nSubject: ${t.subject}\n\n${t.body.join('\n\n')}`).join('\n\n')}
+
+## Mistakes that weaken the email
+
+${g.mistakes.map((m) => `- ${m}`).join('\n')}
+
+${faqList(g.faqs)}
+`;
+}
+
+function perQuestionMirror(page: PageEntry, g: PerQuestionGuide) {
+  return `${header(page)}
+${g.intro.join('\n\n')}
+
+## The framework
+
+${g.framework.map((s, i) => `### ${i + 1}. ${s.step}\n\n${s.detail}`).join('\n\n')}
+
+## Example answers
+
+${g.examples.map((e) => `### ${e.context}\n\n${e.text}`).join('\n\n')}
+
+## The same question, other phrasings
+
+${g.variations.map((v) => `### ${v.question}\n\n${v.note}`).join('\n\n')}
+
+## What weakens an answer
+
+${g.pitfalls.map((p) => `- ${p}`).join('\n')}
+
+${faqList(g.faqs)}
+`;
+}
+
+function interviewTypeMirror(page: PageEntry, g: InterviewTypeGuide) {
+  return `${header(page)}
+${g.intro.join('\n\n')}
+
+${g.sections.map((s) => `## ${s.heading}\n\n${s.body.join('\n\n')}`).join('\n\n')}
+
+## The questions
+
+${qList(g.questions)}
+
+${faqList(g.faqs)}
+`;
+}
+
+function bringMirror(page: PageEntry, g: BringGuide) {
+  return `${header(page)}
+${g.intro.join('\n\n')}
+
+${g.categories.map((c) => `## ${c.name}\n\n${c.note ? `${c.note}\n\n` : ''}${c.items.map((i) => `### ${i.item}\n\n${i.why}`).join('\n\n')}`).join('\n\n')}
+
+## Leave these at home
+
+${g.notToBring.map((n) => `- ${n}`).join('\n')}
+
+## If your interview is on video
+
+${g.virtual.map((v) => `- ${v}`).join('\n')}
+
+${faqList(g.faqs)}
+`;
+}
 
 export function buildMirrorMarkdown(page: PageEntry): string {
   const role = ROLES[page.path];
@@ -176,6 +269,20 @@ ${faqList(elevatorPitch.faqs)}
 ${INTERVIEW_PREP_TEMPLATE_BODY}
 \`\`\`
 `;
+    case '/interview-thank-you-email/':
+      return emailGuideMirror(page, thankYouEmail);
+    case '/how-to-follow-up-after-an-interview/':
+      return emailGuideMirror(page, followUpEmail);
+    case '/why-should-we-hire-you/':
+      return perQuestionMirror(page, whyHireYou);
+    case '/where-do-you-see-yourself-in-5-years/':
+      return perQuestionMirror(page, fiveYears);
+    case '/phone-interview-questions/':
+      return interviewTypeMirror(page, phoneInterview);
+    case '/second-interview-questions/':
+      return interviewTypeMirror(page, secondInterview);
+    case '/what-to-bring-to-an-interview/':
+      return bringMirror(page, whatToBring);
     case '/privacy/':
       return `${header(page)}
 ## Your prep stays on your device

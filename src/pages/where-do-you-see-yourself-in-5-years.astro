@@ -1,0 +1,13 @@
+---
+import PerQuestionPage from '../components/PerQuestionPage.astro';
+import { fiveYears } from '../data/per-question';
+---
+<PerQuestionPage
+  path="/where-do-you-see-yourself-in-5-years/"
+  dataset={fiveYears}
+  related={[
+    { href: '/why-should-we-hire-you/', label: 'How to answer “Why should we hire you?”' },
+    { href: '/tell-me-about-yourself/', label: 'How to answer the "Tell Me About Yourself" Interview Question' },
+    { href: '/common-interview-questions/', label: 'Common interview questions and how to answer them' },
+  ]}
+/>
