@@ -29,6 +29,14 @@ const page = pageByPath(dataset.pagePath)!;
   </p>
   <AskList items={dataset.questionsToAsk} />
 
+  {dataset.companion && (
+    <div class="card">
+      <h3>{dataset.companion.heading}</h3>
+      <p>{dataset.companion.text}</p>
+      <p><a href={dataset.companion.href}>Read the companion page</a></p>
+    </div>
+  )}
+
   <Faq faqs={dataset.faqs} />
   <Disclaimer />
 </Base>

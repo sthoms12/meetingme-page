@@ -6,6 +6,7 @@ import { behavioralQuestions, commonQuestions, questionsToAsk } from '../data/ge
 import { customerService } from '../data/role-customer-service';
 import { manager } from '../data/role-manager';
 import { nursing } from '../data/role-nursing';
+import { projectManager } from '../data/role-project-manager';
 import { softwareEngineer } from '../data/role-software-engineer';
 import { teacher } from '../data/role-teacher';
 import type { RoleDataset } from '../data/types';
@@ -26,7 +27,7 @@ const toSet = (r: RoleDataset): RoleSet => ({
   asks: r.questionsToAsk.map((q) => q.question),
 });
 
-export const ROLE_SETS: RoleSet[] = [nursing, teacher, softwareEngineer, customerService, manager].map(toSet);
+export const ROLE_SETS: RoleSet[] = [nursing, teacher, softwareEngineer, customerService, manager, projectManager].map(toSet);
 
 export const GENERAL_SET: RoleSet = {
   slug: 'general',

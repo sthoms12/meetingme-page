@@ -1,0 +1,53 @@
+---
+import Base from '../layouts/Base.astro';
+import Faq from './Faq.astro';
+import ToolCta from './ToolCta.astro';
+import Disclaimer from './Disclaimer.astro';
+import { pageByPath } from '../lib/pages';
+import { articleJsonLd, faqJsonLd } from '../lib/jsonld';
+import type { BringGuide } from '../data/types';
+
+interface RelatedLink { href: string; label: string }
+interface Props { path: string; dataset: BringGuide; related?: RelatedLink[] }
+const { path, dataset, related = [] } = Astro.props;
+const page = pageByPath(path)!;
+---
+<Base title={page.title} description={page.description} path={page.path} jsonLd={[articleJsonLd(page), faqJsonLd(dataset.faqs)]}>
+  <h1>What to bring to an interview</h1>
+  {dataset.intro.map((p) => <p class="lede">{p}</p>)}
+
+  {dataset.categories.map((cat) => (
+    <section>
+      <h2>{cat.name}</h2>
+      {cat.note && <p>{cat.note}</p>}
+      {cat.items.map((it) => (
+        <article class="q">
+          <h3>{it.item}</h3>
+          <p class="why">{it.why}</p>
+        </article>
+      ))}
+    </section>
+  ))}
+
+  <h2>Leave these at home</h2>
+  <ul>
+    {dataset.notToBring.map((n) => <li>{n}</li>)}
+  </ul>
+
+  <h2>If your interview is on video</h2>
+  <ul>
+    {dataset.virtual.map((v) => <li>{v}</li>)}
+  </ul>
+
+  {related.length > 0 && (
+    <p>
+      Keep going: {related.map((r, i) => (
+        <span>{i > 0 ? ' · ' : ''}<a href={r.href}>{r.label}</a></span>
+      ))}
+    </p>
+  )}
+
+  <ToolCta />
+  <Faq faqs={dataset.faqs} />
+  <Disclaimer />
+</Base>

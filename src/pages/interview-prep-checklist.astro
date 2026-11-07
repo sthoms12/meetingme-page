@@ -27,6 +27,11 @@ const printFaqs = prepareGuide.faqs.slice(0, 3);
       <ul>{phase.items.map((item) => <li>{item}</li>)}</ul>
     </section>
   ))}
+  <p>
+    The day-of items above are summarized in full on the
+    <a href="/what-to-bring-to-an-interview/">what to bring to an interview</a> page — documents, role-specific
+    extras, and the things to leave at home.
+  </p>
   <ToolCta />
   <Faq faqs={printFaqs} />
   <Disclaimer />

@@ -10,16 +10,32 @@ import {
   starMethod,
   tellMeAboutYourself,
 } from '../src/data/general';
+import { phoneInterview, secondInterview } from '../src/data/interview-types';
+import { fiveYears, whyHireYou } from '../src/data/per-question';
+import { followUpEmail, thankYouEmail } from '../src/data/post-interview';
 import { customerService } from '../src/data/role-customer-service';
 import { manager } from '../src/data/role-manager';
 import { nursing } from '../src/data/role-nursing';
+import { nursingQuestions } from '../src/data/role-nursing-questions';
+import { projectManager } from '../src/data/role-project-manager';
 import { softwareEngineer } from '../src/data/role-software-engineer';
 import { teacher } from '../src/data/role-teacher';
+import { teacherQuestions } from '../src/data/role-teacher-questions';
+import { whatToBring } from '../src/data/what-to-bring';
 import type { RoleDataset } from '../src/data/types';
 import { PAGES } from '../src/lib/pages';
 import { GENERAL_SET, ROLE_SETS } from '../src/tool/role-sets';
 
-const ROLES: RoleDataset[] = [nursing, teacher, softwareEngineer, customerService, manager];
+const ROLES: RoleDataset[] = [
+  nursing,
+  teacher,
+  softwareEngineer,
+  customerService,
+  manager,
+  projectManager,
+  teacherQuestions,
+  nursingQuestions,
+];
 
 describe('general datasets', () => {
   test('common and behavioral sets are substantial', () => {
@@ -69,8 +85,8 @@ describe('general datasets', () => {
 });
 
 describe('role datasets', () => {
-  test('five roles, each within the spec shape (15–25 questions, 5–8 asks)', () => {
-    expect(ROLES).toHaveLength(5);
+  test('eight role-page datasets, each within the spec shape (15–25 questions, 5–8 asks)', () => {
+    expect(ROLES).toHaveLength(8);
     for (const role of ROLES) {
       expect(role.questions.length).toBeGreaterThanOrEqual(15);
       expect(role.questions.length).toBeLessThanOrEqual(25);
@@ -92,13 +108,72 @@ describe('role datasets', () => {
     expect(titles.size).toBe(ROLES.length);
   });
 
+  test('teacher and nursing question pages complement, never duplicate, the ask pages', () => {
+    const teacherAsked = new Set(teacher.questions.map((q) => q.question));
+    const teacherAsks = new Set(teacher.questionsToAsk.map((q) => q.question));
+    for (const q of teacherQuestions.questions) expect(teacherAsked.has(q.question)).toBe(false);
+    for (const q of teacherQuestions.questionsToAsk) expect(teacherAsks.has(q.question)).toBe(false);
+    const nursingAsked = new Set(nursing.questions.map((q) => q.question));
+    const nursingAsks = new Set(nursing.questionsToAsk.map((q) => q.question));
+    for (const q of nursingQuestions.questions) expect(nursingAsked.has(q.question)).toBe(false);
+    for (const q of nursingQuestions.questionsToAsk) expect(nursingAsks.has(q.question)).toBe(false);
+  });
+
   test('tool role sets are derived from the same datasets', () => {
-    expect(ROLE_SETS).toHaveLength(5);
+    expect(ROLE_SETS).toHaveLength(6);
     for (const set of ROLE_SETS) {
       const role = ROLES.find((r) => r.slug === set.slug)!;
       expect(set.questions).toEqual(role.questions.map((q) => q.question));
       expect(set.asks).toEqual(role.questionsToAsk.map((q) => q.question));
     }
     expect(GENERAL_SET.questions.length).toBeGreaterThanOrEqual(12);
+  });
+});
+
+describe('wave 1 guide datasets', () => {
+  test('email guides have prose sections, copy-ready templates, mistakes and FAQs', () => {
+    for (const g of [thankYouEmail, followUpEmail]) {
+      expect(g.intro.length).toBeGreaterThanOrEqual(2);
+      expect(g.sections.length).toBeGreaterThanOrEqual(3);
+      expect(g.templates.length).toBeGreaterThanOrEqual(3);
+      for (const t of g.templates) {
+        expect(t.subject.length).toBeGreaterThan(5);
+        expect(t.body.length).toBeGreaterThanOrEqual(3);
+      }
+      expect(g.mistakes.length).toBeGreaterThanOrEqual(5);
+      expect(g.faqs.length).toBeGreaterThanOrEqual(4);
+    }
+  });
+
+  test('per-question guides have a framework, worked examples, variations and pitfalls', () => {
+    for (const g of [whyHireYou, fiveYears]) {
+      expect(g.intro.length).toBeGreaterThanOrEqual(2);
+      expect(g.framework.length).toBeGreaterThanOrEqual(4);
+      expect(g.examples.length).toBeGreaterThanOrEqual(3);
+      expect(g.variations.length).toBeGreaterThanOrEqual(3);
+      expect(g.pitfalls.length).toBeGreaterThanOrEqual(5);
+      expect(g.faqs.length).toBeGreaterThanOrEqual(4);
+    }
+  });
+
+  test('interview-type guides carry full, fully written question sets', () => {
+    for (const g of [phoneInterview, secondInterview]) {
+      expect(g.sections.length).toBeGreaterThanOrEqual(3);
+      expect(g.questions.length).toBeGreaterThanOrEqual(12);
+      for (const q of g.questions) {
+        expect(q.whyAsked.length).toBeGreaterThan(20);
+        expect(q.guidance.length).toBeGreaterThan(50);
+      }
+      expect(g.faqs.length).toBeGreaterThanOrEqual(4);
+    }
+  });
+
+  test('what-to-bring is a real checklist with the virtual variant', () => {
+    const totalItems = whatToBring.categories.reduce((n, c) => n + c.items.length, 0);
+    expect(whatToBring.categories.length).toBeGreaterThanOrEqual(4);
+    expect(totalItems).toBeGreaterThanOrEqual(15);
+    expect(whatToBring.notToBring.length).toBeGreaterThanOrEqual(5);
+    expect(whatToBring.virtual.length).toBeGreaterThanOrEqual(4);
+    expect(whatToBring.faqs.length).toBeGreaterThanOrEqual(4);
   });
 });

@@ -1,0 +1,13 @@
+---
+import EmailGuidePage from '../components/EmailGuidePage.astro';
+import { followUpEmail } from '../data/post-interview';
+---
+<EmailGuidePage
+  path="/how-to-follow-up-after-an-interview/"
+  h1="How to follow up after an interview"
+  dataset={followUpEmail}
+  related={[
+    { href: '/interview-thank-you-email/', label: 'Interview thank you email' },
+    { href: '/second-interview-questions/', label: 'Second interview questions' },
+  ]}
+/>

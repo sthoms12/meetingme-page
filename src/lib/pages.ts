@@ -75,9 +75,9 @@ export const PAGES: PageEntry[] = [
   },
   {
     path: '/tell-me-about-yourself/',
-    title: 'How to Answer "Tell Me About Yourself" | B4WeMeet',
+    title: 'How to Answer the "Tell Me About Yourself" Interview Question | B4WeMeet',
     description:
-      'A simple present, past, future structure for the "tell me about yourself" answer, with examples for career changers, graduates and experienced specialists.',
+      'How to answer the "tell me about yourself" interview question: a simple present, past, future structure, with examples for career changers, graduates and experienced specialists.',
   },
   {
     path: '/elevator-pitch-examples/',
@@ -116,10 +116,70 @@ export const PAGES: PageEntry[] = [
       'Manager interview questions on leadership style, difficult conversations and underperformance — with answer guidance — plus what to ask about the team you would inherit.',
   },
   {
+    path: '/teacher-interview-questions/',
+    title: 'Teacher Interview Questions and Answers | B4WeMeet',
+    description:
+      'Teacher interview questions and how to answer them: checking for understanding, parent emails about grades, group work, homework and feedback — with examples and questions to ask about the school.',
+  },
+  {
+    path: '/nursing-interview-questions/',
+    title: 'Nursing Interview Questions and Answers (Including New Grads) | B4WeMeet',
+    description:
+      'Nursing interview questions with answer guidance — including the questions new graduates actually get on building competence, asking for help and residency programs — plus what to ask about the unit.',
+  },
+  {
+    path: '/project-manager-interview-questions/',
+    title: 'Project Manager Interview Questions and Answers | B4WeMeet',
+    description:
+      'Project manager interview questions on scope, schedules, risk, budgets and difficult stakeholders — with answer guidance — plus the questions to ask about the PMO before you accept.',
+  },
+  {
     path: '/interview-prep-template/',
     title: 'Interview Prep Template (Free, Fill-In) | B4WeMeet',
     description:
       'A free fill-in interview preparation template: research notes, likely questions, your stories, questions to ask and day-of logistics — copy it or build it in the free prep-pack tool.',
+  },
+  {
+    path: '/why-should-we-hire-you/',
+    title: 'How to Answer "Why Should We Hire You?" | B4WeMeet',
+    description:
+      'A framework for the "why should we hire you" interview question: match the posting, prove it with evidence, and close on the gap you fill — with worked examples to adapt.',
+  },
+  {
+    path: '/where-do-you-see-yourself-in-5-years/',
+    title: 'How to Answer "Where Do You See Yourself in 5 Years?" | B4WeMeet',
+    description:
+      'How to answer "where do you see yourself in 5 years": a framework that sounds ambitious without sounding like a flight risk, with examples for different career stages.',
+  },
+  {
+    path: '/phone-interview-questions/',
+    title: 'Phone Interview Questions and Tips for Candidates | B4WeMeet',
+    description:
+      'The questions recruiters actually ask on a phone screen — your story, salary, availability — plus how phone screens are scored and how to prepare for yours.',
+  },
+  {
+    path: '/second-interview-questions/',
+    title: 'Second Interview Questions: What Changes in Round Two | B4WeMeet',
+    description:
+      'Second interview questions go deeper: first-90-days plans, scenario questions, panels and consistency checks — how round two differs from round one and how to prepare.',
+  },
+  {
+    path: '/what-to-bring-to-an-interview/',
+    title: 'What to Bring to an Interview: The Complete Checklist | B4WeMeet',
+    description:
+      'What to bring to a job interview: documents and copies, role-specific extras, day-of logistics, what to leave at home, and the virtual-interview version of the list.',
+  },
+  {
+    path: '/interview-thank-you-email/',
+    title: 'Interview Thank You Email: Templates, Subject Lines and Timing | B4WeMeet',
+    description:
+      'How to write a thank-you email after an interview: when to send it, subject lines that get opened, and copy-ready templates for hiring managers, panels and phone screens.',
+  },
+  {
+    path: '/how-to-follow-up-after-an-interview/',
+    title: 'How to Follow Up After an Interview: Email Templates and Timing | B4WeMeet',
+    description:
+      'When and how to follow up after an interview without nagging: a sane cadence, copy-ready follow-up email templates, and what to do when you hear nothing back.',
   },
   {
     path: '/privacy/',

@@ -1,0 +1,60 @@
+---
+import Base from '../layouts/Base.astro';
+import Faq from './Faq.astro';
+import ToolCta from './ToolCta.astro';
+import Disclaimer from './Disclaimer.astro';
+import { pageByPath } from '../lib/pages';
+import { articleJsonLd, faqJsonLd } from '../lib/jsonld';
+import type { PerQuestionGuide } from '../data/types';
+
+interface RelatedLink { href: string; label: string }
+interface Props { path: string; dataset: PerQuestionGuide; related?: RelatedLink[] }
+const { path, dataset, related = [] } = Astro.props;
+const page = pageByPath(path)!;
+---
+<Base title={page.title} description={page.description} path={page.path} jsonLd={[articleJsonLd(page), faqJsonLd(dataset.faqs)]}>
+  <h1>How to answer “{dataset.question}”</h1>
+  {dataset.intro.map((p) => <p class="lede">{p}</p>)}
+
+  <h2>The framework</h2>
+  {dataset.framework.map((s, i) => (
+    <section>
+      <h3>{i + 1}. {s.step}</h3>
+      <p>{s.detail}</p>
+    </section>
+  ))}
+
+  <h2>Example answers</h2>
+  <p>Each of these is an illustration to adapt in your own words and your own facts — never a script to recite.</p>
+  {dataset.examples.map((e) => (
+    <div class="card">
+      <h3>{e.context}</h3>
+      <p>{e.text}</p>
+    </div>
+  ))}
+
+  <h2>The same question, other phrasings</h2>
+  {dataset.variations.map((v) => (
+    <article class="q">
+      <h3>{v.question}</h3>
+      <p>{v.note}</p>
+    </article>
+  ))}
+
+  <h2>What weakens an answer</h2>
+  <ul>
+    {dataset.pitfalls.map((p) => <li>{p}</li>)}
+  </ul>
+
+  {related.length > 0 && (
+    <p>
+      Keep going: {related.map((r, i) => (
+        <span>{i > 0 ? ' · ' : ''}<a href={r.href}>{r.label}</a></span>
+      ))}
+    </p>
+  )}
+
+  <ToolCta />
+  <Faq faqs={dataset.faqs} />
+  <Disclaimer />
+</Base>

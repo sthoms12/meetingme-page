@@ -1,0 +1,13 @@
+---
+import BringPage from '../components/BringPage.astro';
+import { whatToBring } from '../data/what-to-bring';
+---
+<BringPage
+  path="/what-to-bring-to-an-interview/"
+  dataset={whatToBring}
+  related={[
+    { href: '/interview-prep-checklist/', label: 'Interview prep checklist' },
+    { href: '/how-to-prepare-for-an-interview/', label: 'How to prepare for an interview' },
+    { href: '/phone-interview-questions/', label: 'Phone interview questions' },
+  ]}
+/>

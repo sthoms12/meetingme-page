@@ -4,6 +4,11 @@ export const teacher: RoleDataset = {
   slug: "teacher",
   roleName: "Teacher",
   pagePath: "/questions-to-ask-in-a-teacher-interview/",
+  companion: {
+    href: "/teacher-interview-questions/",
+    heading: "Preparing for the questions they will ask you?",
+    text: "This page covers what to ask the school. The companion page covers the other direction: fifteen more teacher interview questions panels ask — checking for understanding, parent emails about grades, group work, homework, feedback — with answer guidance for each.",
+  },
   title: "Teacher Interview Questions: What You Will Be Asked and What to Ask",
   metaDescription: "Prepare for a teacher interview with realistic questions on classroom management, differentiation, assessment, and difficult parents — plus thoughtful questions to ask about class size, curriculum, mentoring, and planning time.",
   h1: "Teacher interview questions",

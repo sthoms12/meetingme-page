@@ -4,6 +4,11 @@ export const nursing: RoleDataset = {
   slug: "nursing",
   roleName: "Nursing",
   pagePath: "/questions-to-ask-in-a-nursing-interview/",
+  companion: {
+    href: "/nursing-interview-questions/",
+    heading: "Preparing for the questions they will ask you?",
+    text: "This page covers what to ask the unit. The companion page covers the other direction: fifteen more nursing interview questions — refused medication, floated shifts, verbal orders, asking for help — including the questions new graduates actually get, with answer guidance for each.",
+  },
   title: "Nursing Interview Questions: What You Will Be Asked and What to Ask",
   metaDescription: "Prepare for a nursing interview with the questions hiring managers actually ask about patient safety, prioritization, and difficult situations — plus smart questions to ask about ratios, orientation, and unit culture.",
   h1: "Nursing interview questions",

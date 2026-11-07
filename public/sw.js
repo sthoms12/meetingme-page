@@ -1,6 +1,6 @@
 // B4WeMeet service worker. Bump CACHE on every release — never ship two
 // releases under one cache name (portfolio lesson, SolveStack v11).
-const CACHE = 'b4wemeet-v1';
+const CACHE = 'b4wemeet-v2';
 const PRECACHE = [
   '/',
   '/interview-prep/',
