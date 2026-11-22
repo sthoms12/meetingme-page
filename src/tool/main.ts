@@ -6,7 +6,17 @@
 import './tool.css';
 import { runHandoff, type HandoffTask } from './ai-handoff';
 import { serializeBackup, validateBackupText } from './backup';
-import { flushSave, isDirty, loadWorkspace, requestPersistence, scheduleSave, storageEstimate } from './db';
+import {
+  flushSave,
+  getSaveStatus,
+  isDirty,
+  loadWorkspace,
+  onSaveStatus,
+  requestPersistence,
+  scheduleSave,
+  storageEstimate,
+  type SaveStatus,
+} from './db';
 import { buildBriefMarkdown, buildBriefPrintHtml, buildChecklistPrintHtml, buildPackICS } from './exporters';
 import { GENERAL_SET, ROLE_SETS, type RoleSet } from './role-sets';
 import { downloadICS } from '../lib/ics';
@@ -16,12 +26,30 @@ import {
   newId,
   type InterviewType,
   type Pack,
+  type Pitch,
   type Story,
   type Workspace,
 } from './types';
 
-const root = document.getElementById('prep-tool');
-if (root) void init(root);
+export function assemblePitch(pitch: Pitch): string {
+  return [pitch.present, pitch.past, pitch.future].map((s) => s.trim()).filter(Boolean).join(' ');
+}
+
+export function estimateSpokenSeconds(text: string): { words: number; seconds: number } {
+  const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+  // Average conversational speaking pace ~140 words per minute (~2.33 words/sec).
+  const seconds = words ? Math.max(1, Math.round((words / 140) * 60)) : 0;
+  return { words, seconds };
+}
+
+export function formatPackHeading(pack: Pick<Pack, 'roleTitle' | 'company'>): string {
+  return `${pack.roleTitle || 'Untitled interview'}${pack.company ? ` at ${pack.company}` : ''}`;
+}
+
+if (typeof document !== 'undefined') {
+  const root = document.getElementById('prep-tool');
+  if (root) void init(root);
+}
 
 type View = 'packs' | 'stories' | 'pitch' | 'settings';
 
@@ -31,15 +59,45 @@ const esc = (s: string) =>
 const ALL_SETS: RoleSet[] = [GENERAL_SET, ...ROLE_SETS];
 const setBySlug = (slug: string) => ALL_SETS.find((s) => s.slug === slug);
 
+function saveStatusLabel(status: SaveStatus, loadError: string | null): string {
+  if (loadError && status.state !== 'saved') return 'Temporary session (storage unavailable)';
+  if (status.state === 'saving') return 'Saving…';
+  if (status.state === 'saved') return 'Saved locally';
+  if (status.state === 'error') return 'Save failed — export a backup';
+  return 'Ready';
+}
+
+function renderPitchPreviewInner(pitch: Pitch): string {
+  const combined = assemblePitch(pitch);
+  if (!combined) return '';
+  const { words, seconds } = estimateSpokenSeconds(combined);
+  return `<h3>Your pitch, assembled</h3><div class="card">${esc(combined)}</div><p class="meta">${words} ${
+    words === 1 ? 'word' : 'words'
+  } · ~${seconds}s spoken aloud</p>`;
+}
+
 async function init(el: HTMLElement) {
-  let ws: Workspace = await loadWorkspace();
+  let ws: Workspace;
+  let storageLoadError: string | null = null;
+  try {
+    ws = await loadWorkspace();
+  } catch (err) {
+    ws = emptyWorkspace();
+    storageLoadError =
+      err instanceof Error && err.message
+        ? err.message
+        : 'Browser local storage (IndexedDB) is unavailable or blocked.';
+  }
+
   let view: View = 'packs';
   let editingPackId: string | null = null;
   let editingStoryId: string | null = null;
   let bannerDismissed = false;
   let importCandidate: Workspace | null = null;
+  let wipeConfirmPending = false;
+  let saveStatus: SaveStatus = getSaveStatus();
 
-  void requestPersistence();
+  if (!storageLoadError) void requestPersistence();
 
   const save = () => scheduleSave(ws);
   const packById = (id: string) => ws.packs.find((p) => p.id === id);
@@ -48,10 +106,13 @@ async function init(el: HTMLElement) {
   // ---------- toasts ----------
   const toastHost = document.createElement('div');
   toastHost.id = 'prep-toasts';
+  toastHost.setAttribute('role', 'status');
+  toastHost.setAttribute('aria-live', 'polite');
   document.body.appendChild(toastHost);
-  function toast(message: string, opts: { undo?: () => void; ms?: number } = {}) {
+  function toast(message: string, opts: { undo?: () => void; ms?: number; alert?: boolean } = {}) {
     const node = document.createElement('div');
-    node.className = 'prep-toast';
+    node.className = opts.alert ? 'prep-toast prep-toast-error' : 'prep-toast';
+    if (opts.alert) node.setAttribute('role', 'alert');
     const span = document.createElement('span');
     span.textContent = message;
     node.appendChild(span);
@@ -62,6 +123,7 @@ async function init(el: HTMLElement) {
     };
     if (opts.undo) {
       const btn = document.createElement('button');
+      btn.type = 'button';
       btn.textContent = 'Undo';
       btn.addEventListener('click', () => {
         opts.undo?.();
@@ -86,6 +148,44 @@ async function init(el: HTMLElement) {
       },
     });
   }
+
+  function storageAlertBanner(): string {
+    if (storageLoadError) {
+      return `<div class="banner banner-error" role="alert"><span><strong>Local storage unavailable:</strong> ${esc(
+        storageLoadError,
+      )} You can still use this temporary session — export a JSON backup or Markdown brief before closing this tab.</span>
+      <button class="btn small primary" data-action="retry-storage">Retry storage</button>
+      <button class="btn small" data-action="export-backup">Export backup (JSON)</button></div>`;
+    }
+    if (saveStatus.state === 'error') {
+      return `<div class="banner banner-error" role="alert"><span><strong>Could not save changes locally:</strong> ${esc(
+        saveStatus.error || 'Browser storage write failed.',
+      )} Export a JSON backup so you don’t lose your work.</span>
+      <button class="btn small primary" data-action="retry-save">Retry save</button>
+      <button class="btn small" data-action="export-backup">Export backup (JSON)</button></div>`;
+    }
+    return '';
+  }
+
+  function updatePersistenceUi() {
+    const statusEl = el.querySelector<HTMLElement>('#save-status');
+    if (statusEl) statusEl.textContent = saveStatusLabel(saveStatus, storageLoadError);
+    const alertHost = el.querySelector<HTMLElement>('#storage-alert-host');
+    if (alertHost) alertHost.innerHTML = storageAlertBanner();
+  }
+
+  onSaveStatus((next) => {
+    const prevWasError = saveStatus.state === 'error';
+    saveStatus = next;
+    if (next.state === 'saved') storageLoadError = null;
+    updatePersistenceUi();
+    if (next.state === 'error' && !prevWasError) {
+      toast(`Could not save locally: ${next.error || 'storage error'}. Export a JSON backup.`, {
+        alert: true,
+        ms: 8000,
+      });
+    }
+  });
 
   // ---------- downloads / print ----------
   function downloadText(filename: string, text: string, type: string) {
@@ -164,12 +264,13 @@ async function init(el: HTMLElement) {
     else body = settingsView();
 
     el.innerHTML = `
+      <div id="storage-alert-host">${storageAlertBanner()}</div>
       ${backupBanner()}
       <div class="tabs" role="tablist">${tabs
         .map((t) => `<button role="tab" aria-selected="${view === t.id}" data-action="tab" data-view="${t.id}">${t.label}</button>`)
         .join('')}</div>
       ${body}
-      <p class="saved">Stored only in this browser, on this device. Nothing is uploaded.</p>`;
+      <p class="saved">Stored only in this browser, on this device. Nothing is uploaded. · <span id="save-status" aria-live="polite">${esc(saveStatusLabel(saveStatus, storageLoadError))}</span></p>`;
     if (view === 'settings') void fillStorageMeter();
   }
 
@@ -233,7 +334,7 @@ async function init(el: HTMLElement) {
   function packEditor(pack: Pack): string {
     return `
       <button class="btn small" data-action="back-packs">← All prep packs</button>
-      <h2>${esc(pack.roleTitle || 'Untitled interview')}${pack.company ? ` at ${esc(pack.company)}` : ''}</h2>
+      <h2 id="pack-editor-heading">${esc(formatPackHeading(pack))}</h2>
       <div class="row">
         <div><label>Role title</label><input type="text" data-bind="roleTitle" value="${esc(pack.roleTitle)}" placeholder="e.g. Staff Nurse"></div>
         <div><label>Company / organization</label><input type="text" data-bind="company" value="${esc(pack.company)}"></div>
@@ -329,7 +430,6 @@ async function init(el: HTMLElement) {
   }
 
   function pitchView(): string {
-    const combined = [ws.pitch.present, ws.pitch.past, ws.pitch.future].map((s) => s.trim()).filter(Boolean).join(' ');
     return `
       <h2>Your “tell me about yourself” pitch</h2>
       <p class="hint">Present, then past, then future: where you are now, the path that got you here, and why this role is the next step. Aim for about a minute spoken aloud.</p>
@@ -339,7 +439,7 @@ async function init(el: HTMLElement) {
       <textarea data-pitch="past" placeholder="Before that I …">${esc(ws.pitch.past)}</textarea>
       <label>Future — why this role, why now</label>
       <textarea data-pitch="future" placeholder="What I'm looking for next is …">${esc(ws.pitch.future)}</textarea>
-      ${combined ? `<h3>Your pitch, assembled</h3><div class="card">${esc(combined)}</div>` : ''}`;
+      <div id="pitch-preview-region">${renderPitchPreviewInner(ws.pitch)}</div>`;
   }
 
   function settingsView(): string {
@@ -371,7 +471,15 @@ async function init(el: HTMLElement) {
       <div class="card">
         <h3>Start over</h3>
         <p class="hint">Erase every pack, story and your pitch from this device. You get 30 seconds to undo.</p>
-        <button class="btn danger" data-action="wipe">Erase everything on this device</button>
+        ${
+          wipeConfirmPending
+            ? `<div class="banner banner-error" role="alert"><span>Erase all ${ws.packs.length} prep ${
+                ws.packs.length === 1 ? 'pack' : 'packs'
+              }, ${ws.stories.length} ${ws.stories.length === 1 ? 'story' : 'stories'}, and your pitch from this device?</span>
+               <button class="btn small danger" data-action="confirm-wipe">Confirm erase everything</button>
+               <button class="btn small" data-action="cancel-wipe">Cancel</button></div>`
+            : `<button class="btn danger" data-action="wipe">Erase everything on this device</button>`
+        }
       </div>`;
   }
 
@@ -397,11 +505,50 @@ async function init(el: HTMLElement) {
     const pack = editingPackId ? packById(editingPackId) : undefined;
 
     switch (action) {
-      case 'tab':
-        view = target.dataset.view as View;
-        editingPackId = null;
+      case 'tab': {
+        const nextView = target.dataset.view as View;
+        if (nextView === 'packs' && view === 'packs') editingPackId = null;
+        view = nextView;
+        wipeConfirmPending = false;
         render();
         break;
+      }
+      case 'retry-storage': {
+        void loadWorkspace()
+          .then((loaded) => {
+            const isEmpty = ws.packs.length === 0 && ws.stories.length === 0 && !assemblePitch(ws.pitch);
+            if (isEmpty) {
+              ws = loaded;
+            } else {
+              save();
+            }
+            storageLoadError = null;
+            toast('Local browser storage connected.');
+            render();
+          })
+          .catch((err: unknown) => {
+            storageLoadError =
+              err instanceof Error && err.message
+                ? err.message
+                : 'Browser local storage (IndexedDB) is still unavailable.';
+            toast(`Storage still unavailable: ${storageLoadError}`, { alert: true });
+            updatePersistenceUi();
+          });
+        break;
+      }
+      case 'retry-save': {
+        save();
+        void flushSave()
+          .then(() => {
+            storageLoadError = null;
+            toast('Saved locally.');
+            updatePersistenceUi();
+          })
+          .catch(() => {
+            // Save error status and alert banner are already updated via onSaveStatus.
+          });
+        break;
+      }
       case 'dismiss-banner':
         bannerDismissed = true;
         render();
@@ -456,29 +603,46 @@ async function init(el: HTMLElement) {
         }
         break;
       }
-      case 'remove-question':
-        if (pack) {
-          pack.questions.splice(Number(target.dataset.i), 1);
-          save();
-          render();
+      case 'remove-question': {
+        const idx = Number(target.dataset.i);
+        if (pack && Number.isInteger(idx) && idx >= 0 && idx < pack.questions.length) {
+          const removed = pack.questions[idx];
+          const label = removed.question.length > 48 ? `${removed.question.slice(0, 48)}…` : removed.question;
+          withUndo(`Removed question “${label}”.`, () => {
+            const current = packById(pack.id);
+            if (current) {
+              current.questions.splice(idx, 1);
+              current.updatedAt = new Date().toISOString();
+            }
+          });
         }
         break;
+      }
       case 'add-ask': {
         const input = document.getElementById('custom-ask') as HTMLInputElement | null;
         if (pack && input && input.value.trim()) {
           pack.asks.push({ question: input.value.trim(), notes: '' });
+          pack.updatedAt = new Date().toISOString();
           save();
           render();
         }
         break;
       }
-      case 'remove-ask':
-        if (pack) {
-          pack.asks.splice(Number(target.dataset.i), 1);
-          save();
-          render();
+      case 'remove-ask': {
+        const idx = Number(target.dataset.i);
+        if (pack && Number.isInteger(idx) && idx >= 0 && idx < pack.asks.length) {
+          const removed = pack.asks[idx];
+          const label = removed.question.length > 48 ? `${removed.question.slice(0, 48)}…` : removed.question;
+          withUndo(`Removed question to ask “${label}”.`, () => {
+            const current = packById(pack.id);
+            if (current) {
+              current.asks.splice(idx, 1);
+              current.updatedAt = new Date().toISOString();
+            }
+          });
         }
         break;
+      }
       case 'new-story': {
         const now = new Date().toISOString();
         const story: Story = {
@@ -563,8 +727,13 @@ async function init(el: HTMLElement) {
           editingPackId = null;
           editingStoryId = null;
           save();
-          void flushSave();
-          toast('Backup restored on this device.');
+          void flushSave()
+            .then(() => {
+              toast('Backup restored on this device.');
+            })
+            .catch(() => {
+              // Error banner and toast are surfaced via onSaveStatus.
+            });
           render();
         }
         break;
@@ -573,6 +742,15 @@ async function init(el: HTMLElement) {
         render();
         break;
       case 'wipe':
+        wipeConfirmPending = true;
+        render();
+        break;
+      case 'cancel-wipe':
+        wipeConfirmPending = false;
+        render();
+        break;
+      case 'confirm-wipe':
+        wipeConfirmPending = false;
         withUndo('Everything on this device was erased.', () => {
           ws = emptyWorkspace();
           editingPackId = null;
@@ -595,7 +773,7 @@ async function init(el: HTMLElement) {
           render();
         } else {
           // §4.3 invariant: a failed import never touches current data.
-          toast(`Import failed — your current data is untouched. ${result.error}`);
+          toast(`Import failed — your current data is untouched. ${result.error}`, { alert: true });
         }
         input.value = '';
       });
@@ -621,6 +799,18 @@ async function init(el: HTMLElement) {
       else if (bind === 'type') pack.type = value as InterviewType;
       else (pack as unknown as Record<string, string>)[bind] = value;
       pack.updatedAt = new Date().toISOString();
+      if (bind === 'dateTime') {
+        const icsBtn = el.querySelector<HTMLButtonElement>('[data-action="export-ics"]');
+        if (icsBtn) {
+          const hasDate = Boolean(pack.dateTime.trim());
+          icsBtn.disabled = !hasDate;
+          if (hasDate) icsBtn.removeAttribute('title');
+          else icsBtn.title = 'Set a date first';
+        }
+      } else if (bind === 'roleTitle' || bind === 'company') {
+        const heading = el.querySelector<HTMLElement>('#pack-editor-heading');
+        if (heading) heading.textContent = formatPackHeading(pack);
+      }
       save();
     } else if (storyField && editingStoryId) {
       const story = storyById(editingStoryId);
@@ -632,6 +822,8 @@ async function init(el: HTMLElement) {
       }
     } else if (pitchField) {
       (ws.pitch as unknown as Record<string, string>)[pitchField] = value;
+      const preview = el.querySelector<HTMLElement>('#pitch-preview-region');
+      if (preview) preview.innerHTML = renderPitchPreviewInner(ws.pitch);
       save();
     }
   }
@@ -639,12 +831,18 @@ async function init(el: HTMLElement) {
   // beforeunload guard: never lose an in-flight edit (§4.3).
   window.addEventListener('beforeunload', (ev) => {
     if (isDirty()) {
-      void flushSave();
+      void flushSave().catch(() => {
+        // Save error status is surfaced via onSaveStatus.
+      });
       ev.preventDefault();
     }
   });
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') void flushSave();
+    if (document.visibilityState === 'hidden') {
+      void flushSave().catch(() => {
+        // Save error status is surfaced via onSaveStatus.
+      });
+    }
   });
 
   // Pre-load a pack from a content page (?role=nursing etc.).
