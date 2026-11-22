@@ -46,6 +46,81 @@ export function formatPackHeading(pack: Pick<Pack, 'roleTitle' | 'company'>): st
   return `${pack.roleTitle || 'Untitled interview'}${pack.company ? ` at ${pack.company}` : ''}`;
 }
 
+function isWorkspaceEmpty(workspace: Workspace): boolean {
+  return workspace.packs.length === 0 && workspace.stories.length === 0 && !assemblePitch(workspace.pitch);
+}
+
+function mergePitchSegment(saved: string, temp: string): string {
+  const savedTrimmed = saved.trim();
+  const tempTrimmed = temp.trim();
+  if (!savedTrimmed) return temp;
+  if (!tempTrimmed || savedTrimmed === tempTrimmed) return saved;
+  return `${savedTrimmed}\n\n${tempTrimmed}`;
+}
+
+export function reconcileRecoveredWorkspace(
+  loaded: Workspace,
+  temp: Workspace,
+): { workspace: Workspace; merged: boolean } {
+  if (isWorkspaceEmpty(temp)) {
+    return { workspace: loaded, merged: false };
+  }
+  if (isWorkspaceEmpty(loaded)) {
+    return { workspace: temp, merged: false };
+  }
+
+  const storyIdRemap = new Map<string, string>();
+  const existingStoryIds = new Set(loaded.stories.map((s) => s.id));
+  const mergedStories: Story[] = [...loaded.stories];
+  for (const story of temp.stories) {
+    if (existingStoryIds.has(story.id)) {
+      const remappedId = newId();
+      storyIdRemap.set(story.id, remappedId);
+      existingStoryIds.add(remappedId);
+      mergedStories.push({ ...story, id: remappedId });
+    } else {
+      existingStoryIds.add(story.id);
+      mergedStories.push(story);
+    }
+  }
+
+  const existingPackIds = new Set(loaded.packs.map((p) => p.id));
+  const mergedPacks: Pack[] = [...loaded.packs];
+  for (const pack of temp.packs) {
+    const questions =
+      storyIdRemap.size > 0
+        ? pack.questions.map((q) =>
+            q.storyId && storyIdRemap.has(q.storyId) ? { ...q, storyId: storyIdRemap.get(q.storyId) } : q,
+          )
+        : pack.questions;
+    if (existingPackIds.has(pack.id)) {
+      const remappedId = newId();
+      existingPackIds.add(remappedId);
+      mergedPacks.push({ ...pack, id: remappedId, questions });
+    } else {
+      existingPackIds.add(pack.id);
+      mergedPacks.push(questions === pack.questions ? pack : { ...pack, questions });
+    }
+  }
+
+  const mergedPitch: Pitch = {
+    present: mergePitchSegment(loaded.pitch.present, temp.pitch.present),
+    past: mergePitchSegment(loaded.pitch.past, temp.pitch.past),
+    future: mergePitchSegment(loaded.pitch.future, temp.pitch.future),
+  };
+
+  return {
+    workspace: {
+      version: 1,
+      stories: mergedStories,
+      packs: mergedPacks,
+      pitch: mergedPitch,
+      lastBackupAt: loaded.lastBackupAt ?? temp.lastBackupAt,
+    },
+    merged: true,
+  };
+}
+
 if (typeof document !== 'undefined') {
   const root = document.getElementById('prep-tool');
   if (root) void init(root);
@@ -516,14 +591,18 @@ async function init(el: HTMLElement) {
       case 'retry-storage': {
         void loadWorkspace()
           .then((loaded) => {
-            const isEmpty = ws.packs.length === 0 && ws.stories.length === 0 && !assemblePitch(ws.pitch);
-            if (isEmpty) {
-              ws = loaded;
-            } else {
+            const tempIsEmpty = isWorkspaceEmpty(ws);
+            const { workspace, merged } = reconcileRecoveredWorkspace(loaded, ws);
+            ws = workspace;
+            if (!tempIsEmpty) {
               save();
             }
             storageLoadError = null;
-            toast('Local browser storage connected.');
+            toast(
+              merged
+                ? 'Local browser storage connected and merged with your temporary workspace.'
+                : 'Local browser storage connected.',
+            );
             render();
           })
           .catch((err: unknown) => {
