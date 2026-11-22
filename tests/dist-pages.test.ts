@@ -37,6 +37,9 @@ describe('built pages', () => {
     expect(html).toContain('data-project="b4wemeet"');
     expect(html).toContain('rel="manifest"');
     expect(html).toContain('rel="canonical"');
+    expect(html).toContain('property="og:image" content="https://b4wemeet.app/og-b4wemeet.png"');
+    expect(html).toContain('name="twitter:card" content="summary_large_image"');
+    expect(existsSync(join(DIST, 'og-b4wemeet.png'))).toBe(true);
   });
 
   test('privacy page carries the §7.4 transparency sentence', () => {
