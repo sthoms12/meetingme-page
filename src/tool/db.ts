@@ -12,16 +12,65 @@ const DB_NAME = 'b4wemeet-prep';
 const STORE = 'workspace';
 const KEY = 'main';
 
+export type SaveStatus = {
+  state: 'idle' | 'saving' | 'saved' | 'error';
+  error?: string;
+  updatedAt?: number;
+};
+
+type SaveStatusListener = (status: SaveStatus) => void;
+const statusListeners = new Set<SaveStatusListener>();
+let lastStatus: SaveStatus = { state: 'idle' };
+
+function emitStatus(next: SaveStatus) {
+  lastStatus = next;
+  for (const listener of statusListeners) {
+    try {
+      listener(next);
+    } catch {
+      // Listener errors must never break persistence.
+    }
+  }
+}
+
+export function getSaveStatus(): SaveStatus {
+  return lastStatus;
+}
+
+export function onSaveStatus(listener: SaveStatusListener): () => void {
+  statusListeners.add(listener);
+  return () => {
+    statusListeners.delete(listener);
+  };
+}
+
+function errorMessage(err: unknown): string {
+  if (err instanceof Error && err.message) return err.message;
+  if (typeof err === 'string' && err) return err;
+  return 'Could not save to browser storage.';
+}
+
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, 1);
+    if (typeof indexedDB === 'undefined') {
+      reject(new Error('IndexedDB is not available in this browser.'));
+      return;
+    }
+    let req: IDBOpenDBRequest;
+    try {
+      req = indexedDB.open(DB_NAME, 1);
+    } catch (err) {
+      reject(err instanceof Error ? err : new Error(errorMessage(err)));
+      return;
+    }
     req.onupgradeneeded = () => {
       if (!req.result.objectStoreNames.contains(STORE)) {
         req.result.createObjectStore(STORE);
       }
     };
     req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
+    req.onerror = () => reject(req.error ?? new Error('Failed to open local storage database.'));
+    req.onblocked = () => reject(new Error('Local storage database is blocked by another tab.'));
   });
 }
 
@@ -34,7 +83,7 @@ export async function loadWorkspace(): Promise<Workspace> {
         const value = req.result as Workspace | undefined;
         resolve(value && value.version === 1 ? value : emptyWorkspace());
       };
-      req.onerror = () => reject(req.error);
+      req.onerror = () => reject(req.error ?? new Error('Failed to read workspace from local storage.'));
     });
   } finally {
     db.close();
@@ -48,7 +97,8 @@ async function putWorkspace(ws: Workspace): Promise<void> {
       const tx = db.transaction(STORE, 'readwrite');
       tx.objectStore(STORE).put(ws, KEY);
       tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
+      tx.onerror = () => reject(tx.error ?? new Error('Failed to write workspace to local storage.'));
+      tx.onabort = () => reject(tx.error ?? new Error('Local storage write was aborted (quota may be full).'));
     });
   } finally {
     db.close();
@@ -64,23 +114,34 @@ let dirty = false;
 export const isDirty = () => dirty;
 
 function enqueue(ws: Workspace): Promise<void> {
-  chain = chain.then(() => putWorkspace(ws)).catch(() => undefined);
-  return chain;
+  const writePromise = chain.then(() => putWorkspace(ws));
+  // Keep the serialized chain healthy for future retries while propagating this write's error.
+  chain = writePromise.catch(() => undefined);
+  return writePromise;
 }
 
 /** Debounced save — call on every edit. */
 export function scheduleSave(ws: Workspace) {
   pending = ws;
   dirty = true;
+  emitStatus({ state: 'saving' });
   if (timer) clearTimeout(timer);
   timer = setTimeout(() => {
     timer = null;
     if (pending) {
       const toWrite = pending;
       pending = null;
-      void enqueue(toWrite).then(() => {
-        if (!pending) dirty = false;
-      });
+      void enqueue(toWrite)
+        .then(() => {
+          if (!pending) {
+            dirty = false;
+            emitStatus({ state: 'saved', updatedAt: Date.now() });
+          }
+        })
+        .catch((err: unknown) => {
+          dirty = true;
+          emitStatus({ state: 'error', error: errorMessage(err) });
+        });
     }
   }, 400);
 }
@@ -94,8 +155,18 @@ export async function flushSave(): Promise<void> {
   if (pending) {
     const toWrite = pending;
     pending = null;
-    await enqueue(toWrite);
-    if (!pending) dirty = false;
+    emitStatus({ state: 'saving' });
+    try {
+      await enqueue(toWrite);
+      if (!pending) {
+        dirty = false;
+        emitStatus({ state: 'saved', updatedAt: Date.now() });
+      }
+    } catch (err) {
+      dirty = true;
+      emitStatus({ state: 'error', error: errorMessage(err) });
+      throw err;
+    }
   } else {
     await chain;
   }
