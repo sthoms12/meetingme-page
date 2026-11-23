@@ -177,7 +177,7 @@ export const PAGES: PageEntry[] = [
   },
   {
     path: '/how-to-follow-up-after-an-interview/',
-    title: 'How to Follow Up After an Interview: Email Templates and Timing | B4WeMeet',
+    title: 'Interview Follow-Up Email Templates & Timing | B4WeMeet',
     description:
       'When and how to follow up after an interview without nagging: a sane cadence, copy-ready follow-up email templates, and what to do when you hear nothing back.',
   },
