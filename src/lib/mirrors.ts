@@ -324,6 +324,8 @@ ${template.body}
 ## How to use it
 
 ${template.howTo.map((s, i) => `${i + 1}. ${s}`).join('\n')}
+
+${faqList(template.faqs)}
 `;
       }
       return `${header(page)}\n`;

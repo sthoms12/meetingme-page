@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import { SITE_ORIGIN } from '../lib/pages';
+import { breadcrumbsForPath } from '../lib/jsonld';
 
 interface Props {
   title: string;
@@ -11,6 +12,8 @@ interface Props {
 }
 const { title, description, path, jsonLd = [], wide = false } = Astro.props;
 const canonical = `${SITE_ORIGIN}${path}`;
+const breadcrumbLd = breadcrumbsForPath(path, title);
+const allJsonLd = breadcrumbLd ? [...jsonLd, breadcrumbLd] : jsonLd;
 ---
 <!doctype html>
 <html lang="en">
@@ -38,7 +41,7 @@ const canonical = `${SITE_ORIGIN}${path}`;
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="theme-color" content="#1d6f5c" />
     <link rel="alternate" type="text/markdown" href={path === '/' ? '/index.md' : `${path.replace(/\/$/, '')}.md`} />
-    {jsonLd.map((ld) => <script type="application/ld+json" set:html={ld} />)}
+    {allJsonLd.map((ld) => <script type="application/ld+json" set:html={ld} />)}
     <script defer src="https://glass-portfolio.sthoms105.workers.dev/s.js" data-project="b4wemeet" data-persistence="cookieless"></script>
     <script src="/register-sw.js" defer></script>
   </head>
