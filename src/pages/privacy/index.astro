@@ -15,6 +15,7 @@ const faqs = PRIVACY_FAQS;
     B4WeMeet is built so that we cannot see your job search — not "we choose not to look", but architecturally
     cannot. This page explains exactly how that works.
   </p>
+  <p><small>Effective / last updated: November 23, 2026</small></p>
 
   <h2>Your prep stays on your device</h2>
   <p>
@@ -33,8 +34,9 @@ const faqs = PRIVACY_FAQS;
   <h2>AI is bring-your-own</h2>
   <p>
     The mock-prep and polish features work by copying a pack to <em>your</em> clipboard and opening ChatGPT or
-    Claude in a new tab with a short coaching prompt. You paste the pack yourself, into your own AI account.
-    B4WeMeet holds no AI keys and sends nothing to any AI service.
+    Claude in a new tab with a short coaching prompt. You paste the pack yourself, into your own AI account,
+    subject to that third-party service's terms and privacy policy. B4WeMeet holds no AI keys and sends nothing
+    to any AI service.
   </p>
 
   <h2>Downloads are files, not links</h2>
@@ -46,10 +48,17 @@ const faqs = PRIVACY_FAQS;
   <h2>Site analytics</h2>
   <p>
     This site uses Dataflare, an analytics tool we self-host in our own Cloudflare account. It is cookieless —
-    it sets no cookies and stores nothing on your device. It records pageviews, the referring site, and basic
-    device and browser information so we can understand which content is useful. Analytics data is kept for 90
-    days and is never sold or shared. It measures pages, not people, and it has no access to anything you
-    prepare in the tool.
+    it sets no cookies and stores nothing on your device. It records pageviews, the referring site, basic device
+    and browser information, and any anonymous site events so we can understand which content is useful.
+    Analytics data is kept for 90 days and is never sold or shared. It measures pages, not people, and never has
+    access to your prep content.
+  </p>
+
+  <h2>Hosting and infrastructure logs</h2>
+  <p>
+    B4WeMeet is hosted on Cloudflare. Standard hosting and network request logs — such as IP address, requested
+    URL, timestamp, and user-agent — are processed by Cloudflare to serve pages reliably and protect the site
+    against abuse.
   </p>
 
   <h2>What changed in November 2026</h2>
@@ -58,6 +67,10 @@ const faqs = PRIVACY_FAQS;
     previous version of B4WeMeet hosted public intro pages on our servers; that system — accounts-by-link,
     stored profiles, photos and all — has been shut down and its data deleted, because a tool people trust with
     something as sensitive as a job search should not be holding it on a server at all.
+  </p>
+
+  <p>
+    For the terms governing use of this site and its tools, see our <a href="/terms/">Terms of Use</a>.
   </p>
 
   <Faq faqs={faqs} />

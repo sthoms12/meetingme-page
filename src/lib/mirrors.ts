@@ -285,13 +285,15 @@ ${INTERVIEW_PREP_TEMPLATE_BODY}
       return bringMirror(page, whatToBring);
     case '/privacy/':
       return `${header(page)}
+Effective / last updated: November 23, 2026
+
 ## Your prep stays on your device
 
 Everything you create in the Prep Pack builder is stored in your browser's local storage (IndexedDB) on the device you are using. There is no B4WeMeet server database for user content, no account system, and no sync. Clearing this site's browser data erases your prep, so export a backup and keep it somewhere private.
 
 ## AI is bring-your-own
 
-The handoff copies your pack to your clipboard and opens ChatGPT or Claude with a short coaching prompt. You paste the pack yourself, into your own AI account. B4WeMeet holds no AI keys and sends nothing to any AI service.
+The handoff copies your pack to your clipboard and opens ChatGPT or Claude with a short coaching prompt. You paste the pack yourself, into your own AI account, under that third-party service's terms and privacy policy. B4WeMeet holds no AI keys and sends nothing to any AI service.
 
 ## Downloads are files, not links
 
@@ -299,13 +301,51 @@ Briefs, checklists, calendar files and backups are generated in your browser and
 
 ## Site analytics
 
-This site uses Dataflare, a cookieless analytics tool self-hosted in our own Cloudflare account. It records pageviews, the referring site, and basic device and browser information; data is kept for 90 days and never sold or shared. It measures pages, not people, and has no access to anything you prepare in the tool.
+This site uses Dataflare, a cookieless analytics tool self-hosted in our own Cloudflare account. It sets no cookies and stores nothing on your device. It records pageviews, the referring site, basic device and browser information, and any anonymous site events — never your prep content. Analytics data is kept for 90 days and is never sold or shared.
+
+## Hosting logs
+
+B4WeMeet is hosted on Cloudflare. Standard hosting and network request logs (such as IP address, requested URL, timestamp, and user-agent) are processed by Cloudflare to serve the site and protect against abuse.
 
 ## What changed in November 2026
 
 Hosted intro pages were retired in November 2026 when B4WeMeet became a private, on-device tool. The previous system — stored profiles, photos and all — has been shut down and its data deleted.
 
+See also our Terms of Use: ${SITE_ORIGIN}/terms/
+
 ${faqList(PRIVACY_FAQS)}
+`;
+    case '/terms/':
+      return `${header(page)}
+Effective / last updated: November 23, 2026
+
+B4WeMeet is operated as a free, independent, non-commercial project provided "as is" and "as available", with no commercial support, SLA, ads, or sponsorships.
+
+## General interview guidance only
+
+The guides, example answers, templates, and Prep Pack Builder are general informational guidance only. They are not employment, career, HR, or legal advice. Every employer runs interviews differently, and B4WeMeet makes no guarantee about any employer's process, questions, or hiring outcomes.
+
+## Local browser storage responsibility
+
+Everything you create in the Prep Pack Builder is stored locally in your browser (IndexedDB). You are responsible for securing access to your device, exporting and storing your own backup files safely, and understanding that clearing site data in your browser will erase your locally stored prep.
+
+## Bring-your-own AI (BYO-AI)
+
+Optional handoff actions copy your pack to your clipboard and open third-party AI services such as ChatGPT or Claude in a new tab. Those third-party services are governed by their own terms and privacy policies, and you are solely responsible for any content you choose to paste into them.
+
+## Independence and trademarks
+
+B4WeMeet is an independent project and is not affiliated with, endorsed by, or sponsored by OpenAI, Anthropic, or any named employers or organizations. All third-party product names and trademarks belong to their respective owners.
+
+## Permitted and prohibited use
+
+B4WeMeet is free for personal or workplace use at your own risk. You agree not to abuse or disrupt the site or its hosting infrastructure, and not to engage in wholesale commercial republishing or reselling of the site's content or templates.
+
+## No warranties and limitation of liability
+
+B4WeMeet is provided "as is" and "as available" without warranties of any kind, express or implied. To the fullest extent permitted by law, B4WeMeet is not liable for any direct, indirect, incidental, consequential, or special damages arising from your use of the site, loss of locally stored data, use of third-party AI services, or employment or hiring outcomes.
+
+See also our Security and Privacy page: ${SITE_ORIGIN}/privacy/
 `;
     case '/templates/':
       return `${header(page)}
