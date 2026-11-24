@@ -75,7 +75,7 @@ export const PAGES: PageEntry[] = [
   },
   {
     path: '/tell-me-about-yourself/',
-    title: 'How to Answer the "Tell Me About Yourself" Interview Question | B4WeMeet',
+    title: 'Tell Me About Yourself Examples & Formula | B4WeMeet',
     description:
       'How to answer the "tell me about yourself" interview question: a simple present, past, future structure, with examples for career changers, graduates and experienced specialists.',
   },
@@ -171,7 +171,7 @@ export const PAGES: PageEntry[] = [
   },
   {
     path: '/interview-thank-you-email/',
-    title: 'Interview Thank You Email: Templates, Subject Lines and Timing | B4WeMeet',
+    title: 'Interview Thank You Email Templates & Timing | B4WeMeet',
     description:
       'How to write a thank-you email after an interview: when to send it, subject lines that get opened, and copy-ready templates for hiring managers, panels and phone screens.',
   },
