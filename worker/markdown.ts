@@ -35,6 +35,7 @@ export const MARKDOWN_PAGE_PATHS: string[] = [
   '/interview-thank-you-email/',
   '/how-to-follow-up-after-an-interview/',
   '/privacy/',
+  '/terms/',
   '/templates/',
   '/templates/meeting-agenda-template/',
   '/templates/one-on-one-meeting-template/',

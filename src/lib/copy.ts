@@ -45,7 +45,7 @@ export const PRIVACY_FAQS: FaqEntry[] = [
   },
   {
     q: 'What analytics do you run?',
-    a: "This site uses Dataflare, an analytics tool we self-host in our own Cloudflare account. It is cookieless — it sets no cookies and stores nothing on your device. It records pageviews, the referring site, and basic device and browser information so we can understand which content is useful. Analytics data is kept for 90 days and is never sold or shared. It cannot see your prep: the tool's data never leaves your browser, and the analytics script only sees that a page was viewed.",
+    a: "This site uses Dataflare, an analytics tool we self-host in our own Cloudflare account. It is cookieless — it sets no cookies and stores nothing on your device. It records pageviews, the referring site, basic device and browser information, and any anonymous site events so we can understand which content is useful. Analytics data is kept for 90 days and is never sold or shared. It measures pages, not people, and never has access to your prep content.",
   },
   {
     q: 'What happened to the old hosted intro pages?',
