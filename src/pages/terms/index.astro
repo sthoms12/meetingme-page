@@ -1,0 +1,78 @@
+---
+import Base from '../../layouts/Base.astro';
+import { pageByPath } from '../../lib/pages';
+import { articleJsonLd } from '../../lib/jsonld';
+
+const page = pageByPath('/terms/')!;
+---
+<Base title={page.title} description={page.description} path={page.path} jsonLd={[articleJsonLd(page)]}>
+  <h1>Terms of use</h1>
+  <p class="lede">
+    B4WeMeet is operated as a free, independent, non-commercial project provided "as is" and "as available", with no
+    commercial support, service-level agreement (SLA), advertising, or sponsorships.
+  </p>
+  <p><small>Effective / last updated: November 23, 2026</small></p>
+
+  <h2>General interview guidance only</h2>
+  <p>
+    The guides, question libraries, example answers, templates, and Prep Pack Builder on B4WeMeet are for general
+    informational purposes only. Nothing on this site is employment, career, HR, or legal advice. Every employer runs
+    interviews differently, and B4WeMeet makes no guarantee regarding any employer's interview process, questions, or
+    hiring outcomes.
+  </p>
+
+  <h2>Your local data and backups</h2>
+  <p>
+    Everything you enter in the Prep Pack Builder is stored locally in your browser (IndexedDB) on your device.
+    B4WeMeet has no user accounts, cloud sync, or server-side copy of your prep. You are solely responsible for
+    securing access to your device, exporting and storing your own backup files safely, and understanding that
+    clearing site data in your browser will erase your locally stored prep.
+  </p>
+
+  <h2>Bring-your-own AI (BYO-AI)</h2>
+  <p>
+    Optional handoff features copy your prep pack to your clipboard and open third-party AI services such as ChatGPT
+    or Claude in a new tab. Those services are operated by third parties under their own terms of service and privacy
+    policies. You are responsible for reviewing those terms and deciding what information to paste into any
+    third-party AI tool.
+  </p>
+
+  <h2>Independence and trademarks</h2>
+  <p>
+    B4WeMeet is an independent project and is not affiliated with, endorsed by, or sponsored by OpenAI, Anthropic, or
+    any named employers, platforms, or organizations. All third-party product names, service names, and trademarks
+    belong to their respective owners.
+  </p>
+
+  <h2>Permitted and prohibited use</h2>
+  <p>
+    B4WeMeet is free for personal or workplace use at your own risk. You agree not to:
+  </p>
+  <ul>
+    <li>Abuse, disrupt, overload, or attempt to interfere with the site or its hosting infrastructure.</li>
+    <li>Engage in wholesale commercial republishing, repackaging, or reselling of the site's guides, question libraries, or templates.</li>
+  </ul>
+
+  <h2>Provided "as is" — no warranties</h2>
+  <p>
+    B4WeMeet and all content and tools on it are provided <strong>"as is"</strong> and{' '}
+    <strong>"as available"</strong>, without warranties of any kind, whether express or implied, including without
+    limitation implied warranties of accuracy, completeness, merchantability, fitness for a particular purpose, or
+    non-infringement.
+  </p>
+
+  <h2>Limitation of liability</h2>
+  <p>
+    To the fullest extent permitted by law, B4WeMeet and its operators are not liable for any direct, indirect,
+    incidental, special, consequential, or punitive damages — including loss of locally stored data, device issues,
+    third-party AI service outputs, or hiring and employment outcomes — arising out of or related to your use of or
+    reliance on this site.
+  </p>
+
+  <h2>Changes and privacy</h2>
+  <p>
+    We may update or discontinue parts of the site or revise these Terms at any time. Continued use after changes are
+    posted constitutes acceptance of the updated Terms. Please also review our{' '}
+    <a href="/privacy/">Security and Privacy</a> page.
+  </p>
+</Base>

@@ -188,6 +188,12 @@ export const PAGES: PageEntry[] = [
       'How B4WeMeet handles your data: everything you prepare is stored only in your browser, on your device. No accounts, no uploads, no tracking of your job search.',
   },
   {
+    path: '/terms/',
+    title: 'Terms of Use | B4WeMeet',
+    description:
+      'Terms of Use for B4WeMeet: free, independent, non-commercial interview prep tool provided as is, local data and BYO-AI responsibility, and limitation of liability.',
+  },
+  {
     path: '/templates/',
     title: 'Meeting Templates | B4WeMeet',
     description:
