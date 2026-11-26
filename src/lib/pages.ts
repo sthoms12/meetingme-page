@@ -75,7 +75,7 @@ export const PAGES: PageEntry[] = [
   },
   {
     path: '/tell-me-about-yourself/',
-    title: 'How to Answer the "Tell Me About Yourself" Interview Question | B4WeMeet',
+    title: 'Tell Me About Yourself Examples & Formula | B4WeMeet',
     description:
       'How to answer the "tell me about yourself" interview question: a simple present, past, future structure, with examples for career changers, graduates and experienced specialists.',
   },
@@ -171,13 +171,13 @@ export const PAGES: PageEntry[] = [
   },
   {
     path: '/interview-thank-you-email/',
-    title: 'Interview Thank You Email: Templates, Subject Lines and Timing | B4WeMeet',
+    title: 'Interview Thank You Email Templates & Timing | B4WeMeet',
     description:
       'How to write a thank-you email after an interview: when to send it, subject lines that get opened, and copy-ready templates for hiring managers, panels and phone screens.',
   },
   {
     path: '/how-to-follow-up-after-an-interview/',
-    title: 'How to Follow Up After an Interview: Email Templates and Timing | B4WeMeet',
+    title: 'Interview Follow-Up Email Templates & Timing | B4WeMeet',
     description:
       'When and how to follow up after an interview without nagging: a sane cadence, copy-ready follow-up email templates, and what to do when you hear nothing back.',
   },
@@ -186,6 +186,12 @@ export const PAGES: PageEntry[] = [
     title: 'Security and Privacy | B4WeMeet',
     description:
       'How B4WeMeet handles your data: everything you prepare is stored only in your browser, on your device. No accounts, no uploads, no tracking of your job search.',
+  },
+  {
+    path: '/terms/',
+    title: 'Terms of Use | B4WeMeet',
+    description:
+      'Terms of Use for B4WeMeet: free, independent, non-commercial interview prep tool provided as is, local data and BYO-AI responsibility, and limitation of liability.',
   },
   {
     path: '/templates/',
