@@ -1,8 +1,9 @@
 ---
 import Base from '../../layouts/Base.astro';
+import Faq from '../../components/Faq.astro';
 import ToolCta from '../../components/ToolCta.astro';
 import { TEMPLATE_CONTENT, type TemplateContent } from '../../lib/template-content';
-import { articleJsonLd } from '../../lib/jsonld';
+import { articleJsonLd, faqJsonLd } from '../../lib/jsonld';
 
 export function getStaticPaths() {
   return TEMPLATE_CONTENT.map((t) => ({ params: { id: t.id }, props: { template: t } }));
@@ -11,8 +12,23 @@ export function getStaticPaths() {
 interface Props { template: TemplateContent }
 const { template } = Astro.props;
 const path = `/templates/${template.id}/`;
+const CAREER_TEMPLATE_IDS = new Set([
+  'interview-preparation-template',
+  '30-60-90-day-plan-template',
+  'salary-negotiation-script',
+  'panel-interview-prep-template',
+  'reference-check-prep-template',
+]);
 ---
-<Base title={template.title} description={template.metaDescription} path={path} jsonLd={[articleJsonLd({ path, title: template.title, description: template.metaDescription })]}>
+<Base
+  title={template.title}
+  description={template.metaDescription}
+  path={path}
+  jsonLd={[
+    articleJsonLd({ path, title: template.title, description: template.metaDescription }),
+    faqJsonLd(template.faqs),
+  ]}
+>
   <h1>{template.h1}</h1>
   <p class="lede">{template.summary}</p>
   <p class="noprint">
@@ -44,8 +60,9 @@ const path = `/templates/${template.id}/`;
     {template.howTo.map((step) => <li>{step}</li>)}
   </ol>
   <p>{template.ctaText}</p>
+  <Faq faqs={template.faqs} />
   <p><a href="/templates/">See all meeting templates</a></p>
-  {template.id === 'interview-preparation-template' && (
+  {CAREER_TEMPLATE_IDS.has(template.id) && (
     <ToolCta heading="Preparing for a real interview? Use the Prep Pack builder" />
   )}
 </Base>

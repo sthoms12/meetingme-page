@@ -53,3 +53,45 @@ export function webSiteJsonLd() {
   };
   return escapeJsonForScript(JSON.stringify(data));
 }
+
+export interface BreadcrumbItem {
+  name: string;
+  path: string;
+}
+
+export function breadcrumbJsonLd(items: BreadcrumbItem[]) {
+  const data = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map((item, idx) => ({
+      '@type': 'ListItem',
+      position: idx + 1,
+      name: item.name,
+      item: `${SITE_ORIGIN}${item.path}`,
+    })),
+  };
+  return escapeJsonForScript(JSON.stringify(data));
+}
+
+export function breadcrumbsForPath(path: string, title: string): string | null {
+  if (path === '/') return null;
+  const cleanTitle = title.replace(/ \| B4WeMeet$/, '');
+  if (path === '/templates/') {
+    return breadcrumbJsonLd([
+      { name: 'Home', path: '/' },
+      { name: 'Meeting Templates', path: '/templates/' },
+    ]);
+  }
+  if (path.startsWith('/templates/')) {
+    return breadcrumbJsonLd([
+      { name: 'Home', path: '/' },
+      { name: 'Templates', path: '/templates/' },
+      { name: cleanTitle, path },
+    ]);
+  }
+  return breadcrumbJsonLd([
+    { name: 'Home', path: '/' },
+    { name: cleanTitle, path },
+  ]);
+}
+

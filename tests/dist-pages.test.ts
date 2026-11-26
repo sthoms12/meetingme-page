@@ -99,7 +99,44 @@ describe('FAQ JSON-LD parity', () => {
         }
       }
     }
-    // Landing, privacy, role pages and most guide pages carry FAQs.
-    expect(pagesWithFaq).toBeGreaterThanOrEqual(12);
+    // Landing, privacy, role pages, guide pages and all template detail pages carry FAQs.
+    expect(pagesWithFaq).toBeGreaterThanOrEqual(22);
+  });
+
+  test('every template detail page carries FAQPage JSON-LD', () => {
+    const templateDetailPages = PAGES.filter((p) => p.path.startsWith('/templates/') && p.path !== '/templates/');
+    expect(templateDetailPages.length).toBeGreaterThanOrEqual(10);
+    for (const page of templateDetailPages) {
+      const html = read(join(page.path, 'index.html'));
+      const blocks = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map(
+        (m) => JSON.parse(m[1]) as { '@type'?: string; mainEntity?: unknown[] },
+      );
+      const faqBlock = blocks.find((b) => b['@type'] === 'FAQPage');
+      expect(faqBlock).toBeDefined();
+      expect(faqBlock!.mainEntity!.length).toBeGreaterThanOrEqual(3);
+    }
+  });
+});
+
+describe('BreadcrumbList JSON-LD', () => {
+  test('every non-root page carries valid BreadcrumbList JSON-LD', () => {
+    for (const page of PAGES) {
+      if (page.path === '/') continue;
+      const html = read(join(page.path, 'index.html'));
+      const blocks = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map(
+        (m) => JSON.parse(m[1]) as { '@type'?: string; itemListElement?: { position: number; item: string }[] },
+      );
+      const crumb = blocks.find((b) => b['@type'] === 'BreadcrumbList');
+      expect(crumb).toBeDefined();
+      const items = crumb!.itemListElement!;
+      if (page.path.startsWith('/templates/') && page.path !== '/templates/') {
+        expect(items.length).toBe(3);
+        expect(items[1].item).toBe('https://b4wemeet.app/templates/');
+      } else {
+        expect(items.length).toBe(2);
+      }
+      expect(items[0].item).toBe('https://b4wemeet.app/');
+      expect(items[items.length - 1].item).toBe(`https://b4wemeet.app${page.path}`);
+    }
   });
 });

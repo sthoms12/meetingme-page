@@ -43,6 +43,10 @@ export const MARKDOWN_PAGE_PATHS: string[] = [
   '/templates/pre-meeting-questionnaire/',
   '/templates/meeting-prep-template/',
   '/templates/interview-preparation-template/',
+  '/templates/30-60-90-day-plan-template/',
+  '/templates/salary-negotiation-script/',
+  '/templates/panel-interview-prep-template/',
+  '/templates/reference-check-prep-template/',
 ];
 
 /** "/" -> "/index.md", "/x/" -> "/x.md" (same rule as src/lib/pages.ts). */

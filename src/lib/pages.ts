@@ -235,6 +235,30 @@ export const PAGES: PageEntry[] = [
     description:
       'Free interview preparation template: the original B4WeMeet template for preparing what to say and ask before an interview. Copy it or download it as a text file.',
   },
+  {
+    path: '/templates/30-60-90-day-plan-template/',
+    title: '30-60-90 Day Plan Template (Free Copy and Download) | B4WeMeet',
+    description:
+      'Free 30-60-90 day plan template for interviews and new roles: learning goals, early wins, ownership milestones and success metrics. Copy or download as a text file.',
+  },
+  {
+    path: '/templates/salary-negotiation-script/',
+    title: 'Salary Negotiation Script and Prep Template (Free Copy and Download) | B4WeMeet',
+    description:
+      'Free salary negotiation script and prep sheet: target range, walk-away number, total compensation trade-offs and word-for-word scripts for calls and emails.',
+  },
+  {
+    path: '/templates/panel-interview-prep-template/',
+    title: 'Panel Interview Prep Template (Free Copy and Download) | B4WeMeet',
+    description:
+      'Free panel interview prep template: map each panelist, anticipate role-specific questions, match your STAR stories and prepare tailored questions for every seat.',
+  },
+  {
+    path: '/templates/reference-check-prep-template/',
+    title: 'Reference Check Prep Template (Free Copy and Download) | B4WeMeet',
+    description:
+      'Free reference check prep template: pick the right references, brief them with a short context email and confirm timing before the hiring team reaches out.',
+  },
 ];
 
 /** Content pages (everything except the templates library) — used for nav and llms.txt grouping. */

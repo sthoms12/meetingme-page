@@ -3,9 +3,11 @@ import { PAGES, SITE_ORIGIN } from '../lib/pages';
 // Static sitemap generated from the canonical page registry (src/lib/pages.ts).
 export const prerender = true;
 
+const LASTMOD = '2026-11-22';
+
 export function GET() {
   const urls = PAGES.map(
-    (p) => `  <url><loc>${SITE_ORIGIN}${p.path}</loc></url>`,
+    (p) => `  <url><loc>${SITE_ORIGIN}${p.path}</loc><lastmod>${LASTMOD}</lastmod></url>`,
   ).join('\n');
   const body = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
   return new Response(body, {
